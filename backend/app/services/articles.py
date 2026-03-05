@@ -140,8 +140,30 @@ class ArticleService:
 
         article_dir = self._feeds_dir / feed_id / "articles" / article_id
         article_dir.mkdir(parents=True, exist_ok=True)
-
+        article_json_path = article_dir / "article.json"
+        if article_json_path.exists():
+            try:
+                existing = json.loads(article_json_path.read_text(encoding="utf-8"))
+                title_trans = existing.get("title_trans")
+                if title_trans is not None:
+                    article = article.model_copy(update={"title_trans": title_trans})
+            except (json.JSONDecodeError, KeyError):
+                pass
         payload = article.model_dump(mode="json")
+        article_json_path.write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
+    def update_article_title_trans(self, feed_id: str, article_id: str, title_trans: str) -> None:
+        """
+        Update the title_trans field of an article and persist to disk.
+        Raises ArticleNotFoundError if the article does not exist.
+        """
+        article = self.get_article(feed_id, article_id)
+        updated = article.model_copy(update={"title_trans": title_trans})
+        article_dir = self._feeds_dir / feed_id / "articles" / article_id
+        payload = updated.model_dump(mode="json")
         (article_dir / "article.json").write_text(
             json.dumps(payload, indent=2, ensure_ascii=False),
             encoding="utf-8",

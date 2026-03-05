@@ -12,7 +12,10 @@ from app.api.feeds import router as feeds_router
 from app.api.profiles import router as profiles_router
 from app.api.summaries import router as summaries_router
 from app.services.articles import ArticleService
+from app.services.profiles import SummaryProfileService
 from app.services.scheduler import FeedFetchScheduler
+from app.services.summary import make_openai_call_ai
+from app.services.translation import run_translation_pass
 
 
 def get_data_root() -> Path:
@@ -28,22 +31,40 @@ def get_data_root() -> Path:
 
 # Default interval for scheduled feed fetch (seconds).
 FEED_FETCH_INTERVAL_SECONDS = 300.0
+# Default interval for title translation background pass (seconds).
+TRANSLATION_PASS_INTERVAL_SECONDS = 600.0
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
-    """Start the feed fetch scheduler on startup; stop it on shutdown."""
+    """Start the feed fetch and translation schedulers on startup; stop them on shutdown."""
     data_root = get_data_root()
-    article_service = ArticleService(
-        data_root=data_root,
-        logger=logging.getLogger(__name__),
-    )
+    log = logging.getLogger(__name__)
+    article_service = ArticleService(data_root=data_root, logger=log)
     scheduler = FeedFetchScheduler(
         fetch_all=article_service.fetch_and_persist_all_feeds,
         interval_seconds=FEED_FETCH_INTERVAL_SECONDS,
     )
     scheduler.start()
+
+    def _translation_job() -> None:
+        profile_service = SummaryProfileService(data_root)
+        call_ai = make_openai_call_ai(profile_service)
+        run_translation_pass(
+            data_root,
+            call_ai,
+            article_service=article_service,
+            logger=log,
+        )
+
+    translation_scheduler = FeedFetchScheduler(
+        fetch_all=_translation_job,
+        interval_seconds=TRANSLATION_PASS_INTERVAL_SECONDS,
+    )
+    translation_scheduler.start()
+
     yield
+    translation_scheduler.stop()
     scheduler.stop()
 
 

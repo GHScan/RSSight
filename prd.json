@@ -236,7 +236,7 @@
         "title_trans is persisted (e.g. in article data) and exposed to frontend.",
         "Article list and summary page header display title_trans when present, otherwise fall back to title."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S020",

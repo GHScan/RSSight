@@ -34,7 +34,7 @@ export function ArticleSummary() {
       .getArticles(feedId)
       .then((list) => {
         const a = list.find((x) => x.id === articleId);
-        setArticleTitle(a?.title ?? null);
+        setArticleTitle(a ? (a.title_trans ?? a.title) : null);
       })
       .catch(() => setArticleTitle(null));
   }, [feedId, articleId]);

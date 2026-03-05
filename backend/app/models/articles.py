@@ -17,14 +17,16 @@ class Article(BaseModel):
     description: str
     guid: str | None = None
     published_at: datetime
+    title_trans: str | None = None
 
 
 class ArticleRead(BaseModel):
     """
-    Response model for article list API (id, title, link, published).
+    Response model for article list API (id, title, link, published, optional title_trans).
     """
 
     id: str
     title: str
     link: str
     published: str
+    title_trans: str | None = None

@@ -82,7 +82,7 @@ export function ArticleList() {
                 to={`/feeds/${feedId}/articles/${a.id}`}
                 className="text-primary hover:underline break-words focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
               >
-                {a.title}
+                {a.title_trans ?? a.title}
               </Link>
             </li>
           ))}

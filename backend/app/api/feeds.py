@@ -114,6 +114,7 @@ def list_articles(
             title=a.title,
             link=a.link,
             published=a.published_at.isoformat(),
+            title_trans=a.title_trans,
         )
         for a in articles
     ]

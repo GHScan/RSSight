@@ -18,7 +18,7 @@ At the current stage of the project, the backend implements the **Health**, **Fe
 
 ## Articles
 
-- `GET /api/feeds/{feedId}/articles`
+- `GET /api/feeds/{feedId}/articles` — returns list with `id`, `title`, `link`, `published`, and optional `title_trans` (translated title when available).
 - `POST /api/feeds/{feedId}/refresh` (manually trigger a fetch)
 
 ## Summary Profiles
