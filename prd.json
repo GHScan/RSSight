@@ -210,7 +210,7 @@
         "Boundary/exception: Narrow-width layout and long-content scenarios remain readable and usable.",
         "Regression: Page-level functionality and existing interaction paths stay stable after style migration."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S018",

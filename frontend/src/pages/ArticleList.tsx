@@ -26,19 +26,25 @@ export function ArticleList() {
     loadArticles();
   }, [loadArticles]);
 
-  if (!feedId) return <p>缺少订阅 ID</p>;
-  if (loading && articles.length === 0) return <p>加载中…</p>;
+  if (!feedId) return <p className="max-w-4xl mx-auto px-4 py-6 text-muted-foreground">缺少订阅 ID</p>;
+  if (loading && articles.length === 0) return <p className="max-w-4xl mx-auto px-4 py-6 text-muted-foreground">加载中…</p>;
   if (error && articles.length === 0) {
     return (
-      <main>
-        <h1>文章列表</h1>
-        <nav>
-          <Link to="/feeds">返回订阅管理</Link>
+      <main className="max-w-4xl mx-auto px-4 py-6">
+        <h1 className="text-2xl font-semibold text-foreground mb-4">文章列表</h1>
+        <nav className="flex flex-wrap gap-4 mb-6">
+          <Link to="/feeds" className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded">
+            返回订阅管理
+          </Link>
         </nav>
-        <p className="error-message" style={{ whiteSpace: "pre-wrap" }}>
-          错误：{error}
-        </p>
-        <button type="button" onClick={loadArticles} aria-label="重试" data-testid="retry-articles">
+        <p className="text-destructive whitespace-pre-wrap mb-4" role="alert">错误：{error}</p>
+        <button
+          type="button"
+          onClick={loadArticles}
+          aria-label="重试"
+          data-testid="retry-articles"
+          className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+        >
           重试
         </button>
       </main>
@@ -46,33 +52,41 @@ export function ArticleList() {
   }
 
   return (
-    <main>
-      <h1>文章列表</h1>
-      <nav>
-        <Link to="/feeds">返回订阅管理</Link>
+    <main className="max-w-4xl mx-auto px-4 py-6">
+      <h1 className="text-2xl font-semibold text-foreground mb-4">文章列表</h1>
+      <nav className="flex flex-wrap gap-4 mb-6 items-center">
+        <Link to="/feeds" className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded">
+          返回订阅管理
+        </Link>
         <button
           type="button"
           onClick={loadArticles}
           disabled={loading}
           aria-label="刷新"
+          className="px-4 py-2 rounded-md border border-border bg-background text-foreground hover:bg-accent disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           刷新
         </button>
       </nav>
-      {loading && <p>加载中…</p>}
+      {loading && <p className="text-muted-foreground">加载中…</p>}
       {error && (
-        <p className="error-message" role="alert" style={{ whiteSpace: "pre-wrap" }}>
+        <p className="text-destructive whitespace-pre-wrap mb-4" role="alert">
           错误：{error}
         </p>
       )}
       {!loading && !error && articles.length === 0 && (
-        <p>暂无文章</p>
+        <p className="text-muted-foreground">暂无文章</p>
       )}
       {!loading && !error && articles.length > 0 && (
-        <ul>
+        <ul className="space-y-2 list-none p-0">
           {articles.map((a) => (
-            <li key={a.id}>
-              <Link to={`/feeds/${feedId}/articles/${a.id}`}>{a.title}</Link>
+            <li key={a.id} className="border-b border-border py-2 last:border-b-0">
+              <Link
+                to={`/feeds/${feedId}/articles/${a.id}`}
+                className="text-primary hover:underline break-words focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
+              >
+                {a.title}
+              </Link>
             </li>
           ))}
         </ul>
