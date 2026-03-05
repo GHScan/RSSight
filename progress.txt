@@ -1,0 +1,2 @@
+[bootstrap] 初始化仓库并建立前期基建骨架（Windows + OpenCode + Ralph 流程）。
+[bootstrap] 业务功能未实现；后续迭代请从 prd.json 的第一条 passes=false 故事开始。

@@ -1,0 +1,92 @@
+{
+  "project": "WebRSSReader",
+  "branchName": "feature/ai-rss-reader",
+  "version": 1,
+  "notes": "Windows + OpenCode + Ralph method (no upstream bash script). One iteration handles one story.",
+  "userStories": [
+    {
+      "id": "S001",
+      "priority": 1,
+      "title": "Implement feed CRUD API and file storage",
+      "description": "Support creating, updating, deleting, and querying the feed list, and write to the data/feeds index.",
+      "acceptanceCriteria": [
+        "Tests are written first and cover feed create/update/delete/query.",
+        "Deleting a feed deletes its corresponding directory.",
+        "API contract documentation is consistent with tests."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S002",
+      "priority": 2,
+      "title": "Implement RSS fetching and article persistence",
+      "description": "Fetch articles per feed and provide queries in reverse chronological order, writing to data/feeds/{feedId}/articles.",
+      "acceptanceCriteria": [
+        "Tests cover inserting new articles and idempotency for duplicates.",
+        "Article lists are sorted by published time in descending order.",
+        "Failures for one feed do not affect fetching for other feeds."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S003",
+      "priority": 3,
+      "title": "Implement summary profile management",
+      "description": "Support configuring multiple AI summary profiles, including name/base_url/key/model/fields/prompt_template.",
+      "acceptanceCriteria": [
+        "Tests cover creating, updating, deleting, and querying profiles.",
+        "The uniqueness constraint for profile names is clearly enforced.",
+        "The configuration storage structure is documented."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S004",
+      "priority": 4,
+      "title": "Implement manual triggering of article AI summaries",
+      "description": "Allow users to select an article and a profile to trigger a summary, then write the result to a markdown file.",
+      "acceptanceCriteria": [
+        "Templates support variables such as title and content.",
+        "Summary results are written to `.md` files.",
+        "Tests cover mocked AI calls and writing the output to disk."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S005",
+      "priority": 5,
+      "title": "Implement global cascading cleanup for profile delete/edit",
+      "description": "When deleting or renaming a profile, remove all summary markdown and metadata with the same name under all feed articles.",
+      "acceptanceCriteria": [
+        "Tests cover the full scope of global cleanup.",
+        "Summaries for other profiles are not accidentally deleted.",
+        "The cleanup process tolerates missing files."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S006",
+      "priority": 6,
+      "title": "Implement scheduled feed fetching",
+      "description": "Run background tasks to fetch feeds at fixed intervals.",
+      "acceptanceCriteria": [
+        "Tests cover the scheduling trigger logic.",
+        "Error isolation and logging are clear.",
+        "Manual triggers and scheduled tasks can coexist."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S007",
+      "priority": 7,
+      "title": "Implement basic frontend page flow",
+      "description": "Build the page skeletons for feed management, article list, article summary, and summary configuration, and connect them to the APIs.",
+      "acceptanceCriteria": [
+        "Routing and page structure are stable.",
+        "Key interactions are covered by tests.",
+        "Empty/loading/error states are visible."
+      ],
+      "passes": false
+    }
+  ]
+}
