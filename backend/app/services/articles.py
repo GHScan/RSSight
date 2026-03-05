@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -40,11 +41,17 @@ class ArticleService:
     fake implementation without performing real network I/O.
     """
 
-    def __init__(self, data_root: Path, fetch_rss: FetchRssCallable | None = None) -> None:
+    def __init__(
+        self,
+        data_root: Path,
+        fetch_rss: FetchRssCallable | None = None,
+        logger: logging.Logger | None = None,
+    ) -> None:
         self._data_root = data_root
         self._feeds_dir = self._data_root / "feeds"
         self._fetch_rss: FetchRssCallable = fetch_rss or self._default_fetch_rss
         self._feed_service = FeedService(data_root)
+        self._logger = logger
 
     def fetch_and_persist_all_feeds(self) -> None:
         """
@@ -61,8 +68,15 @@ class ArticleService:
                 items = self._parse_rss(xml)
                 for item in items:
                     self._persist_article(feed_id=feed.id, item=item)
-            except Exception:
-                # Error isolation: ignore failures for individual feeds.
+            except Exception as exc:  # noqa: BLE001
+                if self._logger is not None:
+                    self._logger.warning(
+                        "Feed fetch failed for feed_id=%s url=%s: %s",
+                        feed.id,
+                        feed.url,
+                        exc,
+                        exc_info=True,
+                    )
                 continue
 
     def list_articles_for_feed(self, feed_id: str) -> List[Article]:

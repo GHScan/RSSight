@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from textwrap import dedent
+from unittest.mock import MagicMock
 
 from app.models.feeds import FeedCreate
 from app.services.articles import ArticleService
@@ -130,3 +131,40 @@ def test_failure_for_one_feed_does_not_block_others(tmp_path: Path) -> None:
 
     assert failing_articles == []
     assert len(successful_articles) == 2
+
+
+def test_feed_failure_is_logged_when_logger_provided(tmp_path: Path) -> None:
+    """
+    When a feed fails and a logger is provided, the failure is logged.
+
+    Ensures error isolation and logging are clear (S006).
+    """
+    feed_service = FeedService(tmp_path)
+    feed_service.create_feed(
+        payload=FeedCreate(
+            title="Failing Feed",
+            url="https://example.com/fail-me",
+        ),
+    )
+    feed_service.create_feed(
+        payload=FeedCreate(
+            title="Ok Feed",
+            url="https://example.com/ok",
+        ),
+    )
+
+    def _fake_fetch(url: str) -> str:
+        if "fail-me" in url:
+            raise RuntimeError("simulated fetch failure")
+        return SAMPLE_RSS
+
+    logger = MagicMock()
+    article_service = ArticleService(
+        data_root=tmp_path,
+        fetch_rss=_fake_fetch,
+        logger=logger,
+    )
+    article_service.fetch_and_persist_all_feeds()
+
+    # Logger should have been called for the failing feed (e.g. warning or exception).
+    assert logger.warning.called or logger.exception.called or logger.error.called

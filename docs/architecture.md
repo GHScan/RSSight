@@ -47,6 +47,13 @@ flowchart LR
 - Scheduler failures must be isolated: failure on a single feed must not block other feeds.
 - All external calls (RSS, AI, etc.) must be replaceable and mockable.
 
+## Scheduler
+
+- `FeedFetchScheduler` (in `app.services.scheduler`) runs in a background thread.
+- On startup (FastAPI lifespan), the app creates an `ArticleService` and a scheduler that calls `article_service.fetch_and_persist_all_feeds` at a fixed interval (default 300 seconds).
+- Manual triggers (e.g. a future per-feed refresh API) and the scheduled task share the same fetch logic; both can run without conflict.
+- If the scheduled job raises, the scheduler logs the exception and continues to the next run.
+
 ## Non‑goals (current stage)
 
 - No production‑grade authentication or multi‑tenancy.

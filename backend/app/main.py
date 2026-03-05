@@ -1,10 +1,15 @@
+import logging
+from contextlib import asynccontextmanager
 from pathlib import Path
+from typing import AsyncGenerator
 
 from fastapi import FastAPI
 
 from app.api.feeds import router as feeds_router
 from app.api.profiles import router as profiles_router
 from app.api.summaries import router as summaries_router
+from app.services.articles import ArticleService
+from app.services.scheduler import FeedFetchScheduler
 
 
 def get_data_root() -> Path:
@@ -18,7 +23,28 @@ def get_data_root() -> Path:
     return Path(__file__).resolve().parents[2] / "data"
 
 
-app = FastAPI(title="WebRSSReader API", version="0.1.0")
+# Default interval for scheduled feed fetch (seconds).
+FEED_FETCH_INTERVAL_SECONDS = 300.0
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
+    """Start the feed fetch scheduler on startup; stop it on shutdown."""
+    data_root = get_data_root()
+    article_service = ArticleService(
+        data_root=data_root,
+        logger=logging.getLogger(__name__),
+    )
+    scheduler = FeedFetchScheduler(
+        fetch_all=article_service.fetch_and_persist_all_feeds,
+        interval_seconds=FEED_FETCH_INTERVAL_SECONDS,
+    )
+    scheduler.start()
+    yield
+    scheduler.stop()
+
+
+app = FastAPI(title="WebRSSReader API", version="0.1.0", lifespan=lifespan)
 
 app.include_router(feeds_router)
 app.include_router(profiles_router)
