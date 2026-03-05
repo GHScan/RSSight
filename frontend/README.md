@@ -6,16 +6,16 @@
 - Vitest + Testing Library smoke test.
 - ESLint + TypeScript basic checks.
 
-## Run locally (PowerShell)
+## Run locally (Windows cmd)
 
-```powershell
+```bat
 npm install
 npm run dev
 ```
 
 ## Tests and quality checks
 
-```powershell
+```bat
 npm run test -- --run
 npm run lint
 npm run typecheck

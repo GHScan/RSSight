@@ -32,7 +32,7 @@ At this stage it only provides the technology stack, project skeleton, documenta
 └─ progress.txt             # Iteration log (append‑only)
 ```
 
-## Quick start (Windows PowerShell)
+## Quick start (Windows cmd)
 
 1. Install dependencies:
    - Python 3.12+
@@ -41,7 +41,7 @@ At this stage it only provides the technology stack, project skeleton, documenta
 2. Initialize backend environment (example):
    - `cd backend`
    - `python -m venv .venv`
-   - `.venv\Scripts\Activate.ps1`
+   - `.venv\Scripts\activate.bat`
    - `pip install -e .[dev]`
 3. Initialize frontend environment:
    - `cd frontend`
@@ -51,7 +51,7 @@ At this stage it only provides the technology stack, project skeleton, documenta
 
 From the repository root, run:
 
-`pwsh -ExecutionPolicy Bypass -File scripts/ci-check.ps1`
+`scripts\ci-check.cmd`
 
 This command will run:
 

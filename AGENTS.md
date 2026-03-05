@@ -5,7 +5,7 @@ All future agents **must** follow these rules.
 
 ## Global principles
 
-- **Platform**: Development and deployment both target Windows; commands should use PowerShell by default.
+- **Platform**: Development and deployment both target Windows; commands should use Windows `cmd` (`.cmd` / `.bat`) by default.
 - **Development mode**: Strict TDD (write failing tests first, then implement, then refactor).
 - **Change granularity**: Each iteration must complete **exactly one** user story.
 - **Definition of done**: All relevant tests pass **and** documentation is updated **and** the corresponding story in `prd.json` has `passes=true`.

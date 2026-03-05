@@ -4,7 +4,7 @@ You are the implementation agent for the current iteration of this project. Foll
 
 1. Implement **only** the single story below; do not add extra features.
 2. Always write failing tests first, then implement until they pass (TDD).
-3. The platform is Windows; use PowerShell‑style commands.
+3. The platform is Windows; use `cmd`‑style commands.
 4. All runtime data lives under the `data` directory; AI summary bodies must be stored as Markdown files.
 5. When finished, update:
    - `progress.txt` (append a record for this iteration).

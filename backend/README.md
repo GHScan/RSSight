@@ -6,18 +6,18 @@
 - `/healthz` smoke endpoint.
 - Baseline configuration for pytest, ruff, black, and mypy.
 
-## Run locally (PowerShell)
+## Run locally (Windows cmd)
 
-```powershell
+```bat
 python -m venv .venv
-.venv\Scripts\Activate.ps1
+.venv\Scripts\activate.bat
 pip install -e .[dev]
 uvicorn app.main:app --reload
 ```
 
 ## Tests and quality checks
 
-```powershell
+```bat
 python -m pytest -q
 python -m ruff check app tests
 python -m black --check app tests

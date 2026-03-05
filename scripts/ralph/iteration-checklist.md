@@ -16,7 +16,7 @@
 
 ## After the iteration
 
-- [ ] Run `scripts/ci-check.ps1`.
+- [ ] Run `scripts/ci-check.cmd`.
 - [ ] Append this iteration’s record to `progress.txt`.
 - [ ] Update `AGENTS.md` if there are new long‑lived rules.
 - [ ] Mark this story’s `passes` as `true` in `prd.json`.

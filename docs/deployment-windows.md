@@ -19,6 +19,6 @@
 
 ## Pre‑run checklist
 
-- `scripts/ci-check.ps1` passes completely.
+- `scripts/ci-check.cmd` passes completely.
 - `GET /healthz` returns `ok`.
 - Log directory is writable.
