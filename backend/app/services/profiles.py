@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List
 
@@ -35,7 +36,23 @@ class SummaryProfileService:
         self._profiles_index_path = self._data_root / "summary_profiles.json"
 
     def list_profiles(self) -> List[SummaryProfile]:
-        return list(self._load_profiles().values())
+        """Return profiles sorted by last_used_at descending (most recently used first)."""
+        profiles = list(self._load_profiles().values())
+        return sorted(
+            profiles,
+            key=lambda p: p.last_used_at or datetime.min.replace(tzinfo=timezone.utc),
+            reverse=True,
+        )
+
+    def touch_profile(self, name: str) -> None:
+        """Update last_used_at for the given profile (e.g. after generating a summary)."""
+        profiles = self._load_profiles()
+        if name not in profiles:
+            return
+        existing = profiles[name]
+        updated = existing.model_copy(update={"last_used_at": datetime.now(timezone.utc)})
+        profiles[name] = updated
+        self._save_profiles(profiles)
 
     def get_profile(self, name: str) -> SummaryProfile:
         profiles = self._load_profiles()

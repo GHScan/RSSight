@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
+import { NavLink } from "../components/NavLink";
 import type { Article } from "../api/types";
 import { api } from "../api/client";
 
@@ -32,10 +33,8 @@ export function ArticleList() {
     return (
       <main className="max-w-4xl mx-auto px-4 py-6">
         <h1 className="text-2xl font-semibold text-foreground mb-4">文章列表</h1>
-        <nav className="flex flex-wrap gap-4 mb-6">
-          <Link to="/feeds" className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded">
-            返回订阅管理
-          </Link>
+        <nav className="flex flex-wrap gap-3 mb-6">
+          <NavLink to="/feeds">返回订阅管理</NavLink>
         </nav>
         <p className="text-destructive whitespace-pre-wrap mb-4" role="alert">错误：{error}</p>
         <button
@@ -43,7 +42,7 @@ export function ArticleList() {
           onClick={loadArticles}
           aria-label="重试"
           data-testid="retry-articles"
-          className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           重试
         </button>
@@ -54,16 +53,14 @@ export function ArticleList() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-semibold text-foreground mb-4">文章列表</h1>
-      <nav className="flex flex-wrap gap-4 mb-6 items-center">
-        <Link to="/feeds" className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded">
-          返回订阅管理
-        </Link>
+      <nav className="flex flex-wrap gap-3 mb-6 items-center">
+        <NavLink to="/feeds">返回订阅管理</NavLink>
         <button
           type="button"
           onClick={loadArticles}
           disabled={loading}
           aria-label="刷新"
-          className="px-4 py-2 rounded-md border border-border bg-background text-foreground hover:bg-accent disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-accent disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
         >
           刷新
         </button>

@@ -224,6 +224,55 @@
         "Windows execution: Verification command and integration point with frontend quality gate are documented."
       ],
       "passes": true
+    },
+    {
+      "id": "S019",
+      "priority": 19,
+      "title": "Background process to add title_trans to articles via translation profile",
+      "description": "Add a background process that gradually populates a title_trans field for articles. It uses a user-configured AI profile named \"translation\": the text to translate is passed as title; the returned result is split by \" (ASCII double quote) and the last non-empty segment is taken as title_trans. title_trans is then shown instead of title in the article list and in the summary page header.",
+      "acceptanceCriteria": [
+        "Background process runs and processes articles incrementally without blocking the main app.",
+        "Translation is performed via the configured \"translation\" profile; input is article title, output is parsed per spec (split by \", last non-empty = title_trans).",
+        "title_trans is persisted (e.g. in article data) and exposed to frontend.",
+        "Article list and summary page header display title_trans when present, otherwise fall back to title."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S020",
+      "priority": 20,
+      "title": "Article favorites with per-article flag and sorted list",
+      "description": "Support favoriting articles: each article has a favorite icon at the start; clicking toggles favorite on/off. Implementation: add a marker file in the article folder to indicate favorite. Article list sort order: most recently favorited first, then earlier favorited, then by publish time (newest first, then older).",
+      "acceptanceCriteria": [
+        "Each article row shows a favorite icon; click toggles favorite state (persisted via marker file in article folder).",
+        "Favorite state is reflected in list and survives refresh.",
+        "List order: recently favorited articles first, then earlier favorited, then by publish date descending."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S021",
+      "priority": 21,
+      "title": "Article list search filter (client-side)",
+      "description": "Add a search control on the article list that filters articles by user input. Purely client-side filtering: no backend search; filter runs as the user types and updates the visible list in real time.",
+      "acceptanceCriteria": [
+        "Search/filter input is visible on the article list page.",
+        "Typing filters the displayed articles in real time (e.g. by title or other visible fields).",
+        "Empty search shows all articles; no server round-trip for filtering."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S022",
+      "priority": 22,
+      "title": "Article list left-side date (year-month) with age-based fading",
+      "description": "Show date (year-month) on the left of each article in the list. Visual treatment: the further in the past, the lighter the color; same-day darkest, articles older than three months lightest.",
+      "acceptanceCriteria": [
+        "Each article row shows a date (year-month) on the left.",
+        "Color intensity reflects recency: same day darkest, gradually lighter for older dates, lightest for three months or older.",
+        "Date display is consistent with sort order and does not break layout."
+      ],
+      "passes": false
     }
   ]
 }

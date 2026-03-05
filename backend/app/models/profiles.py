@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from typing import List, Optional
 
 from pydantic import BaseModel, HttpUrl
@@ -20,6 +21,7 @@ class SummaryProfile(BaseModel):
     fields: List[str]
     prompt_template: str
     reasoning_effort: Optional[str] = None  # e.g. "low" | "medium" | "high" for APIs that support reasoning.effort
+    last_used_at: Optional[datetime] = None  # 最后使用时间，用于按使用顺序排序
 
 
 class SummaryProfileCreate(BaseModel):

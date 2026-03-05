@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { NavLink } from "../components/NavLink";
 import type { Feed } from "../api/types";
 import { api } from "../api/client";
 
@@ -53,10 +54,8 @@ export function FeedManagement() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-6 sm:px-6">
       <h1 className="text-2xl font-semibold text-foreground mb-4">订阅管理</h1>
-      <nav className="flex flex-wrap gap-4 items-center mb-6">
-        <Link to="/" className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded">
-          首页
-        </Link>
+      <nav className="flex flex-wrap gap-3 items-center mb-6">
+        <NavLink to="/">首页</NavLink>
       </nav>
       {loading && <p className="text-muted-foreground">加载中…</p>}
       {error && (
@@ -78,7 +77,7 @@ export function FeedManagement() {
               setFormError(null);
             }}
             aria-label="添加"
-            className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
             添加
           </button>
@@ -113,7 +112,7 @@ export function FeedManagement() {
           <div className="flex gap-2 mt-4">
             <button
               type="submit"
-              className="px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               确定
             </button>
@@ -123,7 +122,7 @@ export function FeedManagement() {
                 setShowAddForm(false);
                 setFormError(null);
               }}
-              className="px-4 py-2 rounded-md border border-border bg-background text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
               取消
             </button>

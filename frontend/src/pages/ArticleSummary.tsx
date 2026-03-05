@@ -1,11 +1,13 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import type { SummaryProfile } from "../api/types";
 import { api } from "../api/client";
 import { MarkdownContent } from "../components/MarkdownContent";
+import { NavLink } from "../components/NavLink";
 
 export function ArticleSummary() {
   const { feedId, articleId } = useParams<{ feedId: string; articleId: string }>();
+  const [articleTitle, setArticleTitle] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<SummaryProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>("");
   const [summary, setSummary] = useState<string | null>(null);
@@ -25,6 +27,17 @@ export function ArticleSummary() {
   useEffect(() => {
     loadProfiles();
   }, [loadProfiles]);
+
+  useEffect(() => {
+    if (!feedId || !articleId) return;
+    api
+      .getArticles(feedId)
+      .then((list) => {
+        const a = list.find((x) => x.id === articleId);
+        setArticleTitle(a?.title ?? null);
+      })
+      .catch(() => setArticleTitle(null));
+  }, [feedId, articleId]);
 
   const loadSummary = useCallback(() => {
     if (!feedId || !articleId || !selectedProfile) return;
@@ -62,19 +75,20 @@ export function ArticleSummary() {
 
   if (!feedId || !articleId) return <p className="max-w-4xl mx-auto px-4 py-6 text-muted-foreground">缺少参数</p>;
 
-  const btnPrimary = "px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50";
+  const btnPrimary =
+    "inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50";
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-semibold text-foreground mb-4">文章摘要</h1>
-      <nav className="mb-6">
-        <Link
-          to={`/feeds/${feedId}/articles`}
-          className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
-        >
-          返回文章列表
-        </Link>
+      <nav className="flex flex-wrap gap-3 mb-4">
+        <NavLink to={`/feeds/${feedId}/articles`}>返回文章列表</NavLink>
       </nav>
+      {articleTitle && (
+        <p className="text-lg font-medium text-foreground mb-4 break-words border-b border-border pb-3">
+          {articleTitle}
+        </p>
+      )}
       {loadingProfiles && <p className="text-muted-foreground">加载中…</p>}
       {!loadingProfiles && profiles.length === 0 && (
         <p className="text-muted-foreground">暂无摘要配置，请先在摘要配置页添加。</p>

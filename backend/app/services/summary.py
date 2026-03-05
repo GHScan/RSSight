@@ -141,18 +141,13 @@ class SummaryService:
         if not desc or desc == article.title or len(desc) < 200:
             content_override = _fetch_article_text(article.link)
         prompt = _render_prompt(profile.prompt_template, article, content_override=content_override)
-        # 调试：调用 AI 前打印输入，便于确认 title/content 等是否带入
-        print("[summary] prompt length:", len(prompt))
-        print("[summary] article.title length:", len(article.title), "| description length:", len(article.description or ""), "| content_override length:", len(content_override) if content_override else 0)
-        print("[summary] --- prompt begin ---")
-        print(prompt)
-        print("[summary] --- prompt end ---")
         summary_body = self._call_ai(prompt, profile_name)
 
         summary_dir = self._feeds_dir / feed_id / "articles" / article_id / "summaries"
         summary_dir.mkdir(parents=True, exist_ok=True)
         md_path = summary_dir / f"{profile_name}.md"
         md_path.write_text(summary_body, encoding="utf-8")
+        self._profile_service.touch_profile(profile_name)
 
         return summary_body
 

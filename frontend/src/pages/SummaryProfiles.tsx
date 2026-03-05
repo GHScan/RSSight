@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
+import { NavLink } from "../components/NavLink";
 import type { SummaryProfile } from "../api/types";
 import { api } from "../api/client";
 
@@ -131,18 +132,16 @@ export function SummaryProfiles() {
   const inputClass =
     "w-full max-w-md px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
   const labelClass = "block text-sm font-medium text-foreground mt-2 first:mt-0";
-  const btnPrimary =
-    "px-4 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
-  const btnSecondary =
-    "px-4 py-2 rounded-md border border-border bg-background text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
+  const btnBase =
+    "inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg text-base font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
+  const btnPrimary = `${btnBase} bg-primary text-primary-foreground hover:opacity-90`;
+  const btnSecondary = `${btnBase} border border-border bg-background text-foreground hover:bg-accent`;
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-semibold text-foreground mb-4">摘要配置</h1>
-      <nav className="mb-6">
-        <Link to="/" className="text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded">
-          首页
-        </Link>
+      <nav className="flex flex-wrap gap-3 mb-6">
+        <NavLink to="/">首页</NavLink>
       </nav>
       {loading && <p className="text-muted-foreground">加载中…</p>}
       {error && (
@@ -232,7 +231,7 @@ export function SummaryProfiles() {
                       <button type="button" onClick={() => startEdit(p)} aria-label={`编辑 ${p.name}`} className={btnSecondary}>
                         编辑
                       </button>
-                      <button type="button" onClick={() => confirmDelete(p.name)} aria-label={`删除 ${p.name}`} className="px-4 py-2 rounded-md bg-destructive text-destructive-foreground hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                      <button type="button" onClick={() => confirmDelete(p.name)} aria-label={`删除 ${p.name}`} className={`${btnBase} bg-destructive text-destructive-foreground hover:opacity-90`}>
                         删除
                       </button>
                     </div>

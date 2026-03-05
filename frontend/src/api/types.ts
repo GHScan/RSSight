@@ -24,6 +24,8 @@ export interface SummaryProfile {
   prompt_template: string;
   /** e.g. "low" | "medium" | "high" for APIs that support reasoning.effort */
   reasoning_effort?: string | null;
+  /** 最后使用时间（ISO 字符串），列表接口按此排序，最近使用的在前 */
+  last_used_at?: string | null;
 }
 
 export interface ApiError {

@@ -25,12 +25,12 @@ const proseClasses = {
   em: "italic",
   hr: "border-t border-border my-4",
   del: "line-through text-muted-foreground",
-  table: "w-full border-collapse text-sm min-w-[200px]",
+  table: "w-full border-collapse text-sm min-w-[200px] table-auto",
   thead: "bg-muted",
-  th: "text-left font-semibold text-foreground px-4 py-2.5 border-b border-border",
+  th: "text-left font-semibold text-foreground px-4 py-2.5 border border-border",
   tbody: "",
-  tr: "border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors",
-  td: "px-4 py-2.5 text-foreground border-border",
+  tr: "hover:bg-muted/30 transition-colors",
+  td: "px-4 py-2.5 text-foreground border border-border",
 };
 
 function CopyButton({
@@ -58,7 +58,7 @@ function CopyButton({
     <button
       type="button"
       onClick={handleCopy}
-      className={`absolute top-2 right-2 rounded px-2 py-1 text-xs font-medium bg-background/80 text-foreground border border-border hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring ${className}`}
+      className={`absolute top-2 right-2 inline-flex items-center justify-center min-h-[36px] min-w-[72px] rounded-md px-3 py-1.5 text-sm font-medium bg-background/80 text-foreground border border-border hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring ${className}`}
       title="复制"
     >
       {copied ? "已复制" : "复制"}
@@ -144,16 +144,38 @@ export function MarkdownContent({ content }: { content: string }) {
           em: ({ children }) => <em className={proseClasses.em}>{children}</em>,
           hr: () => <hr className={proseClasses.hr} />,
           del: ({ children }) => <del className={proseClasses.del}>{children}</del>,
-          table: ({ children }) => (
+          table: ({ children, className, ...props }) => (
             <div className="overflow-x-auto my-4 rounded-lg border border-border">
-              <table className={proseClasses.table}>{children}</table>
+              <table {...props} className={`${proseClasses.table} ${className ?? ""}`.trim()}>
+                {children}
+              </table>
             </div>
           ),
-          thead: ({ children }) => <thead className={proseClasses.thead}>{children}</thead>,
-          tbody: ({ children }) => <tbody className={proseClasses.tbody}>{children}</tbody>,
-          tr: ({ children }) => <tr className={proseClasses.tr}>{children}</tr>,
-          th: ({ children }) => <th className={proseClasses.th}>{children}</th>,
-          td: ({ children }) => <td className={proseClasses.td}>{children}</td>,
+          thead: ({ children, className, ...props }) => (
+            <thead {...props} className={`${proseClasses.thead} ${className ?? ""}`.trim()}>
+              {children}
+            </thead>
+          ),
+          tbody: ({ children, className, ...props }) => (
+            <tbody {...props} className={`${proseClasses.tbody} ${className ?? ""}`.trim()}>
+              {children}
+            </tbody>
+          ),
+          tr: ({ children, className, ...props }) => (
+            <tr {...props} className={`${proseClasses.tr} ${className ?? ""}`.trim()}>
+              {children}
+            </tr>
+          ),
+          th: ({ children, className, ...props }) => (
+            <th {...props} className={`${proseClasses.th} ${className ?? ""}`.trim()}>
+              {children}
+            </th>
+          ),
+          td: ({ children, className, ...props }) => (
+            <td {...props} className={`${proseClasses.td} ${className ?? ""}`.trim()}>
+              {children}
+            </td>
+          ),
           code: ({ className, children }) => {
             const lang = className?.replace("language-", "").trim().toLowerCase();
             const code = String(children ?? "").replace(/\n$/, "");
