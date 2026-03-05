@@ -25,7 +25,7 @@ At the current stage of the project, the backend implements the **Health**, **Fe
 
 - `GET /api/summary-profiles`
 - `POST /api/summary-profiles`
-- `PUT /api/summary-profiles/{profileName}`
+- `PUT /api/summary-profiles/{profileName}` — supports optional `name` in body for renaming; returns `409` if new name already exists. Delete and rename both trigger global cleanup of summary files for the affected profile name.
 - `DELETE /api/summary-profiles/{profileName}`
 
 ## Summaries

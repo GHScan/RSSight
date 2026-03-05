@@ -66,6 +66,10 @@ class SummaryProfileService:
             raise ProfileNotFoundError(name)
 
         existing = profiles[name]
+        new_name = payload.name if payload.name is not None else existing.name
+        if new_name in profiles and new_name != name:
+            raise ProfileNameExistsError(new_name)
+
         base_url = payload.base_url if payload.base_url is not None else existing.base_url
         key = payload.key if payload.key is not None else existing.key
         model = payload.model if payload.model is not None else existing.model
@@ -77,6 +81,7 @@ class SummaryProfileService:
         )
         updated = existing.model_copy(
             update={
+                "name": new_name,
                 "base_url": base_url,
                 "key": key,
                 "model": model,
@@ -84,6 +89,12 @@ class SummaryProfileService:
                 "prompt_template": prompt_template,
             }
         )
+        if new_name != name:
+            profiles.pop(name)
+            profiles[new_name] = updated
+            self._save_profiles(profiles)
+            self._cleanup_summaries_for_profile(name)
+            return updated
         profiles[name] = updated
         self._save_profiles(profiles)
         return updated
@@ -94,6 +105,36 @@ class SummaryProfileService:
             raise ProfileNotFoundError(name)
         profiles.pop(name)
         self._save_profiles(profiles)
+        self._cleanup_summaries_for_profile(name)
+
+    def _cleanup_summaries_for_profile(self, profile_name: str) -> None:
+        """
+        Remove all summary .md and .meta.json files for the given profile name
+        under data/feeds/{feedId}/articles/{articleId}/summaries/.
+        Tolerates missing files; failures for one path do not affect others.
+        """
+        feeds_dir = self._data_root / "feeds"
+        if not feeds_dir.exists():
+            return
+        for feed_path in feeds_dir.iterdir():
+            if not feed_path.is_dir():
+                continue
+            articles_dir = feed_path / "articles"
+            if not articles_dir.exists():
+                continue
+            for article_path in articles_dir.iterdir():
+                if not article_path.is_dir():
+                    continue
+                summaries_dir = article_path / "summaries"
+                if not summaries_dir.exists():
+                    continue
+                for suffix in (".md", ".meta.json"):
+                    path = summaries_dir / f"{profile_name}{suffix}"
+                    if path.exists():
+                        try:
+                            path.unlink()
+                        except OSError:
+                            pass
 
     def _load_profiles(self) -> Dict[str, SummaryProfile]:
         if not self._profiles_index_path.exists():

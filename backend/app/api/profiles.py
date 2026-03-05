@@ -89,6 +89,15 @@ def update_profile(
                 "details": {"profileName": exc.profile_name},
             },
         )
+    except ProfileNameExistsError as exc:
+        return JSONResponse(
+            status_code=HTTPStatus.CONFLICT,
+            content={
+                "code": "PROFILE_NAME_EXISTS",
+                "message": "A profile with this name already exists.",
+                "details": {"profileName": exc.profile_name},
+            },
+        )
     return SummaryProfileRead.model_validate(updated.model_dump())
 
 

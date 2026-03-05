@@ -37,8 +37,10 @@ class SummaryProfileUpdate(BaseModel):
     Payload for updating an existing summary profile.
 
     Fields are optional to allow partial updates.
+    Optional name allows renaming; when changed, summaries for the old name are cleaned up.
     """
 
+    name: Optional[str] = None
     base_url: Optional[HttpUrl] = None
     key: Optional[str] = None
     model: Optional[str] = None

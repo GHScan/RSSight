@@ -192,3 +192,45 @@ def test_get_profile_by_name(tmp_path: Path, monkeypatch) -> None:
 
     not_found = client.get("/api/summary-profiles/nonexistent")
     assert not_found.status_code == 404
+
+
+def test_update_profile_rename_to_existing_name_returns_409(tmp_path: Path, monkeypatch) -> None:
+    """
+    Boundary: renaming a profile to a name that already exists returns 409.
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    client.post(
+        "/api/summary-profiles",
+        json={
+            "name": "first",
+            "base_url": "https://api.example.com",
+            "key": "k",
+            "model": "gpt-4",
+            "fields": [],
+            "prompt_template": "x",
+        },
+    )
+    client.post(
+        "/api/summary-profiles",
+        json={
+            "name": "second",
+            "base_url": "https://api.example.com",
+            "key": "k",
+            "model": "gpt-4",
+            "fields": [],
+            "prompt_template": "y",
+        },
+    )
+
+    response = client.put(
+        "/api/summary-profiles/second",
+        json={"name": "first"},
+    )
+    assert response.status_code == 409
+    body = response.json()
+    assert body.get("code") == "PROFILE_NAME_EXISTS"
+    assert "details" in body

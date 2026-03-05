@@ -62,7 +62,7 @@
         "Summaries for other profiles are not accidentally deleted.",
         "The cleanup process tolerates missing files."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S006",
