@@ -34,7 +34,7 @@ For each story, include:
 
 ## UI automation (E2E, Windows)
 
-- **Scope:** Feed management flow (add/edit/delete/refresh, validation and API-failure feedback, route and list regression). E2E tests mock the API; no backend is required.
+- **Scope:** Feed management flow (add/edit/delete/refresh, validation and API-failure feedback, route and list regression). Article list flow (load, refresh, empty state, fetch failure and retry, reverse-chronological order, feed-to-list navigation). E2E tests mock the API; no backend is required.
 - **Prerequisites:** Node.js 20+, frontend deps installed (`npm install` in `frontend/`). First-time: `npx playwright install chromium` in `frontend/`.
 - **Commands (from repo root or frontend):**
   - `cd frontend && npm run test:e2e` — run E2E (headless). Playwright starts the dev server automatically.

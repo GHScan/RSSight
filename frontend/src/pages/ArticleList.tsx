@@ -38,7 +38,7 @@ export function ArticleList() {
         <p className="error-message" style={{ whiteSpace: "pre-wrap" }}>
           错误：{error}
         </p>
-        <button type="button" onClick={loadArticles} aria-label="重试">
+        <button type="button" onClick={loadArticles} aria-label="重试" data-testid="retry-articles">
           重试
         </button>
       </main>

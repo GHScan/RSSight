@@ -136,7 +136,7 @@
         "Regression automation: Existing sort visibility and navigation behavior is covered with stable assertions.",
         "Windows execution: Automation is runnable in local Windows workflow with documented command and scope."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S012",
