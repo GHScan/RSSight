@@ -38,7 +38,7 @@ flowchart LR
 - AI summary metadata (recommended):
   - `data/feeds/{feedId}/articles/{articleId}/summaries/{profileName}.meta.json`
 - Summary profiles (recommended):
-  - `data/summary_profiles.json`
+  - `data/summary_profiles.json` — single JSON object; keys are profile names (unique). Each value is an object: `name`, `base_url`, `key`, `model`, `fields` (array of strings), `prompt_template`. Name uniqueness is enforced on create.
 
 ## Key behavioral constraints
 

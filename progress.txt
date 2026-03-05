@@ -3,3 +3,4 @@
 [meta] Clarified that only after all tests and local quality checks pass can cross-story state in progress.txt and prd.json be updated.
 [S001] Implemented feed CRUD API and file storage (backend services, models, and FastAPI routes) with passing backend tests and baseline frontend smoke test; fixed CI tooling (pytest, FastAPI, ruff/black/mypy, npm deps) so scripts/ci-check.cmd is green.
 [S002] Implemented RSS fetching and article persistence using ArticleService with file-based storage under data/feeds/{feedId}/articles, covering idempotent insert behavior and error isolation across feeds with all backend and frontend CI checks passing.
+[S003] Implemented summary profile management: SummaryProfileService and FastAPI routes for create/update/delete/query; profile names unique; config stored at data/summary_profiles.json; storage structure documented in docs/architecture.md; all backend and frontend CI checks passing.

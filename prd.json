@@ -38,7 +38,7 @@
         "The uniqueness constraint for profile names is clearly enforced.",
         "The configuration storage structure is documented."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S004",

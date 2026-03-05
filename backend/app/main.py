@@ -3,6 +3,7 @@ from pathlib import Path
 from fastapi import FastAPI
 
 from app.api.feeds import router as feeds_router
+from app.api.profiles import router as profiles_router
 
 
 def get_data_root() -> Path:
@@ -19,6 +20,7 @@ def get_data_root() -> Path:
 app = FastAPI(title="WebRSSReader API", version="0.1.0")
 
 app.include_router(feeds_router)
+app.include_router(profiles_router)
 
 
 @app.get("/healthz")
