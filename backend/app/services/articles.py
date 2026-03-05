@@ -17,6 +17,12 @@ FetchRssCallable = Callable[[str], str]
 
 
 @dataclass(frozen=True)
+class ArticleNotFoundError(Exception):
+    feed_id: str
+    article_id: str
+
+
+@dataclass(frozen=True)
 class ParsedRssItem:
     title: str
     link: str
@@ -81,6 +87,20 @@ class ArticleService:
 
         articles.sort(key=lambda a: a.published_at, reverse=True)
         return articles
+
+    def get_article(self, feed_id: str, article_id: str) -> Article:
+        """
+        Load a single article by feed id and article id.
+
+        Raises ArticleNotFoundError if the article directory or article.json
+        does not exist.
+        """
+        article_dir = self._feeds_dir / feed_id / "articles" / article_id
+        article_json = article_dir / "article.json"
+        if not article_json.exists():
+            raise ArticleNotFoundError(feed_id=feed_id, article_id=article_id)
+        raw = json.loads(article_json.read_text(encoding="utf-8"))
+        return Article.model_validate(raw)
 
     def _persist_article(self, feed_id: str, item: ParsedRssItem) -> None:
         """

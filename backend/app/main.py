@@ -4,6 +4,7 @@ from fastapi import FastAPI
 
 from app.api.feeds import router as feeds_router
 from app.api.profiles import router as profiles_router
+from app.api.summaries import router as summaries_router
 
 
 def get_data_root() -> Path:
@@ -21,6 +22,7 @@ app = FastAPI(title="WebRSSReader API", version="0.1.0")
 
 app.include_router(feeds_router)
 app.include_router(profiles_router)
+app.include_router(summaries_router, prefix="/api/feeds")
 
 
 @app.get("/healthz")
