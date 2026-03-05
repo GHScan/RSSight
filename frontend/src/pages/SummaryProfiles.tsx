@@ -1,32 +1,124 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import type { SummaryProfile } from "../api/types";
 import { api } from "../api/client";
+
+const defaultFields = ["title", "content"];
 
 export function SummaryProfiles() {
   const [profiles, setProfiles] = useState<SummaryProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingName, setEditingName] = useState<string | null>(null);
+  const [deletingName, setDeletingName] = useState<string | null>(null);
+  const [addName, setAddName] = useState("");
+  const [addBaseUrl, setAddBaseUrl] = useState("");
+  const [addKey, setAddKey] = useState("");
+  const [addModel, setAddModel] = useState("");
+  const [addPrompt, setAddPrompt] = useState("");
+  const [editName, setEditName] = useState("");
+  const [editBaseUrl, setEditBaseUrl] = useState("");
+  const [editKey, setEditKey] = useState("");
+  const [editModel, setEditModel] = useState("");
+  const [editPrompt, setEditPrompt] = useState("");
 
-  useEffect(() => {
-    let cancelled = false;
+  const loadProfiles = useCallback(() => {
     setLoading(true);
     setError(null);
     api
       .getSummaryProfiles()
-      .then((data) => {
-        if (!cancelled) setProfiles(data);
-      })
+      .then(setProfiles)
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "请求失败");
+        setError(e instanceof Error ? e.message : "请求失败");
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    loadProfiles();
+  }, [loadProfiles]);
+
+  const handleAddSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError(null);
+    const name = addName.trim();
+    if (!name) {
+      setFormError("请填写名称");
+      return;
+    }
+    const base_url = addBaseUrl.trim() || "https://api.openai.com/v1";
+    const key = addKey.trim();
+    const model = addModel.trim() || "gpt-4";
+    const prompt_template = addPrompt.trim() || "{title}";
+    try {
+      await api.createSummaryProfile({
+        name,
+        base_url,
+        key,
+        model,
+        fields: defaultFields,
+        prompt_template,
+      });
+      setAddName("");
+      setAddBaseUrl("");
+      setAddKey("");
+      setAddModel("");
+      setAddPrompt("");
+      setShowAddForm(false);
+      loadProfiles();
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "添加失败");
+    }
+  };
+
+  const startEdit = (p: SummaryProfile) => {
+    setEditingName(p.name);
+    setEditName(p.name);
+    setEditBaseUrl(p.base_url);
+    setEditKey(p.key);
+    setEditModel(p.model);
+    setEditPrompt(p.prompt_template);
+    setFormError(null);
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingName) return;
+    setFormError(null);
+    const name = editName.trim();
+    if (!name) {
+      setFormError("请填写名称");
+      return;
+    }
+    try {
+      await api.updateSummaryProfile(editingName, {
+        name,
+        base_url: editBaseUrl.trim(),
+        key: editKey.trim(),
+        model: editModel.trim(),
+        prompt_template: editPrompt.trim(),
+      });
+      setEditingName(null);
+      loadProfiles();
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "更新失败");
+    }
+  };
+
+  const confirmDelete = (name: string) => setDeletingName(name);
+  const handleDeleteConfirm = async () => {
+    if (!deletingName) return;
+    setFormError(null);
+    try {
+      await api.deleteSummaryProfile(deletingName);
+      setDeletingName(null);
+      loadProfiles();
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "删除失败");
+    }
+  };
 
   return (
     <main>
@@ -36,17 +128,86 @@ export function SummaryProfiles() {
       </nav>
       {loading && <p>加载中…</p>}
       {error && (
-        <p style={{ whiteSpace: "pre-wrap" }}>错误：{error}</p>
+        <p className="error-message" style={{ whiteSpace: "pre-wrap" }}>
+          错误：{error}
+        </p>
       )}
-      {!loading && !error && profiles.length === 0 && (
-        <p>暂无摘要配置，请先添加配置。</p>
+      {formError && (
+        <p className="form-error" role="alert">
+          {formError}
+        </p>
       )}
-      {!loading && !error && profiles.length > 0 && (
-        <ul>
-          {profiles.map((p) => (
-            <li key={p.name}>{p.name}</li>
-          ))}
-        </ul>
+      {!loading && !error && (
+        <>
+          <div style={{ marginBottom: "1rem" }}>
+            <button type="button" onClick={() => setShowAddForm(!showAddForm)} aria-label="添加">
+              添加
+            </button>
+            <button type="button" onClick={loadProfiles} aria-label="刷新">
+              刷新
+            </button>
+          </div>
+          {showAddForm && (
+            <form data-testid="add-profile-form" onSubmit={handleAddSubmit} style={{ marginBottom: "1rem" }}>
+              <label htmlFor="add-name">名称</label>
+              <input id="add-name" value={addName} onChange={(e) => setAddName(e.target.value)} placeholder="配置名称" />
+              <label htmlFor="add-baseurl">API Base URL</label>
+              <input id="add-baseurl" value={addBaseUrl} onChange={(e) => setAddBaseUrl(e.target.value)} placeholder="https://api.openai.com/v1" />
+              <label htmlFor="add-key">密钥</label>
+              <input id="add-key" type="password" value={addKey} onChange={(e) => setAddKey(e.target.value)} placeholder="sk-..." />
+              <label htmlFor="add-model">Model</label>
+              <input id="add-model" value={addModel} onChange={(e) => setAddModel(e.target.value)} placeholder="gpt-4" />
+              <label htmlFor="add-prompt">提示模板</label>
+              <input id="add-prompt" value={addPrompt} onChange={(e) => setAddPrompt(e.target.value)} placeholder="{title}" />
+              <button type="submit">确定</button>
+              <button type="button" onClick={() => { setShowAddForm(false); setFormError(null); }}>取消</button>
+            </form>
+          )}
+          {!loading && !error && profiles.length === 0 && (
+            <p>暂无摘要配置，请先添加配置。</p>
+          )}
+          {!loading && !error && profiles.length > 0 && (
+            <ul>
+              {profiles.map((p) => (
+                <li key={p.name}>
+                  {editingName === p.name ? (
+                    <form data-testid="edit-profile-form" onSubmit={handleEditSubmit}>
+                      <label htmlFor="edit-name">名称</label>
+                      <input id="edit-name" value={editName} onChange={(e) => setEditName(e.target.value)} />
+                      <label htmlFor="edit-baseurl">API Base URL</label>
+                      <input id="edit-baseurl" value={editBaseUrl} onChange={(e) => setEditBaseUrl(e.target.value)} />
+                      <label htmlFor="edit-key">密钥</label>
+                      <input id="edit-key" type="password" value={editKey} onChange={(e) => setEditKey(e.target.value)} />
+                      <label htmlFor="edit-model">Model</label>
+                      <input id="edit-model" value={editModel} onChange={(e) => setEditModel(e.target.value)} />
+                      <label htmlFor="edit-prompt">提示模板</label>
+                      <input id="edit-prompt" value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} />
+                      <button type="submit">确定</button>
+                      <button type="button" onClick={() => { setEditingName(null); setFormError(null); }}>取消</button>
+                    </form>
+                  ) : (
+                    <>
+                      <span>{p.name}</span>
+                      <button type="button" onClick={() => startEdit(p)} aria-label={`编辑 ${p.name}`}>
+                        编辑
+                      </button>
+                      <button type="button" onClick={() => confirmDelete(p.name)} aria-label={`删除 ${p.name}`}>
+                        删除
+                      </button>
+                    </>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+          {deletingName && (
+            <div role="dialog" aria-modal="true" aria-labelledby="delete-profile-title">
+              <p id="delete-profile-title">确认删除该摘要配置？</p>
+              <button type="button" onClick={handleDeleteConfirm}>确认</button>
+              <button type="button" onClick={() => setDeletingName(null)}>取消</button>
+            </div>
+          )}
+        </>
       )}
     </main>
   );

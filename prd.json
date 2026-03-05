@@ -173,7 +173,7 @@
         "Boundary/exception: Required-field missing, name conflict, and backend failure cases are clearly handled in UI.",
         "Regression: Existing profile list rendering and navigation behavior stays stable after interaction refinements."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S015",
