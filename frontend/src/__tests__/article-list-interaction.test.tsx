@@ -20,6 +20,7 @@ vi.mock("../api/client", () => ({
     createFeed: vi.fn(),
     updateFeed: vi.fn(),
     deleteFeed: vi.fn(),
+    setArticleFavorite: vi.fn(),
     getSummary: vi.fn(),
     generateSummary: vi.fn(),
     createSummaryProfile: vi.fn(),

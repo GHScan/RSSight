@@ -22,7 +22,7 @@ class Article(BaseModel):
 
 class ArticleRead(BaseModel):
     """
-    Response model for article list API (id, title, link, published, optional title_trans).
+    Response model for article list API (id, title, link, published, optional title_trans, favorite).
     """
 
     id: str
@@ -30,3 +30,5 @@ class ArticleRead(BaseModel):
     link: str
     published: str
     title_trans: str | None = None
+    favorite: bool = False
+    favorited_at: str | None = None  # ISO datetime when favorited, for sort/display

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 from textwrap import dedent
 from unittest.mock import MagicMock
 
+from app.models.articles import Article
 from app.models.feeds import FeedCreate
-from app.services.articles import ArticleService
+from app.services.articles import ArticleService, FAVORITE_MARKER
 from app.services.feeds import FeedService
 
 SAMPLE_RSS = dedent(
@@ -170,3 +173,67 @@ def test_feed_failure_is_logged_when_logger_provided(tmp_path: Path) -> None:
 
     # Logger should have been called for the failing feed (e.g. warning or exception).
     assert logger.warning.called or logger.exception.called or logger.error.called
+
+
+def test_set_article_favorite_creates_and_removes_marker(tmp_path: Path) -> None:
+    """Favorite state is persisted via marker file; set False removes it."""
+    feed_svc = FeedService(tmp_path)
+    feed = feed_svc.create_feed(
+        FeedCreate(title="F", url="https://example.com/feed.xml")
+    )
+    article = Article(
+        id="art-1",
+        feed_id=feed.id,
+        title="T",
+        link="https://example.com/1",
+        description="",
+        guid="g1",
+        published_at=datetime.now(timezone.utc),
+    )
+    article_dir = tmp_path / "feeds" / feed.id / "articles" / article.id
+    article_dir.mkdir(parents=True)
+    article_dir.joinpath("article.json").write_text(
+        json.dumps(article.model_dump(mode="json"), indent=2),
+        encoding="utf-8",
+    )
+    art_svc = ArticleService(tmp_path)
+    assert (article_dir / FAVORITE_MARKER).exists() is False
+    art_svc.set_article_favorite(feed.id, article.id, True)
+    assert (article_dir / FAVORITE_MARKER).exists() is True
+    art_svc.set_article_favorite(feed.id, article.id, False)
+    assert (article_dir / FAVORITE_MARKER).exists() is False
+
+
+def test_list_articles_with_favorites_sort_order(tmp_path: Path) -> None:
+    """List order: recently favorited first, then earlier favorited, then by published_at desc."""
+    feed_svc = FeedService(tmp_path)
+    feed = feed_svc.create_feed(
+        FeedCreate(title="F", url="https://example.com/feed.xml")
+    )
+    base = datetime(2026, 3, 1, 12, 0, 0, tzinfo=timezone.utc)
+    for i, (aid, pub) in enumerate(
+        [("a1", base), ("a2", base.replace(day=2)), ("a3", base.replace(day=3))]
+    ):
+        article_dir = tmp_path / "feeds" / feed.id / "articles" / aid
+        article_dir.mkdir(parents=True)
+        art = Article(
+            id=aid,
+            feed_id=feed.id,
+            title=f"Title {i}",
+            link=f"https://example.com/{i}",
+            description="",
+            guid=aid,
+            published_at=pub,
+        )
+        article_dir.joinpath("article.json").write_text(
+            json.dumps(art.model_dump(mode="json"), indent=2),
+            encoding="utf-8",
+        )
+    # a3 newest, a2, a1 oldest. Favorite a1 (oldest) so it should come first.
+    (tmp_path / "feeds" / feed.id / "articles" / "a1" / FAVORITE_MARKER).touch()
+    art_svc = ArticleService(tmp_path)
+    pairs = art_svc.list_articles_for_feed_with_favorites(feed.id)
+    ids = [a.id for a, _ in pairs]
+    assert ids[0] == "a1"
+    assert ids[1] == "a3"
+    assert ids[2] == "a2"

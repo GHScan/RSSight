@@ -1,9 +1,12 @@
+import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
 
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.models.articles import Article
 
 
 def _override_data_root(tmp_path: Path) -> Callable[[], Path]:
@@ -123,3 +126,50 @@ def test_delete_feed_removes_index_and_directory(tmp_path: Path, monkeypatch) ->
 
     # And the feed directory should have been removed as well.
     assert not feed_dir.exists()
+
+
+def test_article_favorite_api_and_list_includes_favorite(tmp_path: Path, monkeypatch) -> None:
+    """PUT favorite sets marker; GET list returns favorite and favorited_at."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    r = client.post("/api/feeds", json={"title": "F", "url": "https://example.com/rss"})
+    assert r.status_code == 201
+    feed_id = r.json()["id"]
+    article_dir = tmp_path / "feeds" / feed_id / "articles" / "art1"
+    article_dir.mkdir(parents=True)
+    article = Article(
+        id="art1",
+        feed_id=feed_id,
+        title="T",
+        link="https://example.com/1",
+        description="",
+        guid="g1",
+        published_at=datetime.now(timezone.utc),
+    )
+    article_dir.joinpath("article.json").write_text(
+        json.dumps(article.model_dump(mode="json"), indent=2),
+        encoding="utf-8",
+    )
+
+    list_r = client.get(f"/api/feeds/{feed_id}/articles")
+    assert list_r.status_code == 200
+    articles = list_r.json()
+    assert len(articles) == 1
+    assert articles[0].get("favorite") is False
+    assert articles[0].get("favorited_at") is None
+
+    put_r = client.put(
+        f"/api/feeds/{feed_id}/articles/art1/favorite",
+        json={"favorite": True},
+    )
+    assert put_r.status_code == 204
+
+    list_r2 = client.get(f"/api/feeds/{feed_id}/articles")
+    assert list_r2.status_code == 200
+    articles2 = list_r2.json()
+    assert len(articles2) == 1
+    assert articles2[0]["favorite"] is True
+    assert articles2[0]["favorited_at"] is not None

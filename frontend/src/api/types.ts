@@ -15,6 +15,8 @@ export interface Article {
   published: string;
   /** Translated title when available (e.g. from background translation profile). */
   title_trans?: string | null;
+  favorite?: boolean;
+  favorited_at?: string | null;
 }
 
 export interface SummaryProfile {

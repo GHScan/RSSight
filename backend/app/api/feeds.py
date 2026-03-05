@@ -6,11 +6,16 @@ from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 
 from app.models.articles import ArticleRead
 from app.models.feeds import FeedCreate, FeedRead, FeedUpdate
-from app.services.articles import ArticleService
+from app.services.articles import ArticleNotFoundError, ArticleService
 from app.services.feeds import FeedNotFoundError, FeedService
+
+
+class FavoriteUpdate(BaseModel):
+    favorite: bool
 
 router = APIRouter(prefix="/api/feeds", tags=["feeds"])
 
@@ -107,7 +112,7 @@ def list_articles(
                 "details": {"feedId": exc.feed_id},
             },
         ) from exc
-    articles = article_service.list_articles_for_feed(feed_id)
+    pairs = article_service.list_articles_for_feed_with_favorites(feed_id)
     return [
         ArticleRead(
             id=a.id,
@@ -115,6 +120,41 @@ def list_articles(
             link=a.link,
             published=a.published_at.isoformat(),
             title_trans=a.title_trans,
+            favorite=favorited_at is not None,
+            favorited_at=favorited_at.isoformat() if favorited_at else None,
         )
-        for a in articles
+        for a, favorited_at in pairs
     ]
+
+
+@router.put("/{feed_id}/articles/{article_id}/favorite", status_code=HTTPStatus.NO_CONTENT)
+def set_article_favorite(
+    feed_id: str,
+    article_id: str,
+    payload: FavoriteUpdate,
+    feed_service: FeedService = Depends(get_feed_service),
+    article_service: ArticleService = Depends(get_article_service),
+) -> None:
+    """Set or clear the favorite state for an article (marker file in article folder)."""
+    try:
+        feed_service.get_feed(feed_id)
+    except FeedNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "FEED_NOT_FOUND",
+                "message": "Feed not found.",
+                "details": {"feedId": exc.feed_id},
+            },
+        ) from exc
+    try:
+        article_service.set_article_favorite(feed_id, article_id, payload.favorite)
+    except ArticleNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "ARTICLE_NOT_FOUND",
+                "message": "Article not found.",
+                "details": {"feedId": exc.feed_id, "articleId": exc.article_id},
+            },
+        ) from exc

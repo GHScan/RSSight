@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { NavLink } from "../components/NavLink";
 import type { Article } from "../api/types";
@@ -77,10 +77,27 @@ export function ArticleList() {
       {!loading && !error && articles.length > 0 && (
         <ul className="space-y-2 list-none p-0">
           {articles.map((a) => (
-            <li key={a.id} className="border-b border-border py-2 last:border-b-0">
+            <li
+              key={a.id}
+              className="border-b border-border py-2 last:border-b-0 flex items-center gap-2"
+            >
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!feedId) return;
+                  const next = !a.favorite;
+                  await api.setArticleFavorite(feedId, a.id, next);
+                  loadArticles();
+                }}
+                aria-label={a.favorite ? "取消收藏" : "收藏"}
+                title={a.favorite ? "取消收藏" : "收藏"}
+                className="shrink-0 text-lg leading-none p-1 rounded focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {a.favorite ? "★" : "☆"}
+              </button>
               <Link
                 to={`/feeds/${feedId}/articles/${a.id}`}
-                className="text-primary hover:underline break-words focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
+                className="text-primary hover:underline break-words focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded flex-1 min-w-0"
               >
                 {a.title_trans ?? a.title}
               </Link>

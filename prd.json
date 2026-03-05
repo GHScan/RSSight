@@ -248,7 +248,7 @@
         "Favorite state is reflected in list and survives refresh.",
         "List order: recently favorited articles first, then earlier favorited, then by publish date descending."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S021",

@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
-from typing import Callable, Iterable, List, cast
+from typing import Callable, Iterable, List, Tuple, cast
 from urllib.request import urlopen
 from xml.etree import ElementTree as ET
 
@@ -15,6 +15,9 @@ from app.models.articles import Article
 from app.services.feeds import FeedService
 
 FetchRssCallable = Callable[[str], str]
+
+# Marker file in article directory to indicate favorite; mtime used as favorited_at.
+FAVORITE_MARKER = ".favorite"
 
 
 @dataclass(frozen=True)
@@ -79,17 +82,36 @@ class ArticleService:
                     )
                 continue
 
+    def _get_favorited_at(self, article_dir: Path) -> datetime | None:
+        """Return mtime of favorite marker if present, else None."""
+        marker = article_dir / FAVORITE_MARKER
+        if not marker.exists():
+            return None
+        try:
+            return datetime.fromtimestamp(marker.stat().st_mtime, tz=timezone.utc)
+        except OSError:
+            return None
+
     def list_articles_for_feed(self, feed_id: str) -> List[Article]:
         """
         Load all articles for a feed and return them in reverse
-        chronological order by published_at.
+        chronological order by published_at (legacy; no favorite sort).
         """
+        pairs = self.list_articles_for_feed_with_favorites(feed_id)
+        return [a for a, _ in pairs]
 
+    def list_articles_for_feed_with_favorites(
+        self, feed_id: str
+    ) -> List[Tuple[Article, datetime | None]]:
+        """
+        Load all articles for a feed with favorite state. Sort order: most
+        recently favorited first, then earlier favorited, then by published_at desc.
+        """
         articles_dir = self._feeds_dir / feed_id / "articles"
         if not articles_dir.exists():
             return []
 
-        articles: list[Article] = []
+        pairs: list[Tuple[Article, datetime | None]] = []
         for entry in articles_dir.iterdir():
             if not entry.is_dir():
                 continue
@@ -97,10 +119,20 @@ class ArticleService:
             if not article_json.exists():
                 continue
             raw = json.loads(article_json.read_text(encoding="utf-8"))
-            articles.append(Article.model_validate(raw))
+            article = Article.model_validate(raw)
+            favorited_at = self._get_favorited_at(entry)
+            pairs.append((article, favorited_at))
 
-        articles.sort(key=lambda a: a.published_at, reverse=True)
-        return articles
+        # Sort: favorited first (by favorited_at desc), then non-favorited by published_at desc.
+        def sort_key(item: Tuple[Article, datetime | None]) -> tuple:
+            art, fav_at = item
+            # Favorited first: (False,) then (True, -ts); then non-fav: (True,) then -pub_ts
+            if fav_at is not None:
+                return (0, -fav_at.timestamp(), -art.published_at.timestamp())
+            return (1, 0.0, -art.published_at.timestamp())
+
+        pairs.sort(key=sort_key)
+        return pairs
 
     def get_article(self, feed_id: str, article_id: str) -> Article:
         """
@@ -168,6 +200,19 @@ class ArticleService:
             json.dumps(payload, indent=2, ensure_ascii=False),
             encoding="utf-8",
         )
+
+    def set_article_favorite(self, feed_id: str, article_id: str, favorite: bool) -> None:
+        """
+        Set or clear the favorite marker for an article. Raises ArticleNotFoundError
+        if the article does not exist.
+        """
+        self.get_article(feed_id, article_id)  # raise if not found
+        article_dir = self._feeds_dir / feed_id / "articles" / article_id
+        marker = article_dir / FAVORITE_MARKER
+        if favorite:
+            marker.touch()
+        elif marker.exists():
+            marker.unlink()
 
     @staticmethod
     def _default_fetch_rss(url: str) -> str:

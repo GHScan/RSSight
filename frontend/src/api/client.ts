@@ -51,6 +51,13 @@ export const api = {
   getArticles(feedId: string): Promise<Article[]> {
     return fetch(`${BASE}/feeds/${feedId}/articles`).then(handleResponse);
   },
+  setArticleFavorite(feedId: string, articleId: string, favorite: boolean): Promise<void> {
+    return fetch(`${BASE}/feeds/${feedId}/articles/${articleId}/favorite`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ favorite }),
+    }).then(handleResponse);
+  },
   getSummaryProfiles(): Promise<SummaryProfile[]> {
     return fetch(`${BASE}/summary-profiles`).then(handleResponse);
   },
