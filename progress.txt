@@ -2,3 +2,4 @@
 [bootstrap] Business features are not implemented yet; future iterations should start from the first story with passes=false in prd.json.
 [meta] Clarified that only after all tests and local quality checks pass can cross-story state in progress.txt and prd.json be updated.
 [S001] Implemented feed CRUD API and file storage (backend services, models, and FastAPI routes) with passing backend tests and baseline frontend smoke test; fixed CI tooling (pytest, FastAPI, ruff/black/mypy, npm deps) so scripts/ci-check.cmd is green.
+[S002] Implemented RSS fetching and article persistence using ArticleService with file-based storage under data/feeds/{feedId}/articles, covering idempotent insert behavior and error isolation across feeds with all backend and frontend CI checks passing.

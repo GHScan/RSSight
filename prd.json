@@ -26,7 +26,7 @@
         "Article lists are sorted by published time in descending order.",
         "Failures for one feed do not affect fetching for other feeds."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S003",
