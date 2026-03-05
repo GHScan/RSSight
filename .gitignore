@@ -5,11 +5,13 @@ __pycache__/
 .ruff_cache/
 .worktrees/
 *.pyc
+*.egg-info/
 
 node_modules/
 dist/
 coverage/
 *.log
+*.tsbuildinfo
 test-results/
 playwright-report/
 .playwright/
