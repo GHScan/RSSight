@@ -123,7 +123,7 @@
         "Boundary/exception: Empty list and fetch failure states are clearly visible, and retry behavior is available and stable.",
         "Regression: Reverse chronological visibility and feed-to-list navigation behavior remain correct."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S011",

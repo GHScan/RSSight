@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { Article } from "../api/types";
 import { api } from "../api/client";
@@ -9,43 +9,66 @@ export function ArticleList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadArticles = useCallback(() => {
     if (!feedId) return;
-    let cancelled = false;
     setLoading(true);
     setError(null);
     api
       .getArticles(feedId)
-      .then((data) => {
-        if (!cancelled) setArticles(data);
-      })
+      .then(setArticles)
       .catch((e) => {
-        if (!cancelled) setError(e instanceof Error ? e.message : "请求失败");
+        setError(e instanceof Error ? e.message : "请求失败");
       })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => {
-      cancelled = true;
-    };
+      .finally(() => setLoading(false));
   }, [feedId]);
 
+  useEffect(() => {
+    loadArticles();
+  }, [loadArticles]);
+
   if (!feedId) return <p>缺少订阅 ID</p>;
-  if (loading) return <p>加载中…</p>;
-  if (error)
+  if (loading && articles.length === 0) return <p>加载中…</p>;
+  if (error && articles.length === 0) {
     return (
-      <p style={{ whiteSpace: "pre-wrap" }}>错误：{error}</p>
+      <main>
+        <h1>文章列表</h1>
+        <nav>
+          <Link to="/feeds">返回订阅管理</Link>
+        </nav>
+        <p className="error-message" style={{ whiteSpace: "pre-wrap" }}>
+          错误：{error}
+        </p>
+        <button type="button" onClick={loadArticles} aria-label="重试">
+          重试
+        </button>
+      </main>
     );
+  }
 
   return (
     <main>
       <h1>文章列表</h1>
       <nav>
         <Link to="/feeds">返回订阅管理</Link>
+        <button
+          type="button"
+          onClick={loadArticles}
+          disabled={loading}
+          aria-label="刷新"
+        >
+          刷新
+        </button>
       </nav>
-      {articles.length === 0 ? (
+      {loading && <p>加载中…</p>}
+      {error && (
+        <p className="error-message" role="alert" style={{ whiteSpace: "pre-wrap" }}>
+          错误：{error}
+        </p>
+      )}
+      {!loading && !error && articles.length === 0 && (
         <p>暂无文章</p>
-      ) : (
+      )}
+      {!loading && !error && articles.length > 0 && (
         <ul>
           {articles.map((a) => (
             <li key={a.id}>
