@@ -38,8 +38,8 @@ All future agents **must** follow these rules.
 
 ## Documentation and workflow constraints
 
-- Every iteration must append a new record to `progress.txt` (append‑only).
-- Only long‑lived, cross‑iteration rules should be recorded in this file (`AGENTS.md`); temporary issues belong in `progress.txt`.
+- **progress.txt**: Records only **lessons learned** that affect subsequent development (append when such a lesson arises). Do **not** use it as an iteration log; iteration history lives in version control — use `git log` to inspect what was done per story/commit.
+- Only long‑lived, cross‑iteration rules should be recorded in this file (`AGENTS.md`); temporary issues and one-off lessons belong in `progress.txt`.
 - Never update `progress.txt` or set any story's `passes` field in `prd.json` to `true` until all relevant tests and quality checks for that story have passed. This explicitly includes frontend UI component/page tests when the story changes the user interface.
 - Before marking any story as complete, review and update all documentation affected by the changes (for example `README.md`, files under `docs/`, ADRs, and `docs/api-contract.md`) so that documentation stays consistent with the source code.
 - Before starting an iteration, always read:
@@ -57,5 +57,5 @@ All future agents **must** follow these rules.
 
 - Do **not** implement features without tests by skipping the “Red” phase (failing tests first).
 - Do **not** work on multiple stories in a single iteration.
-- Do **not** declare an iteration complete without updating `progress.txt`.
+- Do **not** declare an iteration complete without updating documentation; append to `progress.txt` only when the iteration yields a lesson worth recording for future work.
 - Do **not** change cross‑story state (`progress.txt`, story `passes` flags in `prd.json`) while tests are failing or have not been run.

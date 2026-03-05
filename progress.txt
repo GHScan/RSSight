@@ -1,8 +1,12 @@
-[bootstrap] Initialize repo and create initial infrastructure skeleton (Windows + OpenCode + Ralph workflow).
-[bootstrap] Business features are not implemented yet; future iterations should start from the first story with passes=false in prd.json.
-[meta] Clarified that only after all tests and local quality checks pass can cross-story state in progress.txt and prd.json be updated.
-[S001] Implemented feed CRUD API and file storage (backend services, models, and FastAPI routes) with passing backend tests and baseline frontend smoke test; fixed CI tooling (pytest, FastAPI, ruff/black/mypy, npm deps) so scripts/ci-check.cmd is green.
-[S002] Implemented RSS fetching and article persistence using ArticleService with file-based storage under data/feeds/{feedId}/articles, covering idempotent insert behavior and error isolation across feeds with all backend and frontend CI checks passing.
-[S003] Implemented summary profile management: SummaryProfileService and FastAPI routes for create/update/delete/query; profile names unique; config stored at data/summary_profiles.json; storage structure documented in docs/architecture.md; all backend and frontend CI checks passing.
-[S004] Implemented manual triggering of article AI summaries: SummaryService with template variables (title, content, link), injectable AI call for tests, write to data/feeds/{feedId}/articles/{articleId}/summaries/{profileName}.md; GET/POST summary API routes; ArticleService.get_article added; all backend and frontend CI checks passing.
-[S005] Implemented global cascading cleanup for profile delete/rename: SummaryProfileService._cleanup_summaries_for_profile removes all {profileName}.md and {profileName}.meta.json under data/feeds/*/articles/*/summaries/; delete_profile and update_profile (when name changes) call it; optional name in SummaryProfileUpdate for rename; API returns 409 on rename-to-existing-name; tests cover full cleanup scope, other profiles untouched, and missing-file tolerance; all CI checks passing.
+# Progress
+
+## Log (iteration history)
+
+Do not keep a per-iteration log here. Use `git log` (e.g. by story id, tag, or commit message) to see what was done in each iteration.
+
+## Lessons learned
+
+Items below are lessons that affect subsequent development. Append here only when an iteration yields something worth recording for future work.
+
+- [meta] Only after all tests and local quality checks pass may cross-story state (progress.txt, prd.json `passes`) be updated. Do not mark a story complete or append here while tests are failing or not run.
+- [bootstrap] Business features start from the first story with `passes=false` in prd.json; earlier work was repo and infrastructure only.
