@@ -98,7 +98,7 @@
         "Boundary/exception: Invalid URL, duplicate-like URL, and backend failure cases show explicit and actionable error feedback.",
         "Regression: Existing feed list rendering and navigation entry points remain stable after interaction refinements."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S009",
@@ -111,7 +111,7 @@
         "Regression automation: Existing feed management route load and baseline list rendering are covered to prevent breakage.",
         "Windows execution: Test command, prerequisites, and target suite scope are documented."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S010",

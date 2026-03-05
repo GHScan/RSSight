@@ -27,8 +27,19 @@ For each story, include:
   - `python -m mypy app`
 - Frontend:
   - `npm run test -- --run`
+  - `npm run test:ui` — component/page tests under `src/__tests__`
+  - `npm run test:e2e` — Playwright E2E (feed management and other flows)
   - `npm run lint`
   - `npm run typecheck`
+
+## UI automation (E2E, Windows)
+
+- **Scope:** Feed management flow (add/edit/delete/refresh, validation and API-failure feedback, route and list regression). E2E tests mock the API; no backend is required.
+- **Prerequisites:** Node.js 20+, frontend deps installed (`npm install` in `frontend/`). First-time: `npx playwright install chromium` in `frontend/`.
+- **Commands (from repo root or frontend):**
+  - `cd frontend && npm run test:e2e` — run E2E (headless). Playwright starts the dev server automatically.
+  - `cd frontend && npm run test:e2e:headed` — run with visible browser.
+- **Base URL:** Default `http://localhost:5173`. Override with `PLAYWRIGHT_BASE_URL` when the app is already running elsewhere.
 
 ## Fast full-project gate
 

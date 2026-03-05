@@ -35,6 +35,10 @@ rem Run UI component/page tests under src/__tests__
 npm run test:ui
 if errorlevel 1 goto :error
 
+rem Run Playwright E2E (feed management flow; API mocked, no backend required)
+npm run test:e2e
+if errorlevel 1 goto :error
+
 popd
 
 echo All baseline checks passed.
