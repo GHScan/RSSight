@@ -13,17 +13,20 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 
 from app.services.articles import ArticleNotFoundError
-from app.services.profiles import ProfileNotFoundError
-from app.services.summary import SummaryService
+from app.services.profiles import ProfileNotFoundError, SummaryProfileService
+from app.services.summary import SummaryService, make_openai_call_ai
 
 router = APIRouter(tags=["summaries"])
 
 
 def get_summary_service() -> SummaryService:
-    """Dependency that provides SummaryService bound to the current data root."""
+    """Dependency that provides SummaryService with OpenAI-compatible AI caller from profile."""
     from app import main as app_main
 
-    return SummaryService(app_main.get_data_root())
+    data_root = app_main.get_data_root()
+    profile_service = SummaryProfileService(data_root)
+    call_ai = make_openai_call_ai(profile_service)
+    return SummaryService(data_root, call_ai=call_ai)
 
 
 @router.get(
@@ -94,3 +97,11 @@ def generate_summary(
                 "details": {"profileName": exc.profile_name},
             },
         ) from exc
+    except NotImplementedError:
+        raise HTTPException(
+            status_code=HTTPStatus.SERVICE_UNAVAILABLE,
+            detail={
+                "code": "AI_NOT_CONFIGURED",
+                "message": "AI summary is not configured. Configure an OpenAI-compatible API key in the summary profile.",
+            },
+        ) from None

@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import logging
 from http import HTTPStatus
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 
+from app.models.articles import ArticleRead
 from app.models.feeds import FeedCreate, FeedRead, FeedUpdate
+from app.services.articles import ArticleService
 from app.services.feeds import FeedNotFoundError, FeedService
 
 router = APIRouter(prefix="/api/feeds", tags=["feeds"])
@@ -22,6 +25,16 @@ def get_feed_service() -> FeedService:
     from app import main as app_main
 
     return FeedService(app_main.get_data_root())
+
+
+def get_article_service() -> ArticleService:
+    """Dependency that provides ArticleService bound to the current data root."""
+    from app import main as app_main
+
+    return ArticleService(
+        data_root=app_main.get_data_root(),
+        logger=logging.getLogger(__name__),
+    )
 
 
 @router.get("", response_model=List[FeedRead])
@@ -71,3 +84,36 @@ def delete_feed(feed_id: str, service: FeedService = Depends(get_feed_service)) 
                 "details": {"feedId": exc.feed_id},
             },
         ) from exc
+
+
+@router.get("/{feed_id}/articles", response_model=List[ArticleRead])
+def list_articles(
+    feed_id: str,
+    feed_service: FeedService = Depends(get_feed_service),
+    article_service: ArticleService = Depends(get_article_service),
+) -> List[ArticleRead]:
+    """
+    List articles for a feed in reverse chronological order.
+    Returns 404 if the feed does not exist.
+    """
+    try:
+        feed_service.get_feed(feed_id)
+    except FeedNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "FEED_NOT_FOUND",
+                "message": "Feed not found.",
+                "details": {"feedId": exc.feed_id},
+            },
+        ) from exc
+    articles = article_service.list_articles_for_feed(feed_id)
+    return [
+        ArticleRead(
+            id=a.id,
+            title=a.title,
+            link=a.link,
+            published=a.published_at.isoformat(),
+        )
+        for a in articles
+    ]

@@ -86,7 +86,8 @@ describe("Article summary interaction (S012)", () => {
       await userEvent.click(screen.getByRole("button", { name: /生成|trigger/i }));
 
       await waitFor(() => {
-        expect(screen.getByText(/Done\.|Generated content|Summary/)).toBeInTheDocument();
+        const summaryContent = screen.getAllByTestId("summary-content")[0];
+        expect(summaryContent).toHaveTextContent(/Done\.|Summary/);
       });
     });
 
@@ -103,7 +104,8 @@ describe("Article summary interaction (S012)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByText(/Existing|Already saved/)).toBeInTheDocument();
+        const summaryContent = screen.getAllByTestId("summary-content")[0];
+        expect(summaryContent).toHaveTextContent(/Existing|Already saved/);
       });
     });
   });

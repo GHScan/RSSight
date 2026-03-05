@@ -86,7 +86,11 @@ export const api = {
       `${BASE}/feeds/${feedId}/articles/${articleId}/summaries/${encodeURIComponent(profileName)}/generate`,
       { method: "POST" },
     ).then(async (res) => {
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).message ?? res.statusText);
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { message?: string; detail?: { message?: string } };
+        const msg = body.detail?.message ?? body.message ?? res.statusText;
+        throw new Error(msg);
+      }
       return res.text();
     });
   },

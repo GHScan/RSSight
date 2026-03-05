@@ -3,7 +3,7 @@ Service for generating and reading article AI summaries.
 
 Supports template variables (e.g. title, content). Summary bodies are written
 to Markdown files under data/feeds/{feedId}/articles/{articleId}/summaries/{profileName}.md.
-AI calls are injectable for testing.
+AI calls are injectable for testing; production uses OpenAI-compatible API via profile.
 """
 
 from __future__ import annotations
@@ -18,6 +18,28 @@ if TYPE_CHECKING:
     from app.models.articles import Article
 
 CallAiCallable = Callable[[str, str], str]
+
+
+def make_openai_call_ai(profile_service: SummaryProfileService) -> CallAiCallable:
+    """
+    Build a call_ai that uses the profile's base_url, key, and model
+    to call an OpenAI-compatible API (e.g. OpenAI, DeepSeek).
+    """
+
+    def call_ai(prompt: str, profile_name: str) -> str:
+        from openai import OpenAI
+
+        profile = profile_service.get_profile(profile_name)
+        client = OpenAI(api_key=profile.key, base_url=str(profile.base_url))
+        response = client.chat.completions.create(
+            model=profile.model,
+            messages=[{"role": "user", "content": prompt}],
+            stream=False,
+        )
+        content = response.choices[0].message.content if response.choices else None
+        return (content or "").strip()
+
+    return call_ai
 
 
 class SummaryService:

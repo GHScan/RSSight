@@ -17,3 +17,14 @@ class Article(BaseModel):
     description: str
     guid: str | None = None
     published_at: datetime
+
+
+class ArticleRead(BaseModel):
+    """
+    Response model for article list API (id, title, link, published).
+    """
+
+    id: str
+    title: str
+    link: str
+    published: str

@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { SummaryProfile } from "../api/types";
 import { api } from "../api/client";
+import { MarkdownContent } from "../components/MarkdownContent";
 
 export function ArticleSummary() {
   const { feedId, articleId } = useParams<{ feedId: string; articleId: string }>();
@@ -120,7 +121,7 @@ export function ArticleSummary() {
               {!loadingSummary && summary !== null && (
                 <div className="space-y-4">
                   <div data-testid="summary-content" className="rounded-md border border-border p-4 bg-secondary/30 overflow-auto max-h-[70vh]">
-                    <pre className="whitespace-pre-wrap text-foreground text-sm break-words">{summary}</pre>
+                    <MarkdownContent content={summary} />
                   </div>
                   <button
                     type="button"

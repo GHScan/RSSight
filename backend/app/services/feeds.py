@@ -31,6 +31,13 @@ class FeedService:
     def list_feeds(self) -> List[Feed]:
         return list(self._load_feeds().values())
 
+    def get_feed(self, feed_id: str) -> Feed:
+        """Return the feed by id; raise FeedNotFoundError if not found."""
+        feeds = self._load_feeds()
+        if feed_id not in feeds:
+            raise FeedNotFoundError(feed_id)
+        return feeds[feed_id]
+
     def create_feed(self, payload: FeedCreate) -> Feed:
         feeds = self._load_feeds()
         feed_id = uuid.uuid4().hex

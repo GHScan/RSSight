@@ -116,3 +116,22 @@ def test_get_summary_not_found_returns_404(tmp_path: Path) -> None:
         assert data["detail"]["code"] == "SUMMARY_NOT_FOUND"
     finally:
         app.dependency_overrides.pop(get_summary_service, None)
+
+
+def test_post_generate_ai_not_configured_returns_503(tmp_path: Path) -> None:
+    """POST generate when no AI callable is injected returns 503 with clear message."""
+    from app.api.summaries import get_summary_service
+
+    app.dependency_overrides[get_summary_service] = lambda: SummaryService(tmp_path)
+    try:
+        feed_id, article_id, profile_name = _setup_feed_article_profile(tmp_path)
+        client = TestClient(app)
+        resp = client.post(
+            f"/api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}/generate"
+        )
+        assert resp.status_code == 503
+        data = resp.json()
+        assert data["detail"]["code"] == "AI_NOT_CONFIGURED"
+        assert "message" in data["detail"]
+    finally:
+        app.dependency_overrides.pop(get_summary_service, None)
