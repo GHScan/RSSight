@@ -14,7 +14,7 @@ The concrete Windows execution details are documented in `docs/ralph-workflow-wi
 
 - Code changes.
 - Test changes.
-- Documentation updates.
+- Documentation updates, keeping all affected docs consistent with the implementation.
 - `prd.json` status progression (`passes=false` -> `passes=true`), **only after all relevant tests and quality checks pass**.
 
 ## Success criteria

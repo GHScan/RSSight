@@ -9,7 +9,8 @@ Instead, we follow the Ralph method and run iterations on Windows using document
 2. Read `AGENTS.md`, `docs/architecture.md`, and `docs/testing-strategy.md`.
 3. Implement the selected story in OpenCode, following strict TDD.
 4. Run local quality checks (see `scripts/ci-check.cmd`) and ensure they are fully green. If any check fails, fix tests/code and rerun until all pass before proceeding.
-5. **Only after step 4 is fully green**, update documentation and records:
+5. **Only after step 4 is fully green**, review and update all documentation affected by the changes, then update records:
+   - Review and update all impacted docs (for example `README.md`, files under `docs/`, ADRs, and `docs/api-contract.md`) so they stay consistent with the implementation.
    - Append this iteration’s conclusion to `progress.txt`.
    - Update `AGENTS.md` (long‑lived rules only).
    - Mark the story’s `passes` field to `true` in `prd.json`.

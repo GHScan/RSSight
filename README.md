@@ -1,7 +1,7 @@
 # WebRSSReader
 
 Foundation repository for a Windows‑oriented Web RSS Reader.  
-At this stage it only provides the technology stack, project skeleton, documentation system, and Ralph/OpenCode workflow, **without** business features implemented yet.
+The project provides the technology stack, Ralph/OpenCode workflow, and implements feed CRUD, RSS fetching with article persistence, and summary profile management. Further stories (AI summaries, scheduled fetch, frontend page flow) are in `prd.json`.
 
 ## Project goals (later iterations)
 
@@ -56,7 +56,7 @@ From the repository root, run:
 This command will run:
 
 - Backend: `ruff check`, `black --check`, `mypy`, `pytest`
-- Frontend: `npm run lint`, `npm run typecheck`, `npm run test`
+- Frontend: `npm run lint`, `npm run typecheck`, `npm run test:ui` (component/page tests under `src/__tests__`)
 
 ## Ralph/OpenCode (Windows) entrypoint
 
@@ -86,5 +86,5 @@ This command will run:
 
 ## Current status
 
-- The repository is in a “foundation ready, features to be implemented” state.
-- Business stories are initialized in `prd.json` with `passes=false` and can be implemented by later agents one by one.
+- Feed CRUD API and file storage (S001), RSS fetching and article persistence (S002), and summary profile management (S003) are implemented and passing CI.
+- Remaining stories (S004–S007) are in `prd.json` with `passes=false` and can be implemented one by one.

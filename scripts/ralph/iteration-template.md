@@ -28,6 +28,7 @@
 - `progress.txt` updated: [yes/no]
 - `AGENTS.md` updated: [yes/no]
 - `prd.json` `passes=true`: [yes/no]
+- All documentation affected by the changes reviewed and updated (README/docs/ADRs/API contract/workflow docs): [yes/no]
 
 ## Next‑iteration suggestions
 

@@ -2,6 +2,8 @@
 
 This document defines the REST API direction that later implementations should follow, so that backend and frontend can develop in parallel against a shared contract.
 
+At the current stage of the project, the backend implements the **Health**, **Feeds**, and **Summary Profiles** sections below. The **Articles** and **Summaries** sections are forward‑looking contract definitions that will be implemented in later stories (see `prd.json`).
+
 ## Health
 
 - `GET /healthz`
