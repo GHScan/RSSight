@@ -1,10 +1,12 @@
-# Frontend Foundation
+# Frontend
 
-## Scope of this stage
+## Scope
 
-- React + TypeScript + Vite skeleton.
-- Vitest + Testing Library smoke test.
-- ESLint + TypeScript basic checks.
+- React + TypeScript + Vite.
+- React Router: home, feed management (`/feeds`), article list (`/feeds/:feedId/articles`), article summary (`/feeds/:feedId/articles/:articleId`), summary profiles (`/profiles`).
+- API client layer (`src/api/`) separate from UI for testability; calls backend `/api/feeds`, `/api/summary-profiles`, and article/summary endpoints.
+- Empty, loading, and error states on data pages.
+- Vitest + Testing Library for smoke, routing, and page-state tests.
 
 ## Run locally (Windows cmd)
 

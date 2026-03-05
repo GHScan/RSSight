@@ -88,4 +88,5 @@ This command will run:
 
 - Feed CRUD API and file storage (S001), RSS fetching and article persistence (S002), summary profile management (S003), manual AI summary triggering (S004), and global profile cleanup (S005) are implemented and passing CI.
 - Scheduled feed fetching (S006) is implemented: a background scheduler runs at a fixed interval and fetches all feeds; error isolation and logging are in place; manual and scheduled triggers coexist.
-- Remaining stories (e.g. S007 frontend page flow) are in `prd.json` with `passes=false` and can be implemented one by one.
+- Basic frontend page flow (S007) is implemented: React Router with home, feed management, article list, article summary, and summary profile pages; API client layer; empty/loading/error states; routing and key interactions covered by tests.
+- All stories in `prd.json` are currently passing; new stories can be added there for future iterations.

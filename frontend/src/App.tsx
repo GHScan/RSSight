@@ -1,8 +1,18 @@
+import { Routes, Route } from "react-router-dom";
+import { Home } from "./pages/Home";
+import { FeedManagement } from "./pages/FeedManagement";
+import { ArticleList } from "./pages/ArticleList";
+import { ArticleSummary } from "./pages/ArticleSummary";
+import { SummaryProfiles } from "./pages/SummaryProfiles";
+
 export function App() {
   return (
-    <main>
-      <h1>WebRSSReader 基础骨架已就绪</h1>
-      <p>业务功能将在后续 Ralph 迭代中逐步实现。</p>
-    </main>
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/feeds" element={<FeedManagement />} />
+      <Route path="/feeds/:feedId/articles" element={<ArticleList />} />
+      <Route path="/feeds/:feedId/articles/:articleId" element={<ArticleSummary />} />
+      <Route path="/profiles" element={<SummaryProfiles />} />
+    </Routes>
   );
 }

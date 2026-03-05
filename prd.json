@@ -86,7 +86,7 @@
         "Key interactions are covered by tests.",
         "Empty/loading/error states are visible."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

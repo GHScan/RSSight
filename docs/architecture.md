@@ -4,7 +4,7 @@ This document describes the target architecture and boundaries of WebRSSReader, 
 
 ## Layers
 
-- `frontend/`: User interaction and page state management.
+- `frontend/`: User interaction and page state management. React Router for home, feed management, article list, article summary, and summary profile pages; a dedicated API client layer (`src/api/`) calls the backend and is kept separate from UI for testability.
 - `backend/`: APIs, domain services, and scheduled tasks.
 - `data/`: File‑based storage for feeds/articles/summaries/profiles.
 - `docs/`: Architecture and process documentation.

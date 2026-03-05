@@ -47,6 +47,7 @@ All future agents **must** follow these rules.
   - `docs/architecture.md`
   - `docs/testing-strategy.md`
   - `docs/ralph-workflow.md`
+- **Before running any terminal commands**: Confirm current working directory (cwd) and shell environment (OS and shell type, e.g. Windows PowerShell vs cmd). This project targets Windows; in PowerShell do not use `&&` to chain commands — use `;` or run commands separately. Checking cwd and environment first avoids repeated platform-specific command failures.
 
 ### Post-iteration: lessons and escalation to AGENTS.md
 
