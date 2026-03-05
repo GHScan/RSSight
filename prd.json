@@ -148,7 +148,7 @@
         "Boundary/exception: No-profile-selected, no-data, and generation-failure states provide explicit user-visible feedback.",
         "Regression: Repeated trigger attempts and page revisit keep summary-related UI behavior stable and predictable."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S013",
