@@ -6,6 +6,7 @@ All future agents **must** follow these rules.
 ## Global principles
 
 - **Platform**: Development and deployment both target Windows; commands should use Windows `cmd` (`.cmd` / `.bat`) by default.
+- **Scripting**: Use **Python** for scripts (automation, tooling, one-off tasks). Do **not** use PowerShell for script logic; prefer `.py` plus invocation from `.cmd` / `.bat` if needed.
 - **Development mode**: Strict TDD (write failing tests first, then implement, then refactor).
 - **Change granularity**: Each iteration must complete **exactly one** user story.
 - **Definition of done**: All relevant tests pass **and** documentation is updated **and** the corresponding story in `prd.json` has `passes=true`.
@@ -46,6 +47,11 @@ All future agents **must** follow these rules.
   - `docs/architecture.md`
   - `docs/testing-strategy.md`
   - `docs/ralph-workflow-windows.md`
+
+### Post-iteration: lessons and escalation to AGENTS.md
+
+- **When completing an iteration**: Identify attempts that failed **two or more times** during this iteration, determine the **root cause** for each recurring failure, and append each as a lesson to `progress.txt` under "Lessons learned". This keeps a record of what went wrong and why.
+- **Escalation**: When appending a lesson, check how many times the **same or equivalent** lesson already appears in `progress.txt`. If this append brings the total count to **three or more** (including this one), also add a **concrete avoidance rule** to `AGENTS.md` (for example under "Prohibited practices" or a new "Avoidance rules" subsection). The rule must be specific enough that a future agent can avoid the same mistake, reducing token use and development time.
 
 ## Language conventions
 

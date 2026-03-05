@@ -11,7 +11,7 @@ Instead, we follow the Ralph method and run iterations on Windows using document
 4. Run local quality checks (see `scripts/ci-check.cmd`) and ensure they are fully green. If any check fails, fix tests/code and rerun until all pass before proceeding.
 5. **Only after step 4 is fully green**, review and update all documentation affected by the changes, then update records:
    - Review and update all impacted docs (for example `README.md`, files under `docs/`, ADRs, and `docs/api-contract.md`) so they stay consistent with the implementation.
-   - Append this iteration’s conclusion to `progress.txt`.
+   - **Lessons**: Summarise root causes of attempts that failed **two or more times** in this iteration and append each as a lesson to `progress.txt` (under "Lessons learned"). If any lesson then appears **three or more times** in `progress.txt` (including this append), add a concrete avoidance rule to `AGENTS.md` so future runs avoid the same mistake (see AGENTS.md § Post-iteration: lessons and escalation).
    - Update `AGENTS.md` (long‑lived rules only).
    - Mark the story’s `passes` field to `true` in `prd.json`.
 6. Move to the next story and repeat until all pass.
