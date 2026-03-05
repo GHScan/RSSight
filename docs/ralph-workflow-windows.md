@@ -8,8 +8,8 @@ Instead, we follow the Ralph method and run iterations on Windows using document
 1. Open `prd.json` and pick the highest‑priority story with `passes=false`.
 2. Read `AGENTS.md`, `docs/architecture.md`, and `docs/testing-strategy.md`.
 3. Implement the selected story in OpenCode, following strict TDD.
-4. Run local quality checks (see `scripts/ci-check.ps1`).
-5. Update documentation and records:
+4. Run local quality checks (see `scripts/ci-check.ps1`) and ensure they are fully green. If any check fails, fix tests/code and rerun until all pass before proceeding.
+5. **Only after step 4 is fully green**, update documentation and records:
    - Append this iteration’s conclusion to `progress.txt`.
    - Update `AGENTS.md` (long‑lived rules only).
    - Mark the story’s `passes` field to `true` in `prd.json`.
@@ -22,7 +22,7 @@ The prompt should include:
 - The full content of the current story.
 - The iteration boundary (only this story).
 - A reminder to write failing tests first.
-- A reminder to update `progress.txt` and `prd.json` when finished.
+- A reminder to update `progress.txt` and `prd.json` **only after all relevant tests and quality checks have passed**.
 
 You can reuse the template in `scripts/ralph/prompt-opencode.md`.
 

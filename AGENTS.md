@@ -40,6 +40,7 @@ All future agents **must** follow these rules.
 
 - Every iteration must append a new record to `progress.txt` (append‑only).
 - Only long‑lived, cross‑iteration rules should be recorded in this file (`AGENTS.md`); temporary issues belong in `progress.txt`.
+- Never update `progress.txt` or set any story's `passes` field in `prd.json` to `true` until all relevant tests and quality checks for that story have passed.
 - Before starting an iteration, always read:
   - `docs/architecture.md`
   - `docs/testing-strategy.md`
@@ -48,12 +49,12 @@ All future agents **must** follow these rules.
 ## Language conventions
 
 - **Code and implementation**: Source code (backend and frontend), identifiers, comments, log messages, and error messages should be written in **English**.
-- **Project documentation**: Repository documentation (including `README.md`, files under `docs/`, ADRs, and backend/frontend READMEs) should be written in **English**.
+- **Project documentation**: Repository documentation (including `README.md`, files under `docs/`, ADRs, and backend/frontend READMEs, and `progress.txt`) should be written in **English**.
 - **User interface**: Text visible to end users in the frontend UI (page titles, buttons, labels, prompts, error messages presented in the browser) should be written in **Simplified Chinese**.
-- **Progress records**: `progress.txt` may use either Chinese or English, at the author’s discretion; this does not change the default rule that implementation and formal docs are in English.
 
 ## Prohibited practices
 
 - Do **not** implement features without tests by skipping the “Red” phase (failing tests first).
 - Do **not** work on multiple stories in a single iteration.
 - Do **not** declare an iteration complete without updating `progress.txt`.
+- Do **not** change cross‑story state (`progress.txt`, story `passes` flags in `prd.json`) while tests are failing or have not been run.

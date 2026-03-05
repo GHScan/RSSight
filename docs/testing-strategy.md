@@ -38,3 +38,8 @@ For each story in `prd.json`, at minimum:
 - All tests relevant to the current iteration must pass.
 - Do not hide failures by skipping tests.
 - When fixing a historical bug, add at least one regression test.
+
+## Cross‑iteration state updates
+
+- Cross‑iteration artifacts such as `prd.json` story `passes` flags and `progress.txt` iteration records must only be updated after the acceptance gate is satisfied.
+- Never flip a story's `passes` field to `true` or record an iteration as "done" while tests are red or local quality checks are failing.

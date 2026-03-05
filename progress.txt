@@ -1,2 +1,3 @@
-[bootstrap] 初始化仓库并建立前期基建骨架（Windows + OpenCode + Ralph 流程）。
-[bootstrap] 业务功能未实现；后续迭代请从 prd.json 的第一条 passes=false 故事开始。
+[bootstrap] Initialize repo and create initial infrastructure skeleton (Windows + OpenCode + Ralph workflow).
+[bootstrap] Business features are not implemented yet; future iterations should start from the first story with passes=false in prd.json.
+[meta] Clarified that only after all tests and local quality checks pass can cross-story state in progress.txt and prd.json be updated.
