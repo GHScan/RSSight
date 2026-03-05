@@ -40,7 +40,7 @@ All future agents **must** follow these rules.
 
 - Every iteration must append a new record to `progress.txt` (append‑only).
 - Only long‑lived, cross‑iteration rules should be recorded in this file (`AGENTS.md`); temporary issues belong in `progress.txt`.
-- Never update `progress.txt` or set any story's `passes` field in `prd.json` to `true` until all relevant tests and quality checks for that story have passed.
+- Never update `progress.txt` or set any story's `passes` field in `prd.json` to `true` until all relevant tests and quality checks for that story have passed. This explicitly includes frontend UI component/page tests when the story changes the user interface.
 - Before starting an iteration, always read:
   - `docs/architecture.md`
   - `docs/testing-strategy.md`

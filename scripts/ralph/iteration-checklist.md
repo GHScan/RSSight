@@ -16,7 +16,7 @@
 
 ## After the iteration
 
-- [ ] Run `scripts/ci-check.cmd`.
+- [ ] Run `scripts/ci-check.cmd` (this must include passing frontend UI component/page tests).
 - [ ] Append this iteration’s record to `progress.txt`.
 - [ ] Update `AGENTS.md` if there are new long‑lived rules.
 - [ ] Mark this story’s `passes` as `true` in `prd.json`.

@@ -14,7 +14,7 @@
         "Deleting a feed deletes its corresponding directory.",
         "API contract documentation is consistent with tests."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S002",

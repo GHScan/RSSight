@@ -10,7 +10,7 @@
 
 - Backend unit tests: service logic, file‑storage logic, template rendering logic.
 - Backend API tests: route I/O, error codes, and contract stability.
-- Frontend component/page tests: key interactions, state transitions, and error display.
+- Frontend component/page tests: key interactions, state transitions, error display, and visible UI text.
 - Smoke tests: `/healthz` and basic frontend rendering.
 
 ## Story‑level testing requirements
@@ -35,7 +35,7 @@ For each story in `prd.json`, at minimum:
 
 ## Acceptance gate
 
-- All tests relevant to the current iteration must pass.
+- All tests relevant to the current iteration must pass, including frontend UI component/page tests under `frontend/src/__tests__` when the story touches the frontend.
 - Do not hide failures by skipping tests.
 - When fixing a historical bug, add at least one regression test.
 
