@@ -46,7 +46,7 @@ All future agents **must** follow these rules.
 - Before starting an iteration, always read:
   - `docs/architecture.md`
   - `docs/testing-strategy.md`
-  - `docs/ralph-workflow-windows.md`
+  - `docs/ralph-workflow.md`
 
 ### Post-iteration: lessons and escalation to AGENTS.md
 

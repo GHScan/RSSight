@@ -60,7 +60,7 @@ This command will run:
 
 ## Ralph/OpenCode (Windows) entrypoint
 
-1. Read `docs/ralph-workflow-windows.md`.
+1. Read `docs/ralph-workflow.md`.
 2. Use `scripts/ralph/iteration-checklist.md` to execute a single iteration.
 3. Use `scripts/ralph/iteration-template.md` to record each iteration.
 4. After changes are made:

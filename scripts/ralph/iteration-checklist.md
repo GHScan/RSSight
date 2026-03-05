@@ -1,4 +1,4 @@
-# Single‑iteration checklist (Windows)
+# Single‑iteration checklist
 
 ## Before the iteration
 
