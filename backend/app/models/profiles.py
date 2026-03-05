@@ -19,6 +19,7 @@ class SummaryProfile(BaseModel):
     model: str
     fields: List[str]
     prompt_template: str
+    reasoning_effort: Optional[str] = None  # e.g. "low" | "medium" | "high" for APIs that support reasoning.effort
 
 
 class SummaryProfileCreate(BaseModel):
@@ -30,6 +31,7 @@ class SummaryProfileCreate(BaseModel):
     model: str
     fields: List[str]
     prompt_template: str
+    reasoning_effort: Optional[str] = None
 
 
 class SummaryProfileUpdate(BaseModel):
@@ -46,6 +48,7 @@ class SummaryProfileUpdate(BaseModel):
     model: Optional[str] = None
     fields: Optional[List[str]] = None
     prompt_template: Optional[str] = None
+    reasoning_effort: Optional[str] = None
 
 
 class SummaryProfileRead(SummaryProfile):

@@ -1,23 +1,70 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeKatex from "rehype-katex";
+import remarkGfm from "remark-gfm";
 import remarkMath from "remark-math";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import mermaid from "mermaid";
 import "katex/dist/katex.min.css";
 
 const proseClasses = {
-  p: "text-foreground mb-3 last:mb-0",
-  h1: "text-xl font-semibold text-foreground mt-4 mb-2 first:mt-0",
-  h2: "text-lg font-semibold text-foreground mt-4 mb-2",
-  h3: "text-base font-semibold text-foreground mt-3 mb-1",
-  ul: "list-disc list-inside mb-3 space-y-1 text-foreground",
-  ol: "list-decimal list-inside mb-3 space-y-1 text-foreground",
-  li: "text-foreground",
-  blockquote: "border-l-4 border-border pl-4 my-3 text-muted-foreground italic",
-  code: "bg-secondary/50 text-foreground px-1.5 py-0.5 rounded text-sm font-mono",
-  pre: "bg-secondary/50 rounded-md p-4 overflow-x-auto my-3 text-sm",
-  a: "text-primary hover:underline",
+  p: "text-foreground mb-3 last:mb-0 leading-relaxed",
+  h1: "text-2xl font-bold text-foreground mt-6 mb-3 first:mt-0 tracking-tight",
+  h2: "text-xl font-semibold text-foreground mt-5 mb-2 border-b border-border pb-1",
+  h3: "text-lg font-semibold text-foreground mt-4 mb-1",
+  h4: "text-base font-semibold text-foreground mt-3 mb-1",
+  ul: "list-disc list-outside pl-6 mb-3 space-y-1 text-foreground",
+  ol: "list-decimal list-outside pl-6 mb-3 space-y-1 text-foreground",
+  li: "text-foreground leading-relaxed pl-1",
+  blockquote: "border-l-4 border-primary/60 bg-muted/30 pl-4 py-1 my-3 text-muted-foreground italic rounded-r",
+  code: "bg-muted text-foreground px-1.5 py-0.5 rounded text-sm font-mono border border-border/50",
+  pre: "bg-muted rounded-lg p-4 overflow-x-auto my-3 text-sm border border-border/50",
+  a: "text-primary hover:underline font-medium",
+  strong: "font-semibold text-foreground",
+  em: "italic",
+  hr: "border-t border-border my-4",
+  del: "line-through text-muted-foreground",
+  table: "w-full border-collapse text-sm min-w-[200px]",
+  thead: "bg-muted",
+  th: "text-left font-semibold text-foreground px-4 py-2.5 border-b border-border",
+  tbody: "",
+  tr: "border-b border-border last:border-b-0 hover:bg-muted/30 transition-colors",
+  td: "px-4 py-2.5 text-foreground border-border",
 };
+
+function CopyButton({
+  text,
+  getText,
+  className = "",
+}: {
+  text?: string;
+  getText?: () => string;
+  className?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const handleCopy = async () => {
+    const toCopy = getText ? getText() : text ?? "";
+    if (!toCopy) return;
+    try {
+      await navigator.clipboard.writeText(toCopy);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={handleCopy}
+      className={`absolute top-2 right-2 rounded px-2 py-1 text-xs font-medium bg-background/80 text-foreground border border-border hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring ${className}`}
+      title="复制"
+    >
+      {copied ? "已复制" : "复制"}
+    </button>
+  );
+}
 
 let mermaidInitialized = false;
 function ensureMermaidInit() {
@@ -65,24 +112,49 @@ function MermaidDiagram({ code }: { code: string }) {
   );
 }
 
+function BlockquoteWithCopy({ children }: { children: React.ReactNode }) {
+  const ref = useRef<HTMLQuoteElement>(null);
+  return (
+    <div className="relative my-3 group">
+      <CopyButton getText={() => ref.current?.innerText?.trim() ?? ""} />
+      <blockquote ref={ref} className={proseClasses.blockquote}>
+        {children}
+      </blockquote>
+    </div>
+  );
+}
+
 export function MarkdownContent({ content }: { content: string }) {
   return (
     <div className="markdown-body text-sm text-foreground [&_.katex]:text-foreground">
       <ReactMarkdown
-        remarkPlugins={[remarkMath]}
+        remarkPlugins={[remarkGfm, remarkMath]}
         rehypePlugins={[rehypeKatex]}
         components={{
           p: ({ children }) => <p className={proseClasses.p}>{children}</p>,
           h1: ({ children }) => <h1 className={proseClasses.h1}>{children}</h1>,
           h2: ({ children }) => <h2 className={proseClasses.h2}>{children}</h2>,
           h3: ({ children }) => <h3 className={proseClasses.h3}>{children}</h3>,
+          h4: ({ children }) => <h4 className={proseClasses.h4}>{children}</h4>,
           ul: ({ children }) => <ul className={proseClasses.ul}>{children}</ul>,
           ol: ({ children }) => <ol className={proseClasses.ol}>{children}</ol>,
           li: ({ children }) => <li className={proseClasses.li}>{children}</li>,
-          blockquote: ({ children }) => (
-            <blockquote className={proseClasses.blockquote}>{children}</blockquote>
+          blockquote: ({ children }) => <BlockquoteWithCopy>{children}</BlockquoteWithCopy>,
+          strong: ({ children }) => <strong className={proseClasses.strong}>{children}</strong>,
+          em: ({ children }) => <em className={proseClasses.em}>{children}</em>,
+          hr: () => <hr className={proseClasses.hr} />,
+          del: ({ children }) => <del className={proseClasses.del}>{children}</del>,
+          table: ({ children }) => (
+            <div className="overflow-x-auto my-4 rounded-lg border border-border">
+              <table className={proseClasses.table}>{children}</table>
+            </div>
           ),
-          code: ({ className, children, ...props }) => {
+          thead: ({ children }) => <thead className={proseClasses.thead}>{children}</thead>,
+          tbody: ({ children }) => <tbody className={proseClasses.tbody}>{children}</tbody>,
+          tr: ({ children }) => <tr className={proseClasses.tr}>{children}</tr>,
+          th: ({ children }) => <th className={proseClasses.th}>{children}</th>,
+          td: ({ children }) => <td className={proseClasses.td}>{children}</td>,
+          code: ({ className, children }) => {
             const lang = className?.replace("language-", "").trim().toLowerCase();
             const code = String(children ?? "").replace(/\n$/, "");
             if (lang === "mermaid") {
@@ -91,13 +163,23 @@ export function MarkdownContent({ content }: { content: string }) {
             const isBlock = className?.includes("language-");
             if (isBlock) {
               return (
-                <pre className={proseClasses.pre} {...props}>
-                  <code>{children}</code>
-                </pre>
+                <div className="relative my-3 rounded-lg overflow-hidden border border-border/50 [&>pre]:!mt-0 [&>pre]:!rounded-lg">
+                  <CopyButton text={code} />
+                  <SyntaxHighlighter
+                    language={lang || "text"}
+                    style={oneDark}
+                    PreTag="div"
+                    customStyle={{ margin: 0, borderRadius: 0, paddingTop: "2.25rem", paddingRight: "2.5rem" }}
+                    codeTagProps={{ style: { fontSize: "0.875rem" } }}
+                    showLineNumbers={code.split("\n").length > 4}
+                  >
+                    {code}
+                  </SyntaxHighlighter>
+                </div>
               );
             }
             return (
-              <code className={proseClasses.code} {...props}>
+              <code className={proseClasses.code}>
                 {children}
               </code>
             );

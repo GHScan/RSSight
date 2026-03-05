@@ -4,12 +4,17 @@ Service for generating and reading article AI summaries.
 Supports template variables (e.g. title, content). Summary bodies are written
 to Markdown files under data/feeds/{feedId}/articles/{articleId}/summaries/{profileName}.md.
 AI calls are injectable for testing; production uses OpenAI-compatible API via profile.
+
+When RSS only provides title/short description (e.g. description same as title),
+article content is fetched from the article link so the summary has real body text.
 """
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import TYPE_CHECKING, Callable
+from urllib.request import Request, urlopen
 
 from app.services.articles import ArticleNotFoundError, ArticleService
 from app.services.profiles import ProfileNotFoundError, SummaryProfileService
@@ -20,10 +25,59 @@ if TYPE_CHECKING:
 CallAiCallable = Callable[[str, str], str]
 
 
+def _is_volcengine(base_url: str) -> bool:
+    """True if base_url is Volcengine/Ark (火山引擎)."""
+    url = base_url.lower()
+    return "volces.com" in url or "volcengine" in url
+
+
+def _call_ai_volcengine(client, profile, prompt: str) -> str:
+    """
+    Volcengine Ark Responses API (参见火山引擎示例):
+    client.responses.create(model=..., input=prompt, stream=True, extra_body={"thinking": {"type": "enabled"}})
+    流式消费 response.output_text.delta 的 event.delta 作为最终回复正文。
+    """
+    kwargs = {
+        "model": profile.model,
+        "input": prompt,
+        "stream": True,
+        "extra_body": {"thinking": {"type": "enabled"}},
+    }
+    response = client.responses.create(**kwargs)
+    parts = []
+    for event in response:
+        if event.type == "response.output_text.delta":
+            delta = getattr(event, "delta", None)
+            if delta is not None:
+                parts.append(delta)
+    return "".join(parts).strip()
+
+
+def _call_ai_chat_completions(client, profile, prompt: str) -> str:
+    """OpenAI-compatible Chat Completions API: stream and collect content."""
+    kwargs = {
+        "model": profile.model,
+        "messages": [{"role": "user", "content": prompt}],
+        "stream": True,
+    }
+    if profile.reasoning_effort:
+        kwargs["extra_body"] = {"reasoning": {"effort": profile.reasoning_effort}}
+    stream = client.chat.completions.create(**kwargs)
+    parts = []
+    for chunk in stream:
+        if chunk.choices and chunk.choices[0].delta.content is not None:
+            parts.append(chunk.choices[0].delta.content)
+    return "".join(parts).strip()
+
+
 def make_openai_call_ai(profile_service: SummaryProfileService) -> CallAiCallable:
     """
     Build a call_ai that uses the profile's base_url, key, and model
-    to call an OpenAI-compatible API (e.g. OpenAI, DeepSeek).
+    to call an OpenAI-compatible API (e.g. OpenAI, DeepSeek) or
+    Volcengine Ark (火山引擎) Responses API.
+
+    Uses streaming to avoid timeouts with deep-thinking models; the full
+    response is accumulated and returned.
     """
 
     def call_ai(prompt: str, profile_name: str) -> str:
@@ -31,13 +85,10 @@ def make_openai_call_ai(profile_service: SummaryProfileService) -> CallAiCallabl
 
         profile = profile_service.get_profile(profile_name)
         client = OpenAI(api_key=profile.key, base_url=str(profile.base_url))
-        response = client.chat.completions.create(
-            model=profile.model,
-            messages=[{"role": "user", "content": prompt}],
-            stream=False,
-        )
-        content = response.choices[0].message.content if response.choices else None
-        return (content or "").strip()
+        base_url_str = str(profile.base_url)
+        if _is_volcengine(base_url_str):
+            return _call_ai_volcengine(client, profile, prompt)
+        return _call_ai_chat_completions(client, profile, prompt)
 
     return call_ai
 
@@ -84,7 +135,18 @@ class SummaryService:
         except ProfileNotFoundError:
             raise
 
-        prompt = _render_prompt(profile.prompt_template, article)
+        # 若 RSS 只有标题/短描述（如 description 与 title 相同），从文章链接抓取正文
+        content_override = None
+        desc = (article.description or "").strip()
+        if not desc or desc == article.title or len(desc) < 200:
+            content_override = _fetch_article_text(article.link)
+        prompt = _render_prompt(profile.prompt_template, article, content_override=content_override)
+        # 调试：调用 AI 前打印输入，便于确认 title/content 等是否带入
+        print("[summary] prompt length:", len(prompt))
+        print("[summary] article.title length:", len(article.title), "| description length:", len(article.description or ""), "| content_override length:", len(content_override) if content_override else 0)
+        print("[summary] --- prompt begin ---")
+        print(prompt)
+        print("[summary] --- prompt end ---")
         summary_body = self._call_ai(prompt, profile_name)
 
         summary_dir = self._feeds_dir / feed_id / "articles" / article_id / "summaries"
@@ -112,16 +174,79 @@ class SummaryService:
         return md_path.read_text(encoding="utf-8")
 
 
-def _render_prompt(template: str, article: "Article") -> str:
+def _strip_html_to_text(html: str) -> str:
+    """Remove script/style, strip tags, normalize whitespace. Stdlib-only."""
+    text = re.sub(r"<script[^>]*>.*?</script>", " ", html, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"<style[^>]*>.*?</style>", " ", text, flags=re.DOTALL | re.IGNORECASE)
+    text = re.sub(r"<[^>]+>", " ", text)
+    text = re.sub(r"\s+", " ", text)
+    return text.strip()
+
+
+def _extract_main_content(html: str) -> str | None:
+    """
+    Extract inner HTML of first <article> or <main> so we don't include nav/footer.
+    Handles nested tags by counting. Returns None if no article/main found.
+    """
+    # Find first opening <article> or <main>
+    open_re = re.compile(r"<(article|main)(?:\s[^>]*)?>", re.IGNORECASE)
+    close_re = re.compile(r"</(article|main)\s*>", re.IGNORECASE)
+    open_match = open_re.search(html)
+    if not open_match:
+        return None
+    want = open_match.group(1).lower()
+    start = open_match.start()
+    depth = 1
+    pos = open_match.end()
+    while depth > 0:
+        next_open = open_re.search(html, pos)
+        next_close = close_re.search(html, pos)
+        if not next_close:
+            return None
+        if next_open and next_open.start() < next_close.start():
+            if next_open.group(1).lower() == want:
+                depth += 1
+            pos = next_open.end()
+        else:
+            if next_close.group(1).lower() == want:
+                depth -= 1
+            if depth == 0:
+                return html[start : next_close.end()]
+            pos = next_close.end()
+    return None
+
+
+def _fetch_article_text(link: str) -> str | None:
+    """
+    Fetch article URL and return plain text body, or None on failure.
+    Prefers content inside <article> or <main> to avoid nav/header/footer.
+    """
+    try:
+        req = Request(link, headers={"User-Agent": "WebRSSReader/1.0"})
+        with urlopen(req, timeout=15) as resp:
+            raw = resp.read()
+        charset = resp.headers.get_content_charset() or "utf-8"
+        html = raw.decode(charset, errors="replace")
+        main_html = _extract_main_content(html)
+        html_to_strip = main_html if main_html else html
+        text = _strip_html_to_text(html_to_strip)
+        return text if len(text) > 100 else None
+    except Exception:
+        return None
+
+
+def _render_prompt(template: str, article: "Article", content_override: str | None = None) -> str:
     """
     Fill the prompt template with article fields.
 
     Supported variables: title, content, description, link.
+    When content_override is set (e.g. fetched from article link), use it for content/description.
     """
+    content = content_override if content_override is not None else article.description
     context = {
         "title": article.title,
-        "content": article.description,
-        "description": article.description,
+        "content": content,
+        "description": content,
         "link": article.link,
     }
     return template.format(**context)

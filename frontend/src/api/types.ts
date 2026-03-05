@@ -22,6 +22,8 @@ export interface SummaryProfile {
   model: string;
   fields: string[];
   prompt_template: string;
+  /** e.g. "low" | "medium" | "high" for APIs that support reasoning.effort */
+  reasoning_effort?: string | null;
 }
 
 export interface ApiError {

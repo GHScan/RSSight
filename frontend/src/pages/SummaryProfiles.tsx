@@ -18,11 +18,13 @@ export function SummaryProfiles() {
   const [addKey, setAddKey] = useState("");
   const [addModel, setAddModel] = useState("");
   const [addPrompt, setAddPrompt] = useState("");
+  const [addReasoningEffort, setAddReasoningEffort] = useState("");
   const [editName, setEditName] = useState("");
   const [editBaseUrl, setEditBaseUrl] = useState("");
   const [editKey, setEditKey] = useState("");
   const [editModel, setEditModel] = useState("");
   const [editPrompt, setEditPrompt] = useState("");
+  const [editReasoningEffort, setEditReasoningEffort] = useState("");
 
   const loadProfiles = useCallback(() => {
     setLoading(true);
@@ -52,6 +54,7 @@ export function SummaryProfiles() {
     const key = addKey.trim();
     const model = addModel.trim() || "gpt-4";
     const prompt_template = addPrompt.trim() || "{title}";
+    const reasoning_effort = addReasoningEffort.trim() || undefined;
     try {
       await api.createSummaryProfile({
         name,
@@ -60,12 +63,14 @@ export function SummaryProfiles() {
         model,
         fields: defaultFields,
         prompt_template,
+        ...(reasoning_effort ? { reasoning_effort } : {}),
       });
       setAddName("");
       setAddBaseUrl("");
       setAddKey("");
       setAddModel("");
       setAddPrompt("");
+      setAddReasoningEffort("");
       setShowAddForm(false);
       loadProfiles();
     } catch (e) {
@@ -80,6 +85,7 @@ export function SummaryProfiles() {
     setEditKey(p.key);
     setEditModel(p.model);
     setEditPrompt(p.prompt_template);
+    setEditReasoningEffort(p.reasoning_effort ?? "");
     setFormError(null);
   };
 
@@ -92,6 +98,7 @@ export function SummaryProfiles() {
       setFormError("请填写名称");
       return;
     }
+    const reasoning_effort = editReasoningEffort.trim() || null;
     try {
       await api.updateSummaryProfile(editingName, {
         name,
@@ -99,6 +106,7 @@ export function SummaryProfiles() {
         key: editKey.trim(),
         model: editModel.trim(),
         prompt_template: editPrompt.trim(),
+        reasoning_effort,
       });
       setEditingName(null);
       loadProfiles();
@@ -173,7 +181,14 @@ export function SummaryProfiles() {
               <label htmlFor="add-model" className={labelClass}>Model</label>
               <input id="add-model" className={inputClass} value={addModel} onChange={(e) => setAddModel(e.target.value)} placeholder="gpt-4" />
               <label htmlFor="add-prompt" className={labelClass}>提示模板</label>
-              <input id="add-prompt" className={inputClass} value={addPrompt} onChange={(e) => setAddPrompt(e.target.value)} placeholder="{title}" />
+              <textarea id="add-prompt" className={`${inputClass} min-h-[120px] resize-y font-mono text-sm`} value={addPrompt} onChange={(e) => setAddPrompt(e.target.value)} placeholder={"例如：\n请根据以下内容写摘要：\n{content}"} rows={5} />
+              <label htmlFor="add-reasoning-effort" className={labelClass}>Reasoning effort</label>
+              <select id="add-reasoning-effort" className={inputClass} value={addReasoningEffort} onChange={(e) => setAddReasoningEffort(e.target.value)}>
+                <option value="">不设置</option>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+              </select>
               <div className="flex gap-2 mt-4">
                 <button type="submit" className={btnPrimary}>确定</button>
                 <button type="button" onClick={() => { setShowAddForm(false); setFormError(null); }} className={btnSecondary}>取消</button>
@@ -198,7 +213,14 @@ export function SummaryProfiles() {
                       <label htmlFor="edit-model" className={labelClass}>Model</label>
                       <input id="edit-model" className={inputClass} value={editModel} onChange={(e) => setEditModel(e.target.value)} />
                       <label htmlFor="edit-prompt" className={labelClass}>提示模板</label>
-                      <input id="edit-prompt" className={inputClass} value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} />
+                      <textarea id="edit-prompt" className={`${inputClass} min-h-[120px] resize-y font-mono text-sm`} value={editPrompt} onChange={(e) => setEditPrompt(e.target.value)} rows={5} />
+                      <label htmlFor="edit-reasoning-effort" className={labelClass}>Reasoning effort</label>
+                      <select id="edit-reasoning-effort" className={inputClass} value={editReasoningEffort} onChange={(e) => setEditReasoningEffort(e.target.value)}>
+                        <option value="">不设置</option>
+                        <option value="low">low</option>
+                        <option value="medium">medium</option>
+                        <option value="high">high</option>
+                      </select>
                       <div className="flex gap-2 mt-4">
                         <button type="submit" className={btnPrimary}>确定</button>
                         <button type="button" onClick={() => { setEditingName(null); setFormError(null); }} className={btnSecondary}>取消</button>

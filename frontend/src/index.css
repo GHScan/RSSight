@@ -43,3 +43,31 @@
     --font-sans: ui-sans-serif, system-ui, sans-serif;
   }
 }
+
+/* Markdown 正文主题：与 design tokens 一致，增强可读性 */
+@layer components {
+  .markdown-body {
+    --md-heading: hsl(var(--foreground));
+    --md-muted: hsl(var(--muted-foreground));
+    --md-border: hsl(var(--border));
+    --md-accent: hsl(var(--primary));
+  }
+  .markdown-body h1,
+  .markdown-body h2,
+  .markdown-body h3,
+  .markdown-body h4 {
+    color: var(--md-heading);
+  }
+  .markdown-body blockquote {
+    color: var(--md-muted);
+    border-color: var(--md-accent);
+  }
+  .markdown-body a {
+    color: var(--md-accent);
+  }
+  /* GFM 任务列表复选框 */
+  .markdown-body li input[type="checkbox"] {
+    margin-right: 0.5rem;
+    accent-color: var(--md-accent);
+  }
+}

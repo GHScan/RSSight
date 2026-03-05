@@ -55,6 +55,7 @@ class SummaryProfileService:
             model=payload.model,
             fields=payload.fields,
             prompt_template=payload.prompt_template,
+            reasoning_effort=payload.reasoning_effort,
         )
         profiles[payload.name] = profile
         self._save_profiles(profiles)
@@ -79,6 +80,11 @@ class SummaryProfileService:
             if payload.prompt_template is not None
             else existing.prompt_template
         )
+        reasoning_effort = (
+            payload.reasoning_effort if "reasoning_effort" in payload.model_fields_set else existing.reasoning_effort
+        )
+        if reasoning_effort == "":
+            reasoning_effort = None
         updated = existing.model_copy(
             update={
                 "name": new_name,
@@ -87,6 +93,7 @@ class SummaryProfileService:
                 "model": model,
                 "fields": fields,
                 "prompt_template": prompt_template,
+                "reasoning_effort": reasoning_effort,
             }
         )
         if new_name != name:
