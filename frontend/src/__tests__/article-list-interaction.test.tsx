@@ -162,4 +162,38 @@ describe("Article list interaction (S010)", () => {
       expect(screen.getByText("Article First")).toBeInTheDocument();
     });
   });
+
+  describe("Search filter (S021)", () => {
+    it("typing in search filters articles by title in real time", async () => {
+      renderArticleList();
+      await waitFor(() => {
+        expect(screen.getByText("Article First")).toBeInTheDocument();
+      });
+      const search = screen.getByRole("searchbox", { name: /搜索文章/i });
+      await userEvent.type(search, "Third");
+      await waitFor(() => {
+        expect(screen.getByText("Article Third")).toBeInTheDocument();
+        expect(screen.queryByText("Article First")).not.toBeInTheDocument();
+        expect(screen.queryByText("Article Second")).not.toBeInTheDocument();
+      });
+    });
+
+    it("empty search shows all articles", async () => {
+      renderArticleList();
+      await waitFor(() => {
+        expect(screen.getByText("Article First")).toBeInTheDocument();
+      });
+      const search = screen.getByRole("searchbox", { name: /搜索文章/i });
+      await userEvent.type(search, "Third");
+      await waitFor(() => {
+        expect(screen.queryByText("Article First")).not.toBeInTheDocument();
+      });
+      await userEvent.clear(search);
+      await waitFor(() => {
+        expect(screen.getByText("Article First")).toBeInTheDocument();
+        expect(screen.getByText("Article Second")).toBeInTheDocument();
+        expect(screen.getByText("Article Third")).toBeInTheDocument();
+      });
+    });
+  });
 });

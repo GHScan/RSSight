@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { NavLink } from "../components/NavLink";
 import type { Article } from "../api/types";
@@ -9,6 +9,7 @@ export function ArticleList() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const loadArticles = useCallback(() => {
     if (!feedId) return;
@@ -26,6 +27,15 @@ export function ArticleList() {
   useEffect(() => {
     loadArticles();
   }, [loadArticles]);
+
+  const filteredArticles = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return articles;
+    return articles.filter((a) => {
+      const title = (a.title_trans ?? a.title).toLowerCase();
+      return title.includes(q);
+    });
+  }, [articles, searchQuery]);
 
   if (!feedId) return <p className="max-w-4xl mx-auto px-4 py-6 text-muted-foreground">缺少订阅 ID</p>;
   if (loading && articles.length === 0) return <p className="max-w-4xl mx-auto px-4 py-6 text-muted-foreground">加载中…</p>;
@@ -75,8 +85,25 @@ export function ArticleList() {
         <p className="text-muted-foreground">暂无文章</p>
       )}
       {!loading && !error && articles.length > 0 && (
+        <>
+          <label htmlFor="article-search" className="sr-only">
+            搜索文章
+          </label>
+          <input
+            id="article-search"
+            type="search"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="搜索文章标题…"
+            aria-label="搜索文章"
+            className="w-full max-w-md mb-4 px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          />
+          {filteredArticles.length === 0 && (
+            <p className="text-muted-foreground">无匹配文章</p>
+          )}
+          {filteredArticles.length > 0 && (
         <ul className="space-y-2 list-none p-0">
-          {articles.map((a) => (
+          {filteredArticles.map((a) => (
             <li
               key={a.id}
               className="border-b border-border py-2 last:border-b-0 flex items-center gap-2"
@@ -104,6 +131,8 @@ export function ArticleList() {
             </li>
           ))}
         </ul>
+          )}
+        </>
       )}
     </main>
   );
