@@ -22,7 +22,15 @@ echo.
 echo Close the two console windows to stop the services.
 echo.
 
-start "WebRSSReader Backend" cmd /k "cd /d ""%ROOT%\backend"" && .venv\Scripts\activate.bat && uvicorn app.main:app --reload --host 127.0.0.1 --port %BACKEND_PORT%"
+set "BACKEND_CMD="
+if exist "%ROOT%\backend\.venv\Scripts\activate.bat" (
+  set "BACKEND_CMD=cd /d ""%ROOT%\backend"" && .venv\Scripts\activate.bat && set WEBRSS_DEBUG=1 && uvicorn app.main:app --reload --host 127.0.0.1 --port %BACKEND_PORT%"
+) else (
+  echo [INFO] No backend\.venv found; using current Python. To use a venv: cd backend ^&^& python -m venv .venv ^&^& .venv\Scripts\activate.bat ^&^& pip install -e .[dev]
+  set "BACKEND_CMD=cd /d ""%ROOT%\backend"" && set WEBRSS_DEBUG=1 && python -m uvicorn app.main:app --reload --host 127.0.0.1 --port %BACKEND_PORT%"
+)
+
+start "WebRSSReader Backend" cmd /k "%BACKEND_CMD%"
 start "WebRSSReader Frontend" cmd /k "set BACKEND_PORT=%BACKEND_PORT% && set FRONTEND_PORT=%FRONTEND_PORT% && cd /d ""%ROOT%\frontend"" && npm run dev -- --port %FRONTEND_PORT%"
 
 echo Both processes started. Open http://localhost:%FRONTEND_PORT% in your browser.

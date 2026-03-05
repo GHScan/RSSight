@@ -35,7 +35,9 @@ export function SummaryProfiles() {
         <Link to="/">首页</Link>
       </nav>
       {loading && <p>加载中…</p>}
-      {error && <p>错误：{error}</p>}
+      {error && (
+        <p style={{ whiteSpace: "pre-wrap" }}>错误：{error}</p>
+      )}
       {!loading && !error && profiles.length === 0 && (
         <p>暂无摘要配置，请先添加配置。</p>
       )}

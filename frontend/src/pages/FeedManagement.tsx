@@ -35,7 +35,11 @@ export function FeedManagement() {
         <Link to="/">首页</Link>
       </nav>
       {loading && <p>加载中…</p>}
-      {error && <p>错误：{error}</p>}
+      {error && (
+        <p className="error-message" style={{ whiteSpace: "pre-wrap" }}>
+          错误：{error}
+        </p>
+      )}
       {!loading && !error && feeds.length === 0 && (
         <p>暂无订阅，请先添加订阅源。</p>
       )}

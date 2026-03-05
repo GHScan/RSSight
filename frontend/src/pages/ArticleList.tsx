@@ -32,7 +32,10 @@ export function ArticleList() {
 
   if (!feedId) return <p>缺少订阅 ID</p>;
   if (loading) return <p>加载中…</p>;
-  if (error) return <p>错误：{error}</p>;
+  if (error)
+    return (
+      <p style={{ whiteSpace: "pre-wrap" }}>错误：{error}</p>
+    );
 
   return (
     <main>

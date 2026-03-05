@@ -27,5 +27,7 @@ export interface SummaryProfile {
 export interface ApiError {
   code?: string;
   message?: string;
+  /** Server-side traceback or extra debug info when WEBRSS_DEBUG=1 */
+  detail?: string;
   details?: unknown;
 }

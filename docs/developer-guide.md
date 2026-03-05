@@ -31,6 +31,10 @@ npm install
 scripts\start.cmd
 ```
 
+Both backend (port 8000) and frontend (port 5173) must be running. The frontend proxies `/api` to the backend; if you see "后端未启动或无法连接", start the backend or run `scripts\start.cmd` from the repo root.
+
+To get tracebacks in API error responses (500), set `WEBRSS_DEBUG=1` in the environment before starting the backend (e.g. in the backend console: `set WEBRSS_DEBUG=1` then run uvicorn, or use `scripts\start.cmd` after adding it to the backend start command).
+
 ## Local quality gate
 
 ```bat

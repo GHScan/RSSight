@@ -6,10 +6,22 @@ import type { Feed, Article, SummaryProfile, ApiError } from "./types";
 
 const BASE = "/api";
 
+function buildErrorMessage(status: number, statusText: string, body: ApiError): string {
+  const parts: string[] = [`${status} ${statusText}`];
+  const msg = body?.message ?? "";
+  if (msg) parts.push(msg);
+  if (!msg && (status === 502 || status === 503))
+    parts.push("后端未启动或无法连接，请确认已运行 scripts\\start.cmd 或后端在 127.0.0.1:8000 可访问");
+  const detail = typeof body?.detail === "string" ? body.detail.trim() : "";
+  if (detail) parts.push("\n" + detail);
+  return parts.join(": ");
+}
+
 async function handleResponse<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as ApiError;
-    throw new Error(body.message ?? res.statusText ?? "Request failed");
+    const message = buildErrorMessage(res.status, res.statusText || "Request failed", body);
+    throw new Error(message);
   }
   if (res.status === 204) return undefined as T;
   return res.json() as Promise<T>;
