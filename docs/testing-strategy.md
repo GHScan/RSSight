@@ -41,6 +41,13 @@ For each story, include:
   - `cd frontend && npm run test:e2e:headed` — run with visible browser.
 - **Base URL:** Default `http://localhost:5173`. Override with `PLAYWRIGHT_BASE_URL` when the app is already running elsewhere.
 
+## Visual regression (S018)
+
+- **Scope:** Critical pages and key UI states have screenshot baselines: home, feed management (empty, list, error), summary profiles (empty); desktop (1280×720) and narrow viewport (375×667).
+- **Location:** `frontend/e2e/visual-regression.spec.ts`; baselines in `frontend/e2e/visual-regression.spec.ts-snapshots/`.
+- **Command (Windows):** `cd frontend && npm run test:e2e` (visual tests run with the rest of E2E; included in `scripts\ci-check.cmd`).
+- **Updating baselines:** Run `cd frontend && npx playwright test e2e/visual-regression.spec.ts --update-snapshots` only when you intentionally change layout or styling. Review the diff (e.g. `test-results/` or Git) before committing; do not accept unexpected UI drift. Commit updated PNGs under `e2e/visual-regression.spec.ts-snapshots/` so CI stays green.
+
 ## Fast full-project gate
 
 - Preferred full check from repository root:

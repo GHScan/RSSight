@@ -223,7 +223,7 @@
         "Regression verification: Baseline update process is documented and prevents accidental acceptance of unexpected UI drift.",
         "Windows execution: Verification command and integration point with frontend quality gate are documented."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

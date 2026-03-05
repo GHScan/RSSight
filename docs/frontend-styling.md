@@ -4,9 +4,9 @@ This document describes the Tailwind-based styling foundation for the WebRSSRead
 
 ## Tailwind configuration
 
-- **Config file:** `frontend/tailwind.config.js`
-- **Content:** `./index.html`, `./src/**/*.{js,ts,jsx,tsx}`
-- **Entry CSS:** `frontend/src/index.css` (imported from `main.tsx`)
+- **Tailwind v4** with PostCSS: `frontend/postcss.config.js` uses `@tailwindcss/postcss`.
+- **Entry CSS:** `frontend/src/index.css` (imported from `main.tsx`) — `@import "tailwindcss"` and `@theme` for design tokens.
+- **Content:** Scanned from project; no separate content config needed for v4.
 
 ## Design tokens
 

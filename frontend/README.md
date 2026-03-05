@@ -20,6 +20,9 @@ npm run dev
 
 ```bat
 npm run test -- --run
+npm run test:e2e
 npm run lint
 npm run typecheck
 ```
+
+Visual regression (S018) is part of `test:e2e`. To update screenshot baselines after intentional UI changes: `npx playwright test e2e/visual-regression.spec.ts --update-snapshots`. See `docs/testing-strategy.md` (from repo root).
