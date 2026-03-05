@@ -21,6 +21,7 @@ Read these files at the start of every iteration:
 3. `docs/testing-strategy.md`
 4. `docs/ralph-workflow.md`
 5. `prd.json` (pick highest-priority story with `passes=false`)
+6. `scripts/ralph/schedule.md` (parent-agent wave scheduling policy)
 
 Helpful references by task:
 
@@ -52,7 +53,8 @@ Helpful references by task:
 ### TDD and change granularity
 
 - Strict TDD: Red -> Green -> Refactor.
-- Every iteration must complete exactly one story.
+- Parent scheduler may run multiple stories in parallel waves according to `scripts/ralph/schedule.md`.
+- Each subagent iteration must complete exactly one story.
 
 ### Definition of done
 
@@ -126,6 +128,6 @@ A story is done only when all are true:
 ## 10) Prohibited practices
 
 - Skipping the Red phase and implementing without failing tests first.
-- Working on multiple stories in one iteration.
+- A single subagent handling multiple stories in one run.
 - Declaring completion without updating impacted documentation.
 - Updating cross-story state (`progress.txt`, `prd.json` `passes`) before tests/checks are green.
