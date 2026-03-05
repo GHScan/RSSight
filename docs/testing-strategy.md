@@ -1,10 +1,7 @@
 # Testing strategy (TDD first)
 
-## Core principles
-
-- Write failing tests first (Red).
-- Implement the minimum code to make tests pass (Green).
-- Refactor while keeping all tests passing (Refactor).
+Mandatory policy (TDD requirement, acceptance gate, and status update restrictions) is defined in `AGENTS.md`.
+This document keeps only practical testing scope and command references.
 
 ## Testing levels
 
@@ -13,13 +10,13 @@
 - Frontend component/page tests: key interactions, state transitions, error display, and visible UI text.
 - Smoke tests: `/healthz` and basic frontend rendering.
 
-## Story‑level testing requirements
+## Coverage checklist (practical)
 
-For each story in `prd.json`, at minimum:
+For each story, include:
 
-- 1 failing test case for the new behavior (happy path).
-- 1 boundary/exception test case.
-- 1 regression test case to avoid breaking existing behavior.
+- behavior test for the main success path,
+- boundary/exception behavior,
+- regression coverage for previously working behavior.
 
 ## Commands (Windows)
 
@@ -33,13 +30,7 @@ For each story in `prd.json`, at minimum:
   - `npm run lint`
   - `npm run typecheck`
 
-## Acceptance gate
+## Fast full-project gate
 
-- All tests relevant to the current iteration must pass, including frontend UI component/page tests under `frontend/src/__tests__` when the story touches the frontend.
-- Do not hide failures by skipping tests.
-- When fixing a historical bug, add at least one regression test.
-
-## Cross‑iteration state updates
-
-- Cross‑iteration artifacts such as `prd.json` story `passes` flags and `progress.txt` iteration records must only be updated after the acceptance gate is satisfied.
-- Never flip a story's `passes` field to `true` or record an iteration as "done" while tests are red or local quality checks are failing.
+- Preferred full check from repository root:
+  - `scripts\ci-check.cmd`

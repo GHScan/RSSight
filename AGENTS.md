@@ -1,68 +1,131 @@
 # AGENTS
 
-This document defines the multi‑agent collaboration rules for the WebRSSReader project.  
-All future agents **must** follow these rules.
+Operational handbook for all coding agents working in WebRSSReader.
+All rules in this file are mandatory unless explicitly overridden by the user.
 
-## Global principles
+## 1) Source of truth and DRY
 
-- **Platform**: Development and deployment both target Windows; commands should use Windows `cmd` (`.cmd` / `.bat`) by default.
-- **Scripting**: Use **Python** for scripts (automation, tooling, one-off tasks). Do **not** use PowerShell for script logic; prefer `.py` plus invocation from `.cmd` / `.bat` if needed.
-- **Development mode**: Strict TDD (write failing tests first, then implement, then refactor).
-- **Change granularity**: Each iteration must complete **exactly one** user story.
-- **Definition of done**: All relevant tests pass **and** documentation is updated **and** the corresponding story in `prd.json` has `passes=true`.
+- Use this file as the primary rule and navigation entrypoint for agent work.
+- If guidance is duplicated across documents, keep the authoritative version here and simplify references elsewhere.
+- If instructions conflict, follow this precedence:
+  1. Direct user request
+  2. `AGENTS.md`
+  3. Other project docs
 
-## Code and directory constraints
+## 2) Quick navigation
 
-- **Runtime data location**: All business runtime data must be written under the `data/` directory only.
-- **AI summary body format**: Summary bodies must be stored as Markdown files; do not store them only in a database or only as JSON.
-- **Recommended path for summaries**:
+Read these files at the start of every iteration:
+
+1. `AGENTS.md` (this file)
+2. `docs/architecture.md`
+3. `docs/testing-strategy.md`
+4. `docs/ralph-workflow.md`
+5. `prd.json` (pick highest-priority story with `passes=false`)
+
+Helpful references by task:
+
+- API contract: `docs/api-contract.md`
+- Deployment: `docs/deployment-windows.md`
+- User/developer entry docs: `README.md`, `docs/developer-guide.md`
+- Iteration templates: `scripts/ralph/iteration-checklist.md`, `scripts/ralph/iteration-template.md`
+
+## 3) Repository map (agent-focused)
+
+- `backend/`: FastAPI routes, services, domain behavior, scheduler integration.
+- `frontend/`: React pages/components and API client layer.
+- `data/`: runtime data only (feeds, articles, summary markdown, metadata).
+- `docs/`: architecture, contracts, workflow, ADRs.
+- `scripts/`: local startup and quality scripts (`start.cmd`, `ci-check.cmd`).
+- `prd.json`: story backlog and pass/fail status.
+- `progress.txt`: cross-iteration lessons learned only.
+
+## 4) Non-negotiable engineering rules
+
+### Platform and scripting
+
+- Development and deployment target Windows.
+- Prefer Windows `cmd` (`.cmd` / `.bat`) commands.
+- Do not use PowerShell for script logic; use Python scripts (`.py`) and invoke them from `cmd` wrappers when needed.
+- Before running terminal commands, verify current cwd and shell type.
+- In PowerShell, do not chain commands with `&&`; use `;` or run commands separately.
+
+### TDD and change granularity
+
+- Strict TDD: Red -> Green -> Refactor.
+- Every iteration must complete exactly one story.
+
+### Definition of done
+
+A story is done only when all are true:
+
+1. Relevant tests and quality checks pass.
+2. Documentation impacted by the change is updated.
+3. The story is marked `passes=true` in `prd.json`.
+
+## 5) Architecture and code constraints
+
+### Data and file boundaries
+
+- All runtime business data must be stored under `data/` only.
+- AI summary body must be stored as Markdown, not only database/JSON.
+- Canonical summary path:
   - `data/feeds/{feedId}/articles/{articleId}/summaries/{profileName}.md`
-- **AI write boundary**: AI agents must never modify files outside the current project root directory.
-- **Deletion rules**:
-  - Deleting a feed => delete the entire feed directory subtree.
-  - Deleting or editing a summary profile => delete all files and metadata with the same profile name under all feeds/articles.
+- Agents must never modify files outside the repository root.
 
-## Backend constraints
+### Domain deletion rules
 
-- Use FastAPI routing plus a dedicated service layer; do not put core business logic directly into route functions.
-- All external dependencies (RSS fetching, AI calls, schedulers) **must** be mockable for testing.
-- File I/O must be idempotent and failure‑isolated so that a single feed failure does not affect global tasks.
+- Deleting a feed must delete the full feed directory subtree.
+- Deleting or renaming/editing a summary profile must delete all summary markdown files and related metadata with the same profile name across all feeds/articles.
 
-## Frontend constraints
+### Backend design constraints
 
-- Organize pages by user flows:
-  - Feed management
-  - Feed article list
-  - Article summary viewing/triggering
-  - Summary profile management
-- Keep the API calling layer separate from UI components to simplify testing and swapping implementations.
+- Keep route handlers thin; put core business logic in dedicated service layer.
+- External dependencies (RSS fetch, AI gateway, scheduler dependencies) must be mockable.
+- File I/O must be idempotent and failure-isolated; one feed failure must not break global tasks.
 
-## Documentation and workflow constraints
+### Frontend design constraints
 
-- **progress.txt**: Records only **lessons learned** that affect subsequent development (append when such a lesson arises). Do **not** use it as an iteration log; iteration history lives in version control — use `git log` to inspect what was done per story/commit.
-- Only long‑lived, cross‑iteration rules should be recorded in this file (`AGENTS.md`); temporary issues and one-off lessons belong in `progress.txt`.
-- Never update `progress.txt` or set any story's `passes` field in `prd.json` to `true` until all relevant tests and quality checks for that story have passed. This explicitly includes frontend UI component/page tests when the story changes the user interface.
-- Before marking any story as complete, review and update all documentation affected by the changes (for example `README.md`, files under `docs/`, ADRs, and `docs/api-contract.md`) so that documentation stays consistent with the source code.
-- Before starting an iteration, always read:
-  - `docs/architecture.md`
-  - `docs/testing-strategy.md`
-  - `docs/ralph-workflow.md`
-- **Before running any terminal commands**: Confirm current working directory (cwd) and shell environment (OS and shell type, e.g. Windows PowerShell vs cmd). This project targets Windows; in PowerShell do not use `&&` to chain commands — use `;` or run commands separately. Checking cwd and environment first avoids repeated platform-specific command failures.
+- Organize UI by user flows:
+  - feed management
+  - feed article list
+  - article summary viewing/triggering
+  - summary profile management
+- Keep API calling layer separate from UI components.
 
-### Post-iteration: lessons and escalation to AGENTS.md
+## 6) Testing and quality gates
 
-- **When completing an iteration**: Identify attempts that failed **two or more times** during this iteration, determine the **root cause** for each recurring failure, and append each as a lesson to `progress.txt` under "Lessons learned". This keeps a record of what went wrong and why.
-- **Escalation**: When appending a lesson, check how many times the **same or equivalent** lesson already appears in `progress.txt`. If this append brings the total count to **three or more** (including this one), also add a **concrete avoidance rule** to `AGENTS.md` (for example under "Prohibited practices" or a new "Avoidance rules" subsection). The rule must be specific enough that a future agent can avoid the same mistake, reducing token use and development time.
+- Minimum story-level test set:
+  - 1 happy-path failing test first
+  - 1 boundary/exception test
+  - 1 regression test
+- When frontend behavior changes, include/update UI component/page tests.
+- Do not skip tests to bypass failures.
+- Recommended full local gate:
+  - `scripts\ci-check.cmd`
 
-## Language conventions
+## 7) Documentation and status update policy
 
-- **Code and implementation**: Source code (backend and frontend), identifiers, comments, log messages, and error messages should be written in **English**.
-- **Project documentation**: Repository documentation (including `README.md`, files under `docs/`, ADRs, and backend/frontend READMEs, and `progress.txt`) should be written in **English**.
-- **User interface**: Text visible to end users in the frontend UI (page titles, buttons, labels, prompts, error messages presented in the browser) should be written in **Simplified Chinese**.
+- Keep docs consistent with implementation before marking a story complete.
+- Review and update impacted docs (for example: `README.md`, files under `docs/`, ADRs, `docs/api-contract.md`).
+- `progress.txt` is not an iteration log; it stores lessons learned with cross-iteration value.
+- Only long-lived rules belong in `AGENTS.md`; temporary details belong in `progress.txt`.
+- Never update `progress.txt` or set story `passes=true` while tests/checks are failing or not run.
 
-## Prohibited practices
+## 8) Post-iteration lessons and escalation
 
-- Do **not** implement features without tests by skipping the “Red” phase (failing tests first).
-- Do **not** work on multiple stories in a single iteration.
-- Do **not** declare an iteration complete without updating documentation; append to `progress.txt` only when the iteration yields a lesson worth recording for future work.
-- Do **not** change cross‑story state (`progress.txt`, story `passes` flags in `prd.json`) while tests are failing or have not been run.
+- At iteration end, identify attempts that failed two or more times.
+- Record each recurring failure's root cause in `progress.txt` under lessons learned.
+- If the same/equivalent lesson appears three or more times in `progress.txt` (including the new append), add a concrete avoidance rule to `AGENTS.md`.
+
+## 9) Language conventions
+
+- Code, identifiers, comments, logs, and error messages: English.
+- Project documentation (`README.md`, `docs/`, ADRs, backend/frontend READMEs, `progress.txt`): English.
+- User-facing frontend UI text: Simplified Chinese.
+
+## 10) Prohibited practices
+
+- Skipping the Red phase and implementing without failing tests first.
+- Working on multiple stories in one iteration.
+- Declaring completion without updating impacted documentation.
+- Updating cross-story state (`progress.txt`, `prd.json` `passes`) before tests/checks are green.

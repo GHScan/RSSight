@@ -1,34 +1,26 @@
 # Ralph workflow
 
-This project does not depend on the upstream `ralph.sh`.  
-We follow the Ralph method using documented flows, checklists, and templates. On Windows, run quality checks with `scripts/ci-check.cmd`.
+This project does not depend on upstream `ralph.sh`.
+It follows Ralph iterations using local templates and checklists.
 
-## Core artifacts
+Normative rules (TDD, one-story-per-iteration, done criteria, update policy) are defined in `AGENTS.md`.
+This document focuses only on Ralph execution mechanics.
+
+## Artifacts used by the flow
 
 - Task source: `prd.json`.
-- Iteration history: `progress.txt`.
-- Team rules: `AGENTS.md`.
-- Per‑iteration goal: complete exactly one story.
+- Rules source: `AGENTS.md`.
+- Iteration template/checklist: files under `scripts/ralph/`.
+- Story status and lessons: `prd.json`, `progress.txt`.
 
 ## Per‑iteration flow
 
 1. Open `prd.json` and pick the highest‑priority story with `passes=false`.
-2. Read `AGENTS.md`, `docs/architecture.md`, and `docs/testing-strategy.md`.
-3. Implement the selected story in OpenCode, following strict TDD.
-4. Run local quality checks (on Windows: `scripts/ci-check.cmd`) and ensure they are fully green. If any check fails, fix tests/code and rerun until all pass before proceeding.
-5. **Only after step 4 is fully green**, review and update all documentation affected by the changes, then update records:
-   - Review and update all impacted docs (for example `README.md`, files under `docs/`, ADRs, and `docs/api-contract.md`) so they stay consistent with the implementation.
-   - **Lessons**: Summarise root causes of attempts that failed **two or more times** in this iteration and append each as a lesson to `progress.txt` (under "Lessons learned"). If any lesson then appears **three or more times** in `progress.txt` (including this append), add a concrete avoidance rule to `AGENTS.md` so future runs avoid the same mistake (see AGENTS.md § Post-iteration: lessons and escalation).
-   - Update `AGENTS.md` (long‑lived rules only).
-   - Mark the story's `passes` field to `true` in `prd.json`.
-6. Move to the next story and repeat until all pass.
-
-## Iteration outputs
-
-- Code changes.
-- Test changes.
-- Documentation updates, keeping all affected docs consistent with the implementation.
-- `prd.json` status progression (`passes=false` -> `passes=true`), **only after all relevant tests and quality checks pass**.
+2. Read required context documents listed in `AGENTS.md`.
+3. Execute the story using the templates in `scripts/ralph/`.
+4. Run local checks (`scripts\ci-check.cmd`) and iterate until green.
+5. Update outputs required by `AGENTS.md` (docs, lessons if any, story status) in the required order.
+6. Repeat for the next story.
 
 ## Suggested OpenCode prompt structure
 
@@ -36,26 +28,16 @@ The prompt should include:
 
 - The full content of the current story.
 - The iteration boundary (only this story).
-- A reminder to write failing tests first.
-- A reminder to update `progress.txt` and `prd.json` **only after all relevant tests and quality checks have passed**.
+- A reminder to follow all mandatory rules in `AGENTS.md`.
 
 You can reuse the template in `scripts/ralph/prompt-opencode.md`.
 
 ## Handling failures
 
-- If tests cannot be made stable:
-  - Keep the story's `passes` field as `false`.
-  - Record the blocking reason in `progress.txt`.
-  - Split sub‑problems and add them into `prd.json`.
-
-## Success criteria
-
-- All stories have `passes=true`.
-- All tests and quality checks pass.
+- If a story cannot be stabilized, keep `passes=false`, record the blocker, and split follow-up work into `prd.json`.
 
 ## Iteration health checklist
 
-- Did this iteration only change one story?
-- Are there appropriate tests for the changes?
-- Was the progress record updated?
-- Did the iteration avoid polluting unrelated modules?
+- Did the iteration follow `AGENTS.md` mandatory rules?
+- Did it update only the selected story scope?
+- Are outputs traceable via template/checklist artifacts?
