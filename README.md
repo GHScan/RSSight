@@ -26,6 +26,7 @@ The project provides the technology stack, Ralph/OpenCode workflow, and implemen
 ├─ frontend/                # React frontend foundation
 ├─ data/                    # Runtime data directory (summary markdown lives here)
 ├─ docs/                    # Architecture / ADR / testing / workflow docs
+├─ scripts/                 # CI and run scripts (e.g. ci-check.cmd, start.cmd)
 ├─ scripts/ralph/           # Ralph iteration templates and checklists (Windows)
 ├─ AGENTS.md                # Multi‑agent collaboration rules
 ├─ prd.json                 # Ralph user story pool
@@ -34,18 +35,12 @@ The project provides the technology stack, Ralph/OpenCode workflow, and implemen
 
 ## Quick start (Windows cmd)
 
-1. Install dependencies:
-   - Python 3.12+
-   - Node.js 20+
-   - `opencode` (CLI or Desktop)
-2. Initialize backend environment (example):
-   - `cd backend`
-   - `python -m venv .venv`
-   - `.venv\Scripts\activate.bat`
-   - `pip install -e .[dev]`
-3. Initialize frontend environment:
-   - `cd frontend`
-   - `npm install`
+1. Install dependencies: Python 3.12+, Node.js 20+, and optionally `opencode` (CLI or Desktop).
+2. Initialize backend: `cd backend`, `python -m venv .venv`, `.venv\Scripts\activate.bat`, `pip install -e .[dev]`.
+3. Initialize frontend: `cd frontend`, `npm install`.
+4. Start the app: from the repository root run `scripts\start.cmd` (optionally `scripts\start.cmd [backend_port] [frontend_port]`, defaults 8000 and 5173). Two console windows open; open <http://localhost:5173> in your browser (or the frontend port you passed). Close the two windows to stop the services.
+
+For production deployment (reverse proxy, static assets, process supervision), see `docs/deployment-windows.md`.
 
 ## One‑command baseline check
 
