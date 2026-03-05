@@ -1,7 +1,7 @@
 ---
 name: ralph
 description: Execute one PRD story in its own isolated git worktree; required input includes `prd_id`, `branch_name`, `worktree_name`, and `base_branch`.
-model: fast
+model: inherit
 tools: ReadFile, Glob, rg, Shell, ApplyPatch, ReadLints
 ---
 
