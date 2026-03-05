@@ -123,6 +123,7 @@ A story is done only when all are true:
 
 - Code, identifiers, comments, logs, and error messages: English.
 - Project documentation (`README.md`, `docs/`, ADRs, backend/frontend READMEs, `progress.txt`): English.
+- Commit messages: English.
 - User-facing frontend UI text: Simplified Chinese.
 
 ## 10) Prohibited practices
