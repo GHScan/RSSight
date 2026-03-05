@@ -87,6 +87,143 @@
         "Empty/loading/error states are visible."
       ],
       "passes": true
+    },
+    {
+      "id": "S008",
+      "priority": 8,
+      "title": "Complete feed management interaction details",
+      "description": "Refine feed management frontend behavior according to README user flow, including add/edit/delete/list refresh and user feedback states.",
+      "acceptanceCriteria": [
+        "Happy path: Users can add, edit, delete, and refresh feed list in one session, and UI state stays consistent after each operation.",
+        "Boundary/exception: Invalid URL, duplicate-like URL, and backend failure cases show explicit and actionable error feedback.",
+        "Regression: Existing feed list rendering and navigation entry points remain stable after interaction refinements."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S009",
+      "priority": 9,
+      "title": "Add UI automation for feed management flow",
+      "description": "Create Windows-runnable UI automation coverage for feed management frontend flow.",
+      "acceptanceCriteria": [
+        "Happy path automation: End-to-end case verifies add/edit/delete/refresh feed flow and resulting list state changes.",
+        "Boundary/exception automation: Invalid input and mocked API failure cases assert visible validation/error feedback.",
+        "Regression automation: Existing feed management route load and baseline list rendering are covered to prevent breakage.",
+        "Windows execution: Test command, prerequisites, and target suite scope are documented."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S010",
+      "priority": 10,
+      "title": "Complete article list browsing interaction details",
+      "description": "Refine article list frontend behavior by feed, including loading, empty state, refresh and failure-recovery interactions.",
+      "acceptanceCriteria": [
+        "Happy path: Users can enter feed article list, view loaded results, and refresh list without losing current context.",
+        "Boundary/exception: Empty list and fetch failure states are clearly visible, and retry behavior is available and stable.",
+        "Regression: Reverse chronological visibility and feed-to-list navigation behavior remain correct."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S011",
+      "priority": 11,
+      "title": "Add UI automation for article list flow",
+      "description": "Create UI automation coverage for article list browsing flow and its key state transitions.",
+      "acceptanceCriteria": [
+        "Happy path automation: Article list loading and refresh behavior is verified from feed entry to visible list rendering.",
+        "Boundary/exception automation: Empty-data and failed-fetch scenarios assert expected UI feedback and recovery actions.",
+        "Regression automation: Existing sort visibility and navigation behavior is covered with stable assertions.",
+        "Windows execution: Automation is runnable in local Windows workflow with documented command and scope."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S012",
+      "priority": 12,
+      "title": "Complete article summary page interaction details",
+      "description": "Refine article summary frontend behavior for summary viewing and triggering operations with robust user feedback.",
+      "acceptanceCriteria": [
+        "Happy path: Users can select summary profile, trigger generation, and view generated summary result successfully.",
+        "Boundary/exception: No-profile-selected, no-data, and generation-failure states provide explicit user-visible feedback.",
+        "Regression: Repeated trigger attempts and page revisit keep summary-related UI behavior stable and predictable."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S013",
+      "priority": 13,
+      "title": "Add UI automation for article summary flow",
+      "description": "Create UI automation coverage for article summary viewing and triggering frontend flow.",
+      "acceptanceCriteria": [
+        "Happy path automation: Profile selection and summary trigger flow validates in-progress and success UI feedback.",
+        "Boundary/exception automation: No-data and failed-generation scenarios assert expected message and interaction handling.",
+        "Regression automation: Existing summary view rendering and re-entry behavior are protected by automated checks.",
+        "Windows execution: Setup assumptions and run command are documented for local automation runs."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S014",
+      "priority": 14,
+      "title": "Complete summary profile management interaction details",
+      "description": "Refine summary profile frontend behavior including create/edit/delete/list and validation/error feedback details.",
+      "acceptanceCriteria": [
+        "Happy path: Users can create, update, delete, and re-list summary profiles with consistent interaction feedback.",
+        "Boundary/exception: Required-field missing, name conflict, and backend failure cases are clearly handled in UI.",
+        "Regression: Existing profile list rendering and navigation behavior stays stable after interaction refinements."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S015",
+      "priority": 15,
+      "title": "Add UI automation for summary profile flow",
+      "description": "Create UI automation coverage for summary profile management frontend flow.",
+      "acceptanceCriteria": [
+        "Happy path automation: Profile create/update/delete/list flow is covered with deterministic assertions.",
+        "Boundary/exception automation: Validation prompts, conflict errors, and API failure feedback are asserted.",
+        "Regression automation: Existing profile management page load and baseline list behavior remain protected.",
+        "Windows execution: Test suite command and prerequisites are documented in frontend test instructions."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S016",
+      "priority": 16,
+      "title": "Establish Tailwind UI foundation",
+      "description": "Set up Tailwind styling foundation for frontend, including design tokens, layout primitives, and reusable style conventions.",
+      "acceptanceCriteria": [
+        "Happy path: Tailwind configuration, shared tokens, and base utility conventions are available and documented.",
+        "Boundary/exception: Legacy styles and Tailwind coexist without breaking current functional pages during transition.",
+        "Regression: Existing frontend behavior remains unchanged while foundational style layer is introduced."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S017",
+      "priority": 17,
+      "title": "Migrate core pages to Tailwind visual design",
+      "description": "Apply Tailwind-based visual improvements to home, feed management, article list, article summary, and summary profile pages.",
+      "acceptanceCriteria": [
+        "Happy path: Core pages share consistent spacing, typography, and interaction styles after Tailwind migration.",
+        "Boundary/exception: Narrow-width layout and long-content scenarios remain readable and usable.",
+        "Regression: Page-level functionality and existing interaction paths stay stable after style migration."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S018",
+      "priority": 18,
+      "title": "Add UI verification for Tailwind visual regression",
+      "description": "Add automated UI verification to guard against major visual regressions after Tailwind migration.",
+      "acceptanceCriteria": [
+        "Happy path verification: Critical pages and key UI states have automated visual/UI checks with stable baselines.",
+        "Boundary/exception verification: Responsive breakpoints and error/empty/loading states are included in verification scope.",
+        "Regression verification: Baseline update process is documented and prevents accidental acceptance of unexpected UI drift.",
+        "Windows execution: Verification command and integration point with frontend quality gate are documented."
+      ],
+      "passes": false
     }
   ]
 }
