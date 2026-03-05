@@ -13,7 +13,6 @@ test.describe("Summary profile E2E (S015)", () => {
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       const method = route.request().method();
-      const url = route.request().url();
       if (method === "GET") {
         return route.fulfill({
           status: 200,

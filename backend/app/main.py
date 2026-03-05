@@ -3,7 +3,7 @@ import os
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -61,10 +61,11 @@ def _debug_mode() -> bool:
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     """Return 500 with message and optional traceback. HTTPException is passed through as-is."""
     if isinstance(exc, HTTPException):
-        return JSONResponse(status_code=exc.status_code, content={"message": exc.detail} if isinstance(exc.detail, str) else exc.detail)
+        content = {"message": exc.detail} if isinstance(exc.detail, str) else exc.detail
+        return JSONResponse(status_code=exc.status_code, content=content)
     tb = traceback.format_exc()
     _LOG.exception("Unhandled exception: %s", exc)
-    body: dict = {
+    body: dict[str, Any] = {
         "message": str(exc) or "Internal Server Error",
         "type": type(exc).__name__,
     }

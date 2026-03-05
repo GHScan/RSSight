@@ -3,6 +3,7 @@
 ## Scope
 
 - React + TypeScript + Vite.
+- Tailwind CSS for styling; design tokens and conventions are documented in `docs/frontend-styling.md` (from repo root).
 - React Router: home, feed management (`/feeds`), article list (`/feeds/:feedId/articles`), article summary (`/feeds/:feedId/articles/:articleId`), summary profiles (`/profiles`).
 - API client layer (`src/api/`) separate from UI for testability; calls backend `/api/feeds`, `/api/summary-profiles`, and article/summary endpoints.
 - Empty, loading, and error states on data pages.

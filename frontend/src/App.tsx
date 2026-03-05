@@ -7,12 +7,14 @@ import { SummaryProfiles } from "./pages/SummaryProfiles";
 
 export function App() {
   return (
-    <Routes>
+    <div className="min-h-screen bg-background text-foreground">
+      <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/feeds" element={<FeedManagement />} />
       <Route path="/feeds/:feedId/articles" element={<ArticleList />} />
       <Route path="/feeds/:feedId/articles/:articleId" element={<ArticleSummary />} />
       <Route path="/profiles" element={<SummaryProfiles />} />
     </Routes>
+    </div>
   );
 }

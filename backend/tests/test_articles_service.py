@@ -8,7 +8,8 @@ from app.models.feeds import FeedCreate
 from app.services.articles import ArticleService
 from app.services.feeds import FeedService
 
-SAMPLE_RSS = dedent("""\
+SAMPLE_RSS = dedent(
+    """\
     <?xml version='1.0' encoding='UTF-8'?>
     <rss version="2.0">
       <channel>
@@ -31,7 +32,8 @@ SAMPLE_RSS = dedent("""\
         </item>
       </channel>
     </rss>
-    """)
+    """
+)
 
 
 def _make_feed_service(tmp_path: Path) -> FeedService:

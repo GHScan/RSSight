@@ -95,7 +95,8 @@ def test_manual_fetch_and_scheduler_run_once_coexist(tmp_path: Path) -> None:
     from app.services.articles import ArticleService
     from app.services.feeds import FeedService
 
-    sample_rss = dedent("""\
+    sample_rss = dedent(
+        """\
         <?xml version='1.0' encoding='UTF-8'?>
         <rss version="2.0">
           <channel>
@@ -108,7 +109,8 @@ def test_manual_fetch_and_scheduler_run_once_coexist(tmp_path: Path) -> None:
             </item>
           </channel>
         </rss>
-    """)
+    """
+    )
 
     feed_service = FeedService(tmp_path)
     feed = feed_service.create_feed(
