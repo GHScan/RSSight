@@ -161,7 +161,7 @@
         "Regression automation: Existing summary view rendering and re-entry behavior are protected by automated checks.",
         "Windows execution: Setup assumptions and run command are documented for local automation runs."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S014",
