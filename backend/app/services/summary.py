@@ -18,7 +18,7 @@ from urllib.request import Request, urlopen
 
 from app.services.articles import ArticleNotFoundError, ArticleService
 from app.services.profiles import ProfileNotFoundError, SummaryProfileService
-from app.services.translation import TRANSLATION_PROFILE_NAME, translate_article_title
+from app.services.translation import TRANSLATION_PROFILE_NAME, translate_batch
 
 if TYPE_CHECKING:
     from app.models.articles import Article
@@ -138,21 +138,15 @@ class SummaryService:
             raise
 
         if profile_name == TRANSLATION_PROFILE_NAME:
-            ok = translate_article_title(
-                self._call_ai,
-                self._article_service,
-                feed_id,
-                article_id,
-                article.title,
-                profile_name=profile_name,
-                profile_service=self._profile_service,
-            )
-            if not ok:
+            trans_map = translate_batch([article.title], self._call_ai)
+            title_trans = trans_map.get(article.title)
+            if not title_trans:
                 raise ValueError("Translation failed or profile not configured.")
+            self._article_service.update_article_title_trans(
+                feed_id, article_id, title_trans
+            )
             self._profile_service.touch_profile(profile_name)
-            updated = self._article_service.get_article(feed_id, article_id)
-            assert updated.title_trans is not None
-            return updated.title_trans
+            return title_trans
 
         # 若 RSS 只有标题/短描述（如 description 与 title 相同），从文章链接抓取正文
         content_override = None

@@ -1,5 +1,5 @@
 """
-Tests for title translation (S019): title_translation profile, parsing, persistence, background pass.
+Tests for title translation (S019): batch API, fixed prompt, JSON response, run_translation_pass.
 """
 
 from __future__ import annotations
@@ -21,44 +21,85 @@ from app.services.profiles import ProfileNotFoundError, SummaryProfileService
 from app.services.summary import make_openai_call_ai
 from app.services.translation import (
     TRANSLATION_PROFILE_NAME,
-    parse_translation_response,
+    FIXED_PROMPT,
     run_translation_pass,
-    translate_article_title,
+    translate_batch,
 )
 
 # 项目 data 目录（backend/tests -> backend -> 项目根 -> data）
 _REAL_DATA_ROOT = Path(__file__).resolve().parents[2] / "data"
 
 
-def test_parse_translation_response_last_non_empty_segment() -> None:
-    """Parse: split by ASCII double quote, last non-empty segment is title_trans."""
-    assert parse_translation_response('foo " bar " baz') == "baz"
-    assert parse_translation_response('"only one"') == "only one"
-    assert parse_translation_response('a " b " c " d') == "d"
-    assert parse_translation_response("no quotes") == "no quotes"
-    assert parse_translation_response('" " "" trailing') == "trailing"
+def test_translate_batch_empty_keys() -> None:
+    """Empty keys returns empty dict and does not call AI."""
+    call_ai = MagicMock()
+    assert translate_batch([], call_ai) == {}
+    call_ai.assert_not_called()
 
 
-def test_parse_translation_response_empty_returns_none() -> None:
-    """When no non-empty segment, return None."""
-    assert parse_translation_response("") is None
-    assert parse_translation_response('  "  "  ') is None
+def test_translate_batch_returns_parsed_json() -> None:
+    """AI response is parsed as JSON and returned as dict (only requested keys, string values)."""
+    def call_ai(prompt: str, profile_name: str) -> str:
+        assert profile_name == TRANSLATION_PROFILE_NAME
+        assert "Hello World" in prompt
+        return json.dumps({"Hello World": "你好世界"})
+
+    result = translate_batch(["Hello World"], call_ai)
+    assert result == {"Hello World": "你好世界"}
 
 
-def test_parse_translation_response_english_to_chinese() -> None:
-    """Typical translation API response: 'english' => '英语' parses to 英语."""
-    # 无引号时整段即译文
-    assert parse_translation_response("英语") == "英语"
-    # 带引号的模板式回复，取最后一对引号内的内容
-    assert parse_translation_response('翻译成中文："english"=>"英语"') == "英语"
-    assert parse_translation_response('prefix " 英语 "') == "英语"
+def test_translate_batch_multiple_keys() -> None:
+    """Multiple keys: payload is JSON dict with empty values; response dict returned."""
+    def call_ai(prompt: str, profile_name: str) -> str:
+        assert profile_name == TRANSLATION_PROFILE_NAME
+        assert "english" in prompt and "bus" in prompt and "china" in prompt
+        return json.dumps({"english": "英语", "bus": "公交车", "china": "中国"})
+
+    result = translate_batch(["english", "bus", "china"], call_ai)
+    assert result == {"english": "英语", "bus": "公交车", "china": "中国"}
+
+
+def test_translate_batch_uses_fixed_prompt() -> None:
+    """Prompt contains fixed instruction and example, plus payload JSON."""
+    def call_ai(prompt: str, profile_name: str) -> str:
+        assert "用中文翻译补全下面json" in prompt
+        assert "america" in prompt and "美洲" in prompt
+        assert '{"key":""}' in prompt or '"key": ""' in prompt
+        return json.dumps({"key": "键"})
+
+    result = translate_batch(["key"], call_ai)
+    assert result == {"key": "键"}
+
+
+def test_translate_batch_invalid_json_returns_empty() -> None:
+    """When AI response is not valid JSON, return empty dict."""
+    def call_ai(prompt: str, profile_name: str) -> str:
+        return "not json at all"
+
+    assert translate_batch(["x"], call_ai) == {}
+
+
+def test_translate_batch_non_dict_json_returns_empty() -> None:
+    """When parsed JSON is not a dict, return empty dict."""
+    def call_ai(prompt: str, profile_name: str) -> str:
+        return "[1, 2, 3]"
+
+    assert translate_batch(["x"], call_ai) == {}
+
+
+def test_translate_batch_only_includes_requested_keys_and_string_values() -> None:
+    """Extra keys in response or non-string values are ignored for requested keys."""
+    def call_ai(prompt: str, profile_name: str) -> str:
+        return json.dumps({"a": "一", "b": 2, "c": "三", "extra": "x"})
+
+    result = translate_batch(["a", "c"], call_ai)
+    assert result == {"a": "一", "c": "三"}
 
 
 @pytest.mark.integration
-def test_translation_profile_english_to_chinese_with_real_profile(tmp_path: Path) -> None:
+def test_translation_batch_with_real_profile(tmp_path: Path) -> None:
     """
-    使用 data 目录下真实的 title_translation profile 和真实 API 测翻译：
-    标题 "english" 的翻译结果应为 "英语"。
+    使用 data 目录下真实的 title_translation profile 和真实 API 测批量翻译。
     仅在手选时跑（pytest -m integration），且需 RUN_TRANSLATION_INTEGRATION=1；
     若 data 中无 title_translation profile 则跳过。
     """
@@ -90,80 +131,15 @@ def test_translation_profile_english_to_chinese_with_real_profile(tmp_path: Path
     )
 
     call_ai = make_openai_call_ai(profile_service)
-    art_svc = ArticleService(tmp_path)
-    result = translate_article_title(
-        call_ai, art_svc, feed.id, article.id, "english", TRANSLATION_PROFILE_NAME,
-        profile_service=profile_service,
-    )
-    assert result is True, "翻译应成功并写入 title_trans"
-
-    loaded = art_svc.get_article(feed.id, article.id)
-    assert loaded.title_trans == "英语", (
-        f'使用 data 中真实 title_translation profile 时，"english" 的翻译结果应为 "英语"，实际为 {loaded.title_trans!r}'
-    )
-
-
-def test_translate_article_title_persists_title_trans(tmp_path: Path) -> None:
-    """Happy path: call_ai returns response; title_trans is parsed and persisted."""
-    feed_svc = FeedService(tmp_path)
-    feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
-    article = Article(
-        id="art-1",
-        feed_id=feed.id,
-        title="Hello World",
-        link="https://example.com/1",
-        description="",
-        guid="g1",
-        published_at=datetime.now(timezone.utc),
-    )
-    article_dir = tmp_path / "feeds" / feed.id / "articles" / article.id
-    article_dir.mkdir(parents=True)
-    article_dir.joinpath("article.json").write_text(
-        json.dumps(article.model_dump(mode="json"), indent=2),
-        encoding="utf-8",
-    )
-
-    def fake_call_ai(prompt: str, profile_name: str) -> str:
-        assert profile_name == TRANSLATION_PROFILE_NAME
-        assert prompt == "Hello World"
-        return 'something " 你好世界 "'
+    trans_map = translate_batch(["english"], call_ai)
+    assert "english" in trans_map, "应返回 english 的翻译"
+    title_trans = trans_map["english"]
+    assert title_trans == "英语", f'期望 "英语"，实际 {title_trans!r}'
 
     art_svc = ArticleService(tmp_path)
-    result = translate_article_title(fake_call_ai, art_svc, feed.id, article.id, article.title)
-    assert result is True
-
+    art_svc.update_article_title_trans(feed.id, article.id, title_trans)
     loaded = art_svc.get_article(feed.id, article.id)
-    assert loaded.title_trans == "你好世界"
-
-
-def test_translate_article_title_skips_when_profile_missing(tmp_path: Path) -> None:
-    """When title_translation profile does not exist, translate_article_title returns False."""
-    feed_svc = FeedService(tmp_path)
-    feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
-    article = Article(
-        id="art-1",
-        feed_id=feed.id,
-        title="Hello",
-        link="https://example.com/1",
-        description="",
-        guid="g1",
-        published_at=datetime.now(timezone.utc),
-    )
-    article_dir = tmp_path / "feeds" / feed.id / "articles" / article.id
-    article_dir.mkdir(parents=True)
-    article_dir.joinpath("article.json").write_text(
-        json.dumps(article.model_dump(mode="json"), indent=2),
-        encoding="utf-8",
-    )
-
-    def failing_call_ai(_prompt: str, _profile_name: str) -> str:
-        raise ProfileNotFoundError(TRANSLATION_PROFILE_NAME)
-
-    art_svc = ArticleService(tmp_path)
-    result = translate_article_title(failing_call_ai, art_svc, feed.id, article.id, article.title)
-    assert result is False
-    loaded = art_svc.get_article(feed.id, article.id)
-    assert loaded.title_trans is None
+    assert loaded.title_trans == "英语"
 
 
 def test_run_translation_pass_skips_when_no_translation_profile(tmp_path: Path) -> None:
@@ -192,7 +168,7 @@ def test_run_translation_pass_skips_when_no_translation_profile(tmp_path: Path) 
 
 
 def test_run_translation_pass_populates_title_trans_when_profile_exists(tmp_path: Path) -> None:
-    """When title_translation profile exists, articles without title_trans get translated."""
+    """When profile exists, collect up to 64 unique titles, call batch once, apply to articles."""
     feed_svc = FeedService(tmp_path)
     feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
     article = Article(
@@ -222,11 +198,12 @@ def test_run_translation_pass_populates_title_trans_when_profile_exists(tmp_path
             prompt_template="{title}",
         )
     )
-    profile_svc.touch_profile = MagicMock()  # 后台翻译不得更新 last_used_at
+    profile_svc.touch_profile = MagicMock()
 
     def fake_call_ai(prompt: str, profile_name: str) -> str:
         assert profile_name == TRANSLATION_PROFILE_NAME
-        return f'ignored " translated:{prompt} "'
+        assert "Original Title" in prompt
+        return json.dumps({"Original Title": "译文标题"})
 
     art_svc = ArticleService(tmp_path)
     run_translation_pass(
@@ -236,8 +213,108 @@ def test_run_translation_pass_populates_title_trans_when_profile_exists(tmp_path
         profile_service=profile_svc,
     )
     loaded = art_svc.get_article(feed.id, article.id)
-    assert loaded.title_trans == "translated:Original Title"
+    assert loaded.title_trans == "译文标题"
     profile_svc.touch_profile.assert_not_called()
+
+
+def test_run_translation_pass_same_title_updates_all_articles(tmp_path: Path) -> None:
+    """Multiple articles with same title get same translation from one batch call."""
+    feed_svc = FeedService(tmp_path)
+    feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
+    for i, aid in enumerate(["art-1", "art-2"]):
+        article = Article(
+            id=aid,
+            feed_id=feed.id,
+            title="Same Title",
+            link=f"https://example.com/{i}",
+            description="",
+            guid=f"g{i}",
+            published_at=datetime.now(timezone.utc),
+        )
+        article_dir = tmp_path / "feeds" / feed.id / "articles" / article.id
+        article_dir.mkdir(parents=True)
+        article_dir.joinpath("article.json").write_text(
+            json.dumps(article.model_dump(mode="json"), indent=2),
+            encoding="utf-8",
+        )
+
+    profile_svc = SummaryProfileService(tmp_path)
+    profile_svc.create_profile(
+        SummaryProfileCreate(
+            name=TRANSLATION_PROFILE_NAME,
+            base_url="https://api.example.com",
+            key="key",
+            model="model",
+            fields=[],
+            prompt_template="ignored",
+        )
+    )
+
+    def fake_call_ai(prompt: str, profile_name: str) -> str:
+        return json.dumps({"Same Title": "同一标题"})
+
+    art_svc = ArticleService(tmp_path)
+    run_translation_pass(
+        tmp_path,
+        fake_call_ai,
+        article_service=art_svc,
+        profile_service=profile_svc,
+    )
+    for aid in ["art-1", "art-2"]:
+        loaded = art_svc.get_article(feed.id, aid)
+        assert loaded.title_trans == "同一标题"
+
+
+def test_run_translation_pass_caps_at_64_unique_titles(tmp_path: Path) -> None:
+    """Only first 64 unique titles are sent in one batch."""
+    feed_svc = FeedService(tmp_path)
+    feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
+    for i in range(70):
+        article = Article(
+            id=f"art-{i}",
+            feed_id=feed.id,
+            title=f"Title {i}",
+            link=f"https://example.com/{i}",
+            description="",
+            guid=f"g{i}",
+            published_at=datetime.now(timezone.utc),
+        )
+        article_dir = tmp_path / "feeds" / feed.id / "articles" / article.id
+        article_dir.mkdir(parents=True)
+        article_dir.joinpath("article.json").write_text(
+            json.dumps(article.model_dump(mode="json"), indent=2),
+            encoding="utf-8",
+        )
+
+    profile_svc = SummaryProfileService(tmp_path)
+    profile_svc.create_profile(
+        SummaryProfileCreate(
+            name=TRANSLATION_PROFILE_NAME,
+            base_url="https://api.example.com",
+            key="key",
+            model="model",
+            fields=[],
+            prompt_template="ignored",
+        )
+    )
+
+    payload_keys_count: list[int] = []
+
+    def fake_call_ai(prompt: str, profile_name: str) -> str:
+        # Payload is the last part of the fixed prompt (after the example)
+        payload_str = prompt.split("\n\n")[-1].strip()
+        payload = json.loads(payload_str)
+        payload_keys_count.append(len(payload))
+        return json.dumps({k: f"译文_{k}" for k in payload})
+
+    art_svc = ArticleService(tmp_path)
+    run_translation_pass(
+        tmp_path,
+        fake_call_ai,
+        article_service=art_svc,
+        profile_service=profile_svc,
+    )
+    assert payload_keys_count == [64], "batch should be called once with exactly 64 keys"
 
 
 def test_article_persist_preserves_title_trans_on_refetch(tmp_path: Path) -> None:
@@ -250,7 +327,6 @@ def test_article_persist_preserves_title_trans_on_refetch(tmp_path: Path) -> Non
     feed_svc = FeedService(tmp_path)
     feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
     art_svc = ArticleService(tmp_path)
-    # Use same article_id as _persist_article would derive from guid
     article_id = uuid.uuid5(uuid.NAMESPACE_URL, f"{feed.id}:guid-1").hex
     article_dir = tmp_path / "feeds" / feed.id / "articles" / article_id
     article_dir.mkdir(parents=True)

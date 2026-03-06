@@ -221,7 +221,7 @@ def test_translation_profile_get_summary_returns_title_trans(tmp_path: Path) -> 
 
 
 def test_translation_profile_generate_updates_title_trans(tmp_path: Path) -> None:
-    """For profile 'title_translation', generate_summary updates title_trans and returns it."""
+    """For profile 'title_translation', generate_summary uses translate_batch and updates title_trans."""
     feed_id, article_id = _make_feed_and_article(tmp_path)
     profile_svc = SummaryProfileService(tmp_path)
     profile_svc.create_profile(
@@ -231,12 +231,13 @@ def test_translation_profile_generate_updates_title_trans(tmp_path: Path) -> Non
             key="k",
             model="m",
             fields=["title"],
-            prompt_template='翻译："{title}"=>"',
+            prompt_template="ignored",
         )
     )
 
     def fake_call_ai(prompt: str, profile_name: str) -> str:
-        return 'ignored " 新译文 "'
+        # Batch translation returns JSON: key -> 中文
+        return json.dumps({"Test Article Title": "新译文"})
 
     summary_svc = SummaryService(tmp_path, call_ai=fake_call_ai, profile_service=profile_svc)
     result = summary_svc.generate_summary(
