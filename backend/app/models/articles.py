@@ -37,10 +37,12 @@ class ArticleRead(BaseModel):
 
 
 class CustomArticleCreate(BaseModel):
-    """Payload for creating a custom article under a virtual feed (S027/S028)."""
+    """Payload for custom article under virtual feed (S027/S028).
+    When link is provided, missing fields may be filled by URL autofill (S029).
+    """
 
-    title: str
+    title: str = ""
     link: str = ""
     description: str = ""
-    published_at: datetime
+    published_at: datetime | None = None
     source: str | None = None

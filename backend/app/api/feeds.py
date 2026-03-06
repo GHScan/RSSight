@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from http import HTTPStatus
 from typing import List
 
@@ -12,6 +13,7 @@ from app.models.articles import ArticleRead, CustomArticleCreate
 from app.models.feeds import FeedCreate, FeedRead, FeedUpdate, VirtualFeedCreate
 from app.services.articles import ArticleNotFoundError, ArticleService
 from app.services.feeds import FeedNotFoundError, FeedService
+from app.services.url_autofill import fetch_and_parse_url
 
 
 class FavoriteUpdate(BaseModel):
@@ -159,6 +161,53 @@ def list_articles(
     ]
 
 
+def _resolve_custom_article_payload(payload: CustomArticleCreate) -> tuple[str, str, str, datetime]:
+    """
+    Resolve title, link, description, published_at from payload; when link is provided
+    and fields are missing, run URL autofill and merge (S029). Never overwrite user values.
+    Returns (title, link, description, published_at). Raises HTTPException on failure.
+    """
+    link = (payload.link or "").strip()
+    title = (payload.title or "").strip()
+    description = (payload.description or "").strip()
+    published_at: datetime | None = payload.published_at
+
+    if link and (not title or not description or published_at is None):
+        try:
+            parsed = fetch_and_parse_url(link)
+        except OSError as exc:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail={
+                    "code": "AUTOFILL_FAILED",
+                    "message": "Could not fetch or parse URL for autofill.",
+                    "details": {"reason": str(exc)},
+                },
+            ) from exc
+        if not title and parsed.get("title"):
+            title = (parsed["title"] or "").strip()
+        if not description and parsed.get("description"):
+            description = (parsed["description"] or "").strip()
+        if published_at is None and parsed.get("published_at"):
+            published_at = parsed["published_at"]
+
+    if not title or published_at is None:
+        missing: List[str] = []
+        if not title:
+            missing.append("title")
+        if published_at is None:
+            missing.append("published_at")
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail={
+                "code": "MISSING_REQUIRED_FIELDS",
+                "message": "Title and published_at required; use URL autofill or provide them.",
+                "details": {"missing": missing},
+            },
+        )
+    return title, link, description, published_at
+
+
 @router.post("/{feed_id}/articles", response_model=ArticleRead, status_code=HTTPStatus.CREATED)
 def create_custom_article(
     feed_id: str,
@@ -166,7 +215,7 @@ def create_custom_article(
     feed_service: FeedService = Depends(get_feed_service),
     article_service: ArticleService = Depends(get_article_service),
 ) -> ArticleRead:
-    """Create a custom article under a virtual feed (S027/S028). 400 if not virtual."""
+    """Create custom article under virtual feed (S027/S028). URL autofill (S029)."""
     try:
         feed_service.get_feed(feed_id)
     except FeedNotFoundError as exc:
@@ -178,13 +227,14 @@ def create_custom_article(
                 "details": {"feedId": exc.feed_id},
             },
         ) from exc
+    title, link, description, published_at = _resolve_custom_article_payload(payload)
     try:
         created = article_service.create_custom_article(
             feed_id,
-            title=payload.title,
-            link=payload.link,
-            description=payload.description,
-            published_at=payload.published_at,
+            title=title,
+            link=link,
+            description=description,
+            published_at=published_at,
             source=payload.source,
         )
     except ValueError as exc:

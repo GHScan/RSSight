@@ -21,7 +21,7 @@ At the current stage of the project, the backend implements the **Health**, **Fe
 ## Articles
 
 - `GET /api/feeds/{feedId}/articles` — returns list with `id`, `title`, `link`, `published`, optional `title_trans`, `favorite`, `favorited_at`, and optional `source` (custom-article source metadata). Sort order: recently favorited first, then by published desc. Custom articles under virtual feeds use the same storage path and appear in this list.
-- `POST /api/feeds/{feedId}/articles` — create a custom article under a virtual feed (body: `title`, `link` optional, `description` optional, `published_at` ISO, `source` optional). Returns 201 with created article; 400 if feed is not virtual, 404 if feed not found.
+- `POST /api/feeds/{feedId}/articles` — create a custom article under a virtual feed (body: `title`, `link` optional, `description` optional, `published_at` ISO or null, `source` optional). When `link` is provided and title/description/published_at are missing, the backend may fetch and parse the URL to autofill only empty fields (user-provided values are never overwritten). Returns 201 with created article; 400 if feed is not virtual or if autofill fails (`AUTOFILL_FAILED`) or required fields remain missing after autofill (`MISSING_REQUIRED_FIELDS`); 404 if feed not found.
 - `PUT /api/feeds/{feedId}/articles/{articleId}/favorite` — body `{ "favorite": true | false }`; sets/clears favorite marker file in article folder.
 - `POST /api/feeds/{feedId}/refresh` (manually trigger a fetch)
 

@@ -358,7 +358,7 @@
         "User-provided non-empty fields are never overwritten by autofill.",
         "Autofill failure or incomplete required fields returns explicit actionable error response."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S030",

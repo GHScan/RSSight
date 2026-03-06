@@ -267,6 +267,184 @@ def test_create_custom_article_rejects_rss_feed(tmp_path: Path, monkeypatch) -> 
     assert post_response.status_code == 400
 
 
+# --- S029: URL-branch missing-field autofill ---
+
+
+def test_create_custom_article_url_autofill_fills_missing_fields(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S029 happy path: URL with missing title/description/published_at; autofill fills them."""
+    from datetime import datetime, timezone
+
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+
+    def mock_fetch(url: str):
+        assert "example.com" in url
+        return {
+            "title": "Page Title From Fetch",
+            "description": "Page description from fetch.",
+            "published_at": datetime(2025, 3, 5, 14, 0, 0, tzinfo=timezone.utc),
+        }
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch)
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "",
+            "link": "https://example.com/article",
+            "description": "",
+            "published_at": None,
+            "source": None,
+        },
+    )
+    assert post_response.status_code == 201
+    article = post_response.json()
+    assert article["title"] == "Page Title From Fetch"
+    assert article["link"] == "https://example.com/article"
+    assert article["published"] == "2025-03-05T14:00:00+00:00"
+    assert "id" in article and len(article["id"]) > 0
+
+
+def test_create_custom_article_url_autofill_does_not_overwrite_user_values(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S029: User-provided non-empty fields are never overwritten by autofill."""
+    from datetime import datetime, timezone
+
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+
+    def mock_fetch(url: str):
+        return {
+            "title": "Fetched Title",
+            "description": "Fetched description",
+            "published_at": datetime(2025, 3, 6, 10, 0, 0, tzinfo=timezone.utc),
+        }
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch)
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "User Chosen Title",
+            "link": "https://example.com/page",
+            "description": "User description.",
+            "published_at": "2025-03-01T12:00:00Z",
+            "source": None,
+        },
+    )
+    assert post_response.status_code == 201
+    article = post_response.json()
+    assert article["title"] == "User Chosen Title"
+    assert "2025-03-01" in article["published"]
+
+
+def test_create_custom_article_url_autofill_failure_returns_400(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S029 boundary: Autofill failure returns explicit actionable error response."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+
+    def mock_fetch_fails(url: str):
+        raise OSError("Connection refused")
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch_fails)
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "",
+            "link": "https://example.com/unreachable",
+            "description": "",
+            "published_at": None,
+        },
+    )
+    assert post_response.status_code == 400
+    body = post_response.json()
+    assert "detail" in body or "message" in body
+    detail = body.get("detail") or body.get("message")
+    if isinstance(detail, dict):
+        code_ok = detail.get("code") == "AUTOFILL_FAILED"
+        msg_ok = "autofill" in (detail.get("message") or "").lower()
+        assert code_ok or msg_ok
+    else:
+        assert "autofill" in str(detail).lower() or "fetch" in str(detail).lower()
+
+
+def test_create_custom_article_url_autofill_incomplete_required_returns_400(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S029 boundary: After autofill required fields still missing returns explicit error."""
+    from datetime import datetime, timezone
+
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+
+    def mock_fetch_no_title(url: str):
+        return {
+            "title": None,
+            "description": "Some description",
+            "published_at": datetime(2025, 3, 5, 12, 0, 0, tzinfo=timezone.utc),
+        }
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch_no_title)
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "",
+            "link": "https://example.com/no-title",
+            "description": "",
+            "published_at": None,
+        },
+    )
+    assert post_response.status_code == 400
+    body = post_response.json()
+    detail = body.get("detail") or body.get("message")
+    if isinstance(detail, dict):
+        assert (
+            detail.get("code") == "MISSING_REQUIRED_FIELDS"
+            or "required" in (detail.get("message") or "").lower()
+        )
+    else:
+        assert "required" in str(detail).lower() or "title" in str(detail).lower()
+
+
 def test_virtual_feed_articles_list_returns_empty(tmp_path: Path, monkeypatch) -> None:
     """
     S026: GET /api/feeds/{feedId}/articles for a virtual feed returns 200 and empty list.
