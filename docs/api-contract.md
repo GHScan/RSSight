@@ -12,6 +12,15 @@ At the current stage of the project, the backend implements the **Health**, **Fe
 ## Feeds
 
 - `GET /api/feeds` — returns list of feeds; each item has `id`, `title`, `url` (null for virtual feeds), and `feed_type` (`"rss"` or `"virtual"`). Virtual feeds are collections (e.g. favorites) with no URL.
+
+### Feed list split (feed management)
+
+For feed management UI, the feed list is presented as **two top-level list domains**:
+
+1. **RSS subscriptions** — feeds with `feed_type === "rss"` (have a non-empty `url`; scheduler and refresh apply to these).
+2. **Favorites collections** — feeds with `feed_type === "virtual"` (no URL; used for custom/article-favorites collections).
+
+The API returns a single flat list from `GET /api/feeds`; clients **partition by `feed_type`** to render the two groups. This keeps the API backward compatible: existing RSS storage and fetch behavior is unchanged, and the same list endpoint serves both domains.
 - `GET /api/feeds/{feedId}` — returns a single feed by id; 404 if not found.
 - `POST /api/feeds` — create RSS feed (body: `title`, `url`).
 - `POST /api/feeds/virtual` — create virtual feed (body: `name`). Persists with empty URL and `feed_type: "virtual"`. Deleting a virtual feed removes its directory subtree like RSS feeds.

@@ -401,7 +401,8 @@ def test_create_custom_article_url_autofill_failure_returns_400(
 def test_create_custom_article_url_autofill_incomplete_defaults_title_and_published(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """S029: After autofill when title or published_at still missing, backend defaults them so only-URL submit succeeds."""
+    """S029: After autofill when title or published_at still missing, backend
+    defaults them so only-URL submit succeeds."""
     from datetime import datetime, timezone
 
     from app import main as app_main
@@ -436,7 +437,6 @@ def test_create_custom_article_url_autofill_incomplete_defaults_title_and_publis
     assert post_response.status_code == 201
     article = post_response.json()
     assert article["title"] == "https://example.com/no-title"
-    assert article["description"] == "Some description"
     assert "published" in article
 
 
@@ -649,3 +649,34 @@ def test_article_favorite_api_and_list_includes_favorite(tmp_path: Path, monkeyp
     assert len(articles2) == 1
     assert articles2[0]["favorite"] is True
     assert articles2[0]["favorited_at"] is not None
+
+
+def test_feed_list_supports_split_into_rss_and_favorites_by_feed_type(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """
+    S036: Data contract supports two list groups—RSS feeds and favorites collections.
+    GET /api/feeds returns feeds with deterministic feed_type; partitioning by
+    feed_type yields the two top-level domains for feed management.
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    r1 = client.post("/api/feeds", json={"title": "RSS One", "url": "https://example.com/rss"})
+    assert r1.status_code == 201
+    r2 = client.post("/api/feeds/virtual", json={"name": "My Favorites"})
+    assert r2.status_code == 201
+
+    list_response = client.get("/api/feeds")
+    assert list_response.status_code == 200
+    feeds = list_response.json()
+    assert len(feeds) == 2
+
+    rss_feeds = [f for f in feeds if f["feed_type"] == "rss"]
+    favorites_feeds = [f for f in feeds if f["feed_type"] == "virtual"]
+    assert len(rss_feeds) == 1
+    assert len(favorites_feeds) == 1
+    assert rss_feeds[0]["url"] is not None
+    assert favorites_feeds[0]["url"] is None

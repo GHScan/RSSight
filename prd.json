@@ -14,7 +14,7 @@
         "API contract and architecture docs document split behavior and compatibility.",
         "Existing RSS storage/fetch behavior remains unchanged."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S037",
