@@ -26,7 +26,7 @@
         "Normal RSS flow remains backward compatible.",
         "Backend tests cover mixed-data coexistence."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S038",

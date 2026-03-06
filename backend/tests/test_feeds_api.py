@@ -680,3 +680,78 @@ def test_feed_list_supports_split_into_rss_and_favorites_by_feed_type(
     assert len(favorites_feeds) == 1
     assert rss_feeds[0]["url"] is not None
     assert favorites_feeds[0]["url"] is None
+
+
+def test_list_feeds_domain_rss_returns_only_rss_feeds(tmp_path: Path, monkeypatch) -> None:
+    """
+    S037: GET /api/feeds?domain=rss returns only RSS feeds; favorites excluded.
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    client.post("/api/feeds", json={"title": "RSS One", "url": "https://example.com/rss"})
+    client.post("/api/feeds/virtual", json={"name": "My Favorites"})
+
+    r = client.get("/api/feeds", params={"domain": "rss"})
+    assert r.status_code == 200
+    feeds = r.json()
+    assert len(feeds) == 1
+    assert feeds[0]["feed_type"] == "rss"
+    assert feeds[0]["url"] is not None
+
+
+def test_list_feeds_domain_favorites_returns_only_virtual_feeds(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """
+    S037: GET /api/feeds?domain=favorites returns only favorites (virtual) collections.
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    client.post("/api/feeds", json={"title": "RSS One", "url": "https://example.com/rss"})
+    client.post("/api/feeds/virtual", json={"name": "My Favorites"})
+
+    r = client.get("/api/feeds", params={"domain": "favorites"})
+    assert r.status_code == 200
+    feeds = r.json()
+    assert len(feeds) == 1
+    assert feeds[0]["feed_type"] == "virtual"
+    assert feeds[0]["url"] is None
+
+
+def test_list_feeds_no_domain_returns_all_backward_compatible(tmp_path: Path, monkeypatch) -> None:
+    """
+    S037: GET /api/feeds without domain param returns all feeds; normal RSS flow unchanged.
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    client.post("/api/feeds", json={"title": "RSS One", "url": "https://example.com/rss"})
+    client.post("/api/feeds/virtual", json={"name": "Favorites"})
+
+    r = client.get("/api/feeds")
+    assert r.status_code == 200
+    feeds = r.json()
+    assert len(feeds) == 2
+    types = {f["feed_type"] for f in feeds}
+    assert types == {"rss", "virtual"}
+
+
+def test_list_feeds_domain_invalid_returns_422(tmp_path: Path, monkeypatch) -> None:
+    """
+    S037: GET /api/feeds?domain=invalid returns 422 (validation error).
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    r = client.get("/api/feeds", params={"domain": "invalid"})
+    assert r.status_code == 422

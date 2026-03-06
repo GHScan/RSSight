@@ -3,9 +3,9 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 from http import HTTPStatus
-from typing import List
+from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -45,9 +45,20 @@ def get_article_service() -> ArticleService:
     )
 
 
+FeedListDomain = Literal["rss", "favorites"]
+
+
 @router.get("", response_model=List[FeedRead])
-def list_feeds(service: FeedService = Depends(get_feed_service)) -> List[FeedRead]:
-    return [FeedRead.model_validate(feed.model_dump()) for feed in service.list_feeds()]
+def list_feeds(
+    domain: Optional[FeedListDomain] = Query(None, description="Filter: rss or favorites"),
+    service: FeedService = Depends(get_feed_service),
+) -> List[FeedRead]:
+    feeds = service.list_feeds()
+    if domain == "rss":
+        feeds = [f for f in feeds if f.feed_type == "rss"]
+    elif domain == "favorites":
+        feeds = [f for f in feeds if f.feed_type == "virtual"]
+    return [FeedRead.model_validate(feed.model_dump()) for feed in feeds]
 
 
 @router.post("", response_model=FeedRead, status_code=HTTPStatus.CREATED)

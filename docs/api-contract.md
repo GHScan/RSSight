@@ -12,6 +12,7 @@ At the current stage of the project, the backend implements the **Health**, **Fe
 ## Feeds
 
 - `GET /api/feeds` — returns list of feeds; each item has `id`, `title`, `url` (null for virtual feeds), and `feed_type` (`"rss"` or `"virtual"`). Virtual feeds are collections (e.g. favorites) with no URL.
+  - Optional query: `?domain=rss` returns only RSS feeds; `?domain=favorites` returns only virtual (favorites) feeds. If `domain` is omitted, all feeds are returned (backward compatible). Invalid `domain` value returns 422.
 
 ### Feed list split (feed management)
 
