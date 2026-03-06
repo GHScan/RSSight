@@ -224,9 +224,22 @@ def _resolve_custom_article_payload(payload: CustomArticleCreate) -> tuple[str, 
             published_at = datetime.now(timezone.utc)
         return title, link, description, published_at
 
-    # URL path: after autofill, default any still-missing required fields so "only URL" works.
+    # URL path (S043): one-shot extraction already ran above. If title or description
+    # remain empty after extraction, reject creation; do not default.
+    missing_url: List[str] = []
     if not title:
-        title = link or "Untitled"
+        missing_url.append("title")
+    if not description:
+        missing_url.append("description")
+    if missing_url:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail={
+                "code": "MISSING_REQUIRED_FIELDS",
+                "message": "Title and content are required; URL extraction did not provide them.",
+                "details": {"missing": missing_url},
+            },
+        )
     if published_at is None:
         published_at = datetime.now(timezone.utc)
     return title, link, description, published_at

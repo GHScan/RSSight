@@ -401,8 +401,7 @@ def test_create_custom_article_url_autofill_failure_returns_400(
 def test_create_custom_article_url_autofill_incomplete_defaults_title_and_published(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """S029: After autofill when title or published_at still missing, backend
-    defaults them so only-URL submit succeeds."""
+    """S043: After autofill when title still missing, creation is rejected (no default)."""
     from datetime import datetime, timezone
 
     from app import main as app_main
@@ -434,10 +433,180 @@ def test_create_custom_article_url_autofill_incomplete_defaults_title_and_publis
             "published_at": None,
         },
     )
+    assert post_response.status_code == 400
+    body = post_response.json()
+    detail = body.get("detail")
+    assert isinstance(detail, dict)
+    assert detail.get("code") == "MISSING_REQUIRED_FIELDS"
+    assert "title" in (detail.get("details") or {}).get("missing", [])
+
+
+# --- S043: One-shot URL autofill and failure gating ---
+
+
+def test_create_custom_article_url_autofill_extraction_called_once_per_request(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S043: URL extraction runs at most once per create-attempt (one POST)."""
+    from datetime import datetime, timezone
+
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    call_count = 0
+
+    def mock_fetch(url: str):
+        nonlocal call_count
+        call_count += 1
+        return {
+            "title": "Fetched",
+            "description": "Desc",
+            "published_at": datetime(2025, 3, 5, 14, 0, 0, tzinfo=timezone.utc),
+        }
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch)
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "",
+            "link": "https://example.com/article",
+            "description": "",
+            "published_at": None,
+        },
+    )
+    assert call_count == 1
+
+
+def test_create_custom_article_url_autofill_empty_description_after_extraction_rejected(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S043: When extraction returns empty description, creation is rejected."""
+    from datetime import datetime, timezone
+
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+
+    def mock_fetch_no_description(url: str):
+        return {
+            "title": "Some Title",
+            "description": None,
+            "published_at": datetime(2025, 3, 5, 12, 0, 0, tzinfo=timezone.utc),
+        }
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch_no_description)
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "",
+            "link": "https://example.com/no-desc",
+            "description": "",
+            "published_at": None,
+        },
+    )
+    assert post_response.status_code == 400
+    body = post_response.json()
+    detail = body.get("detail")
+    assert isinstance(detail, dict)
+    assert detail.get("code") == "MISSING_REQUIRED_FIELDS"
+    assert "description" in (detail.get("details") or {}).get("missing", [])
+
+
+def test_create_custom_article_time_precedence_user_over_url(tmp_path: Path, monkeypatch) -> None:
+    """S043: Time source precedence - user input over URL extracted."""
+    from datetime import datetime, timezone
+
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+
+    def mock_fetch(url: str):
+        return {
+            "title": "T",
+            "description": "D",
+            "published_at": datetime(2026, 6, 15, 10, 0, 0, tzinfo=timezone.utc),
+        }
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch)
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "",
+            "link": "https://example.com/page",
+            "description": "",
+            "published_at": "2025-03-01T12:00:00Z",
+            "source": None,
+        },
+    )
     assert post_response.status_code == 201
     article = post_response.json()
-    assert article["title"] == "https://example.com/no-title"
-    assert "published" in article
+    assert "2025-03-01" in article["published"]
+    assert "2026-06" not in article["published"]
+
+
+def test_create_custom_article_time_precedence_url_over_default(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S043: Time source precedence - URL extracted when user did not provide."""
+    from datetime import datetime, timezone
+
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+
+    def mock_fetch(url: str):
+        return {
+            "title": "T",
+            "description": "D",
+            "published_at": datetime(2025, 4, 10, 8, 30, 0, tzinfo=timezone.utc),
+        }
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch)
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "",
+            "link": "https://example.com/page",
+            "description": "",
+            "published_at": None,
+            "source": None,
+        },
+    )
+    assert post_response.status_code == 201
+    article = post_response.json()
+    assert article["published"] == "2025-04-10T08:30:00+00:00"
 
 
 def test_create_custom_article_no_url_missing_title_returns_400(

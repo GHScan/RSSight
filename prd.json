@@ -99,7 +99,7 @@
         "Time source precedence is deterministic: user input > URL extracted > default now.",
         "Non-empty user-provided title/content are never overwritten."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S044",
