@@ -49,6 +49,7 @@ export function ArticleList() {
   const [addPublished, setAddPublished] = useState(() => toDatetimeLocal(new Date()));
   const [addSource, setAddSource] = useState("");
   const [createError, setCreateError] = useState<string | null>(null);
+  const [createSuccess, setCreateSuccess] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
   const loadFeed = useCallback(() => {
@@ -76,6 +77,12 @@ export function ArticleList() {
   useEffect(() => {
     loadFeed();
   }, [loadFeed]);
+
+  useEffect(() => {
+    if (!createSuccess) return;
+    const t = setTimeout(() => setCreateSuccess(null), 3000);
+    return () => clearTimeout(t);
+  }, [createSuccess]);
 
   const filteredArticles = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -134,6 +141,7 @@ export function ArticleList() {
               onClick={() => {
                 setShowAddForm((v) => !v);
                 setCreateError(null);
+                setCreateSuccess(null);
                 if (!showAddForm) {
                   setAddPublished(toDatetimeLocal(new Date()));
                 }
@@ -190,7 +198,9 @@ export function ArticleList() {
                   setAddContent("");
                   setAddSource("");
                   setAddPublished(toDatetimeLocal(new Date()));
+                  setCreateError(null);
                   setShowAddForm(false);
+                  setCreateSuccess("创建成功");
                   loadArticles();
                 } catch (err) {
                   setCreateError(err instanceof Error ? err.message : "创建失败");
@@ -286,6 +296,11 @@ export function ArticleList() {
               </div>
             </form>
           </section>
+        )}
+        {createSuccess && (
+          <p className="mb-4 px-4 py-2 rounded-lg bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30" role="status">
+            {createSuccess}
+          </p>
         )}
         {loading && <p className="text-muted-foreground">加载中…</p>}
       {error && (

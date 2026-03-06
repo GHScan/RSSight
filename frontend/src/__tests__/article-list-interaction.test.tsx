@@ -404,5 +404,91 @@ describe("Article list interaction (S010)", () => {
         expect(screen.getByText("My Custom")).toBeInTheDocument();
       });
     });
+
+    it("S030: URL-only one submit shows success and created article in list", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles)
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: "art1",
+            title: "Fetched Title",
+            link: "https://example.com/page",
+            published: "2025-03-05T14:00:00Z",
+          },
+        ]);
+      vi.mocked(api.createCustomArticle).mockResolvedValue({
+        id: "art1",
+        title: "Fetched Title",
+        link: "https://example.com/page",
+        published: "2025-03-05T14:00:00Z",
+      });
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await waitFor(() => {
+        expect(screen.getByLabelText(/链接 \(URL\)/i)).toBeInTheDocument();
+      });
+      await userEvent.type(screen.getByLabelText(/链接 \(URL\)/i), "https://example.com/page");
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(api.createCustomArticle).toHaveBeenCalledWith("vf1", expect.objectContaining({
+          link: "https://example.com/page",
+        }));
+      });
+      await waitFor(() => {
+        expect(screen.getByText("创建成功")).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByText("Fetched Title")).toBeInTheDocument();
+      });
+    });
+
+    it("S030: create failure shows API error message in form", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([]);
+      vi.mocked(api.createCustomArticle).mockRejectedValue(
+        new Error("400 Bad Request: Could not fetch or parse URL for autofill."),
+      );
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await waitFor(() => {
+        expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
+      });
+      await userEvent.type(screen.getByLabelText(/链接 \(URL\)/i), "https://bad.example/");
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(screen.getByRole("alert")).toHaveTextContent(/autofill|创建失败/i);
+      });
+    });
   });
 });

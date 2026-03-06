@@ -48,10 +48,17 @@ export interface SummaryProfile {
   last_used_at?: string | null;
 }
 
+/** FastAPI HTTPException returns detail as object with code/message/details. */
+export interface ApiErrorDetail {
+  code?: string;
+  message?: string;
+  details?: unknown;
+}
+
 export interface ApiError {
   code?: string;
   message?: string;
-  /** Server-side traceback or extra debug info when WEBRSS_DEBUG=1 */
-  detail?: string;
+  /** Server-side: string (validation) or object (HTTPException detail). */
+  detail?: string | ApiErrorDetail;
   details?: unknown;
 }

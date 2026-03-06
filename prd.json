@@ -370,7 +370,7 @@
         "UI shows clear success/failure feedback for URL-based creation attempts.",
         "Created custom article appears in virtual feed article list after creation."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S031",

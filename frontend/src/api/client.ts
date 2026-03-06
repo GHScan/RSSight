@@ -2,18 +2,23 @@
  * API client for backend REST API. Kept separate from UI for testability.
  */
 
-import type { Feed, Article, SummaryProfile, ApiError, CustomArticleCreatePayload } from "./types";
+import type { Feed, Article, SummaryProfile, ApiError, ApiErrorDetail, CustomArticleCreatePayload } from "./types";
 
 const BASE = "/api";
 
 function buildErrorMessage(status: number, statusText: string, body: ApiError): string {
   const parts: string[] = [`${status} ${statusText}`];
-  const msg = body?.message ?? "";
+  let msg = body?.message ?? "";
+  const detail = body?.detail;
+  if (typeof detail === "object" && detail !== null && "message" in detail) {
+    const obj = detail as ApiErrorDetail;
+    if (obj.message) msg = obj.message;
+  }
   if (msg) parts.push(msg);
   if (!msg && (status === 502 || status === 503))
     parts.push("后端未启动或无法连接，请确认已运行 scripts\\start.cmd 或后端在 127.0.0.1:8000 可访问");
-  const detail = typeof body?.detail === "string" ? body.detail.trim() : "";
-  if (detail) parts.push("\n" + detail);
+  const detailStr = typeof detail === "string" ? detail.trim() : "";
+  if (detailStr) parts.push("\n" + detailStr);
   return parts.join(": ");
 }
 
