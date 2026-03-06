@@ -23,13 +23,14 @@ def safe_get(obj: dict, *keys: str, default: str = ""):
 
 def main() -> int:
     if len(sys.argv) < 2:
-        prompt = "完成一个 prd.json 的 story 并提交"
+        prompt = "Complete one story from prd.json and commit"
     else:
         prompt = sys.argv[1]
 
-    print("🚀 开始流式处理...", flush=True)
+    print("Streaming...", flush=True)
 
     char_count = 0
+    segment_text = ""  # already printed in current assistant segment (for dedup)
     tool_count = 0
     start_time = time.time()
 
@@ -72,7 +73,7 @@ def main() -> int:
 
         if event_type == "system" and subtype == "init":
             model = data.get("model") or "unknown"
-            print(f"🤖 使用模型: {model}", flush=True)
+            print(f"Model: {model}", flush=True)
 
         elif event_type == "assistant":
             content_list = (data.get("message") or {}).get("content") or []
@@ -82,13 +83,24 @@ def main() -> int:
                 text = ""
             if last_line_inline:
                 print(flush=True)
-            if char_count == 0 and text.strip():
-                print("📝 ", end="", flush=True)
-            char_count += len(text)
-            print(text, end="", flush=True)
+            # Dedup: stream may send deltas then same content again (cumulative)
+            if text == segment_text:
+                continue
+            if segment_text and text.startswith(segment_text):
+                to_print = text[len(segment_text) :]
+                segment_text = text
+            else:
+                to_print = text
+                segment_text += text
+            char_count += len(to_print)
+            if char_count == len(to_print) and to_print.strip():
+                print(">> ", end="", flush=True)
+            if to_print:
+                print(to_print, end="", flush=True)
             last_line_inline = True
 
         elif event_type == "tool_call":
+            segment_text = ""
             tc = data.get("tool_call") or {}
             if subtype == "started":
                 tool_count += 1
@@ -97,36 +109,37 @@ def main() -> int:
                     last_line_inline = False
                 if "writeToolCall" in tc:
                     path = safe_get(tc, "writeToolCall", "args", "path") or "unknown"
-                    print(f"🔧 工具 #{tool_count}: 创建 {path}", flush=True)
+                    print(f"Tool #{tool_count}: write {path}", flush=True)
                 elif "readToolCall" in tc:
                     path = safe_get(tc, "readToolCall", "args", "path") or "unknown"
-                    print(f"📖 工具 #{tool_count}: 读取 {path}", flush=True)
+                    print(f"Tool #{tool_count}: read {path}", flush=True)
                 else:
-                    print(f"🔧 工具 #{tool_count}: 调用", flush=True)
+                    print(f"Tool #{tool_count}: call", flush=True)
             elif subtype == "completed":
                 if "writeToolCall" in tc:
                     res = (tc.get("writeToolCall") or {}).get("result") or {}
                     succ = res.get("success") or {}
                     lines = succ.get("linesCreated", 0)
                     size = succ.get("fileSize", 0)
-                    print(f"   ✅ 已创建 {lines} 行 ({size} 字节)", flush=True)
+                    print(f"   done: {lines} lines ({size} bytes)", flush=True)
                 elif "readToolCall" in tc:
                     res = (tc.get("readToolCall") or {}).get("result") or {}
                     succ = res.get("success") or {}
                     lines = succ.get("totalLines", 0)
-                    print(f"   ✅ 已读取 {lines} 行", flush=True)
+                    print(f"   done: {lines} lines read", flush=True)
 
         elif event_type == "result":
+            segment_text = ""
             if last_line_inline:
                 print(flush=True)
             duration_ms = data.get("duration_ms") or 0
             total_sec = int(time.time() - start_time)
             print(
-                f"\n🎯 完成, 耗时 {duration_ms}ms (总计 {total_sec}s)",
+                f"\nDone in {duration_ms}ms (total {total_sec}s)",
                 flush=True,
             )
             print(
-                f"📊 最终统计: {tool_count} 个工具, 生成 {char_count} 字符",
+                f"Stats: {tool_count} tools, {char_count} chars",
                 flush=True,
             )
 
