@@ -141,3 +141,21 @@ def test_create_virtual_feed_persists_and_list_returns_it(tmp_path: Path) -> Non
 
     got = service.get_feed(created.id)
     assert got.feed_type == "virtual" and got.url is None
+
+
+def test_delete_virtual_feed_removes_directory(tmp_path: Path) -> None:
+    """
+    S034: Deleting a virtual feed via FeedService removes its directory subtree
+    and removes it from list_feeds.
+    """
+    service = FeedService(tmp_path)
+    created = service.create_virtual_feed("To Delete")
+    feed_id = created.id
+    feed_dir = tmp_path / "feeds" / feed_id
+    assert feed_dir.exists() and feed_dir.is_dir()
+
+    service.delete_feed(feed_id)
+
+    assert not feed_dir.exists()
+    listed = service.list_feeds()
+    assert len(listed) == 0

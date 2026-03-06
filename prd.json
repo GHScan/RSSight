@@ -418,7 +418,7 @@
         "Tests cover URL-branch autofill success and failure/incomplete-field scenarios.",
         "Tests cover no-URL mandatory validation and two-step default-fill/confirm behavior."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S035",

@@ -543,6 +543,35 @@ def test_create_custom_article_no_url_title_and_content_success(
     assert articles[0]["title"] == "No URL Article"
 
 
+def test_create_custom_article_no_url_with_provided_published_at_success(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S034: No-URL two-step confirm - backend accepts default-filled published_at."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "Second Click Article",
+            "link": "",
+            "description": "Content after default fill.",
+            "published_at": "2025-03-07T10:30:00Z",
+        },
+    )
+    assert post_response.status_code == 201
+    created = post_response.json()
+    assert created["title"] == "Second Click Article"
+    assert "2025-03-07" in created["published"]
+    assert created["id"]
+
+
 def test_virtual_feed_articles_list_returns_empty(tmp_path: Path, monkeypatch) -> None:
     """
     S026: GET /api/feeds/{feedId}/articles for a virtual feed returns 200 and empty list.
