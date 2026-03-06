@@ -15,7 +15,7 @@ if "%BACKEND_PORT%"=="" set "BACKEND_PORT=8000"
 set "FRONTEND_PORT=%~2"
 if "%FRONTEND_PORT%"=="" set "FRONTEND_PORT=5173"
 
-echo Starting WebRSSReader backend and frontend (bound to all interfaces, LAN accessible)...
+echo Starting RSSight backend and frontend (bound to all interfaces, LAN accessible)...
 echo Backend:  http://0.0.0.0:%BACKEND_PORT%  (e.g. http://YOUR_IP:%BACKEND_PORT%)
 echo Frontend: http://0.0.0.0:%FRONTEND_PORT% (e.g. http://YOUR_IP:%FRONTEND_PORT%)
 echo.
@@ -30,8 +30,8 @@ if exist "%ROOT%\backend\.venv\Scripts\activate.bat" (
   set "BACKEND_CMD=cd /d ""%ROOT%\backend"" && set WEBRSS_DEBUG=1 && python -m uvicorn app.main:app --reload --host 0.0.0.0 --port %BACKEND_PORT%"
 )
 
-start "WebRSSReader Backend" cmd /k "%BACKEND_CMD%"
-start "WebRSSReader Frontend" cmd /k "set BACKEND_PORT=%BACKEND_PORT% && set FRONTEND_PORT=%FRONTEND_PORT% && cd /d ""%ROOT%\frontend"" && npm run dev -- --port %FRONTEND_PORT% --host"
+start "RSSight Backend" cmd /k "%BACKEND_CMD%"
+start "RSSight Frontend" cmd /k "set BACKEND_PORT=%BACKEND_PORT% && set FRONTEND_PORT=%FRONTEND_PORT% && cd /d ""%ROOT%\frontend"" && npm run dev -- --port %FRONTEND_PORT% --host"
 
 echo Both processes started. Open http://localhost:%FRONTEND_PORT% (or http://YOUR_IP:%FRONTEND_PORT% from other devices) in your browser.
 exit /b 0

@@ -1,6 +1,6 @@
 # Frontend styling (Tailwind)
 
-This document describes the Tailwind-based styling foundation for the WebRSSReader frontend.
+This document describes the Tailwind-based styling foundation for the RSSight frontend.
 
 ## Tailwind configuration
 

@@ -266,7 +266,7 @@ def _fetch_article_text(link: str) -> str | None:
     Prefers content inside <article> or <main> to avoid nav/header/footer.
     """
     try:
-        req = Request(link, headers={"User-Agent": "WebRSSReader/1.0"})
+        req = Request(link, headers={"User-Agent": "RSSight/1.0"})
         with urlopen(req, timeout=15) as resp:
             raw = resp.read()
         charset = resp.headers.get_content_charset() or "utf-8"

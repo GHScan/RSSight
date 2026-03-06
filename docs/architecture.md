@@ -1,6 +1,6 @@
 # Architecture overview
 
-This document describes the target architecture and boundaries of WebRSSReader, so that future feature iterations follow a consistent design.
+This document describes the target architecture and boundaries of RSSight, so that future feature iterations follow a consistent design.
 
 ## Layers
 

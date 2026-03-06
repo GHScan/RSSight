@@ -68,7 +68,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
     scheduler.stop()
 
 
-app = FastAPI(title="WebRSSReader API", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="RSSight API", version="0.1.0", lifespan=lifespan)
 
 _LOG = logging.getLogger(__name__)
 

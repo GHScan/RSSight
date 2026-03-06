@@ -158,9 +158,6 @@ export function SummaryProfiles() {
       {!loading && !error && (
         <>
           <div className="flex flex-wrap gap-2 mb-6">
-            <button type="button" onClick={loadProfiles} aria-label="刷新" className={btnSecondary}>
-              刷新
-            </button>
             <button
               type="button"
               onClick={() => setShowAddForm(!showAddForm)}
@@ -168,6 +165,9 @@ export function SummaryProfiles() {
               className={btnPrimary}
             >
               添加
+            </button>
+            <button type="button" onClick={loadProfiles} aria-label="刷新" className={btnSecondary}>
+              刷新
             </button>
           </div>
           {showAddForm && (

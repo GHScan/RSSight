@@ -1,1 +1,1 @@
-"""WebRSSReader backend package."""
+"""RSSight backend package."""

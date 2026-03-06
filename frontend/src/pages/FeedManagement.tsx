@@ -13,6 +13,7 @@ export function FeedManagement() {
   const [addUrl, setAddUrl] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteFeed, setConfirmDeleteFeed] = useState<{ id: string; title: string } | null>(null);
 
   const loadFeeds = useCallback(() => {
     setLoading(true);
@@ -52,12 +53,14 @@ export function FeedManagement() {
     }
   };
 
-  const handleDelete = async (feedId: string, title: string) => {
-    if (!window.confirm(`确认删除订阅「${title}」？`)) return;
-    setDeletingId(feedId);
+  const confirmDelete = (id: string, title: string) => setConfirmDeleteFeed({ id, title });
+  const handleDeleteConfirm = async () => {
+    if (!confirmDeleteFeed) return;
+    setDeletingId(confirmDeleteFeed.id);
     setError(null);
     try {
-      await api.deleteFeed(feedId);
+      await api.deleteFeed(confirmDeleteFeed.id);
+      setConfirmDeleteFeed(null);
       loadFeeds();
     } catch (e) {
       setError(e instanceof Error ? e.message : "删除失败");
@@ -164,7 +167,7 @@ export function FeedManagement() {
                 <div className="flex gap-2 shrink-0">
                   <button
                     type="button"
-                    onClick={() => handleDelete(f.id, f.title)}
+                    onClick={() => confirmDelete(f.id, f.title)}
                     disabled={deletingId === f.id}
                     aria-label={`删除 ${f.title}`}
                     className={`${btnBase} bg-destructive text-destructive-foreground hover:opacity-90 disabled:opacity-50`}
@@ -178,6 +181,17 @@ export function FeedManagement() {
         </ul>
       )}
       </div>
+      {confirmDeleteFeed && (
+        <div role="dialog" aria-modal="true" aria-labelledby="delete-feed-title" className="fixed inset-0 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full shadow-lg">
+            <p id="delete-feed-title" className="text-foreground mb-4">确认删除该订阅？</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={handleDeleteConfirm} className={btnPrimary}>确认</button>
+              <button type="button" onClick={() => setConfirmDeleteFeed(null)} className={btnSecondary}>取消</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

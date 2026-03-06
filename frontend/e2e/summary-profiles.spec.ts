@@ -114,7 +114,7 @@ test.describe("Summary profile E2E (S015)", () => {
     await page.goto("/profiles");
     await expect(page.getByRole("heading", { name: /摘要配置/ })).toBeVisible();
     await page.getByRole("link", { name: /首页/ }).click();
-    await expect(page.getByRole("heading", { name: /智能 RSS 阅读器/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /RSSight/ })).toBeVisible();
     await page.getByRole("link", { name: /摘要配置/ }).click();
     await expect(page.getByRole("heading", { name: /摘要配置/ })).toBeVisible();
     await expect(page.getByText("p1")).toBeVisible();

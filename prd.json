@@ -1,5 +1,5 @@
 {
-  "project": "WebRSSReader",
+  "project": "RSSight",
   "branchName": "feature/ai-rss-reader",
   "version": 1,
   "notes": "Windows + OpenCode + Ralph method (no upstream bash script). One iteration handles one story.",

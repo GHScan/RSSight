@@ -1,6 +1,6 @@
 # AGENTS
 
-Operational handbook for all coding agents working in WebRSSReader.
+Operational handbook for all coding agents working in RSSight.
 All rules in this file are mandatory unless explicitly overridden by the user.
 
 ## 1) Source of truth and DRY

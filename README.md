@@ -1,6 +1,6 @@
-# WebRSSReader
+# RSSight
 
-WebRSSReader is a Windows-oriented web service for RSS reading and AI summary generation.
+RSSight is a Windows-oriented web service for RSS reading and AI summary generation.
 It provides a browser UI to manage feeds, browse articles, configure summary profiles, and generate Markdown summaries.
 
 ## What you can do
