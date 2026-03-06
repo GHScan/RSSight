@@ -431,7 +431,7 @@
         "Automation covers no-URL two-step flow (first-click fill, second-click confirm) and regression of existing RSS feed interactions.",
         "Existing normal RSS feed flow remains backward compatible and unaffected."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
