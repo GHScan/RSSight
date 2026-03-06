@@ -29,7 +29,7 @@ def main() -> int:
 
     print("🚀 开始流式处理...", flush=True)
 
-    accumulated_text = ""
+    char_count = 0
     tool_count = 0
     start_time = time.time()
 
@@ -80,10 +80,12 @@ def main() -> int:
                 text = content_list[0].get("text") or ""
             else:
                 text = ""
-            accumulated_text += text
             if last_line_inline:
                 print(flush=True)
-            print(f"\r📝 生成中: {len(accumulated_text)} 字符", end="", flush=True)
+            if char_count == 0 and text.strip():
+                print("📝 ", end="", flush=True)
+            char_count += len(text)
+            print(text, end="", flush=True)
             last_line_inline = True
 
         elif event_type == "tool_call":
@@ -124,7 +126,7 @@ def main() -> int:
                 flush=True,
             )
             print(
-                f"📊 最终统计: {tool_count} 个工具, 生成 {len(accumulated_text)} 字符",
+                f"📊 最终统计: {tool_count} 个工具, 生成 {char_count} 字符",
                 flush=True,
             )
 
