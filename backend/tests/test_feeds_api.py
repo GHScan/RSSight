@@ -445,6 +445,104 @@ def test_create_custom_article_url_autofill_incomplete_required_returns_400(
         assert "required" in str(detail).lower() or "title" in str(detail).lower()
 
 
+def test_create_custom_article_no_url_missing_title_returns_400(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S031: No-URL path with missing title returns 400 and explicit validation message."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "",
+            "link": "",
+            "description": "Some content here",
+            "published_at": None,
+        },
+    )
+    assert post_response.status_code == 400
+    body = post_response.json()
+    detail = body.get("detail")
+    assert isinstance(detail, dict)
+    assert detail.get("code") == "MISSING_REQUIRED_FIELDS"
+    msg = (detail.get("message") or "").lower()
+    assert "title" in msg or "content" in msg
+    missing = detail.get("details", {}).get("missing", [])
+    assert "title" in missing
+
+
+def test_create_custom_article_no_url_missing_description_returns_400(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S031: No-URL path missing content/description returns 400 and explicit validation."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "My Title",
+            "link": "",
+            "description": "",
+            "published_at": None,
+        },
+    )
+    assert post_response.status_code == 400
+    body = post_response.json()
+    detail = body.get("detail")
+    assert isinstance(detail, dict)
+    assert detail.get("code") == "MISSING_REQUIRED_FIELDS"
+    missing = detail.get("details", {}).get("missing", [])
+    assert "description" in missing
+
+
+def test_create_custom_article_no_url_title_and_content_success(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S031: No-URL path with title and content creates article (published_at defaulted)."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "No URL Article",
+            "link": "",
+            "description": "Article body content",
+            "published_at": None,
+        },
+    )
+    assert post_response.status_code == 201
+    created = post_response.json()
+    assert created["title"] == "No URL Article"
+    assert created["link"] == ""
+    assert created["id"]
+    list_response = client.get(f"/api/feeds/{feed_id}/articles")
+    assert list_response.status_code == 200
+    articles = list_response.json()
+    assert len(articles) == 1
+    assert articles[0]["title"] == "No URL Article"
+
+
 def test_virtual_feed_articles_list_returns_empty(tmp_path: Path, monkeypatch) -> None:
     """
     S026: GET /api/feeds/{feedId}/articles for a virtual feed returns 200 and empty list.

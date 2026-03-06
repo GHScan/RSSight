@@ -382,7 +382,7 @@
         "Missing title or content blocks creation and returns explicit validation messages.",
         "Validation behavior is consistent across backend API and frontend form feedback."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S032",

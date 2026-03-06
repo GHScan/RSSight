@@ -182,8 +182,18 @@ export function ArticleList() {
               onSubmit={async (e) => {
                 e.preventDefault();
                 if (!feedId) return;
-                setCreating(true);
                 setCreateError(null);
+                // S031: No-URL path requires title and content (mandatory validation).
+                const urlTrimmed = addUrl.trim();
+                if (!urlTrimmed) {
+                  const titleOk = addTitle.trim().length > 0;
+                  const contentOk = addContent.trim().length > 0;
+                  if (!titleOk || !contentOk) {
+                    setCreateError("不填链接时，标题和内容为必填项。");
+                    return;
+                  }
+                }
+                setCreating(true);
                 const publishedAt = addPublished ? new Date(addPublished).toISOString() : new Date().toISOString();
                 try {
                   await api.createCustomArticle(feedId, {

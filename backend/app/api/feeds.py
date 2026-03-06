@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from http import HTTPStatus
 from typing import List
 
@@ -165,7 +165,9 @@ def _resolve_custom_article_payload(payload: CustomArticleCreate) -> tuple[str, 
     """
     Resolve title, link, description, published_at from payload; when link is provided
     and fields are missing, run URL autofill and merge (S029). Never overwrite user values.
-    Returns (title, link, description, published_at). Raises HTTPException on failure.
+    No-URL path (S031): title and description (content) are mandatory; published_at
+    defaults to now when absent. Returns (title, link, description, published_at).
+    Raises HTTPException on failure.
     """
     link = (payload.link or "").strip()
     title = (payload.title or "").strip()
@@ -191,6 +193,27 @@ def _resolve_custom_article_payload(payload: CustomArticleCreate) -> tuple[str, 
         if published_at is None and parsed.get("published_at"):
             published_at = parsed["published_at"]
 
+    # No-URL path (S031): title and content (description) are mandatory.
+    if not link:
+        missing_no_url: List[str] = []
+        if not title:
+            missing_no_url.append("title")
+        if not description:
+            missing_no_url.append("description")
+        if missing_no_url:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail={
+                    "code": "MISSING_REQUIRED_FIELDS",
+                    "message": "Title and content are required when URL is not provided.",
+                    "details": {"missing": missing_no_url},
+                },
+            )
+        if published_at is None:
+            published_at = datetime.now(timezone.utc)
+        return title, link, description, published_at
+
+    # URL path: require title and published_at after autofill.
     if not title or published_at is None:
         missing: List[str] = []
         if not title:

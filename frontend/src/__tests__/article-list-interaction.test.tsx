@@ -490,5 +490,71 @@ describe("Article list interaction (S010)", () => {
         expect(screen.getByRole("alert")).toHaveTextContent(/autofill|创建失败/i);
       });
     });
+
+    it("S031: no-URL submit with missing title shows validation message and does not call API", async () => {
+      vi.mocked(api.createCustomArticle).mockClear();
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([]);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await waitFor(() => {
+        expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
+      });
+      // Leave URL empty, leave title empty, fill content only
+      await userEvent.type(screen.getByLabelText(/内容/i), "Some content");
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(screen.getByRole("alert")).toHaveTextContent(/标题和内容为必填项|必填/i);
+      });
+      expect(api.createCustomArticle).not.toHaveBeenCalled();
+    });
+
+    it("S031: no-URL submit with missing content shows validation message and does not call API", async () => {
+      vi.mocked(api.createCustomArticle).mockClear();
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([]);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await waitFor(() => {
+        expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
+      });
+      // Leave URL empty, fill title, leave content empty
+      await userEvent.type(screen.getByLabelText(/标题/i), "My Title");
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(screen.getByRole("alert")).toHaveTextContent(/标题和内容为必填项|必填/i);
+      });
+      expect(api.createCustomArticle).not.toHaveBeenCalled();
+    });
   });
 });
