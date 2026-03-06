@@ -182,6 +182,91 @@ def test_delete_virtual_feed_removes_directory(tmp_path: Path, monkeypatch) -> N
     assert not feed_dir.exists()
 
 
+def test_get_feed_returns_single_feed(tmp_path: Path, monkeypatch) -> None:
+    """S028: GET /api/feeds/{feed_id} returns the feed; 404 when not found."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "My Favorites"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    get_response = client.get(f"/api/feeds/{feed_id}")
+    assert get_response.status_code == 200
+    feed = get_response.json()
+    assert feed["id"] == feed_id
+    assert feed["title"] == "My Favorites"
+    assert feed["url"] is None
+    assert feed["feed_type"] == "virtual"
+
+    not_found = client.get("/api/feeds/nonexistent-id")
+    assert not_found.status_code == 404
+
+
+def test_create_custom_article_via_api(tmp_path: Path, monkeypatch) -> None:
+    """S028: POST /api/feeds/{feed_id}/articles creates custom article for virtual feed."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "My Favorites"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "Custom Title",
+            "link": "https://example.com/custom",
+            "description": "Custom content",
+            "published_at": "2025-03-01T12:00:00Z",
+            "source": "Manual",
+        },
+    )
+    assert post_response.status_code == 201
+    article = post_response.json()
+    assert article["title"] == "Custom Title"
+    assert article["link"] == "https://example.com/custom"
+    assert article["published"] == "2025-03-01T12:00:00+00:00"
+    assert article["source"] == "Manual"
+    assert "id" in article and len(article["id"]) > 0
+
+    list_response = client.get(f"/api/feeds/{feed_id}/articles")
+    assert list_response.status_code == 200
+    articles = list_response.json()
+    assert len(articles) == 1
+    assert articles[0]["title"] == "Custom Title"
+
+
+def test_create_custom_article_rejects_rss_feed(tmp_path: Path, monkeypatch) -> None:
+    """S028: POST /api/feeds/{feed_id}/articles returns 400 for non-virtual feed."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_response = client.post(
+        "/api/feeds",
+        json={"title": "RSS Feed", "url": "https://example.com/rss"},
+    )
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "Custom",
+            "link": "",
+            "description": "",
+            "published_at": "2025-03-01T12:00:00Z",
+        },
+    )
+    assert post_response.status_code == 400
+
+
 def test_virtual_feed_articles_list_returns_empty(tmp_path: Path, monkeypatch) -> None:
     """
     S026: GET /api/feeds/{feedId}/articles for a virtual feed returns 200 and empty list.

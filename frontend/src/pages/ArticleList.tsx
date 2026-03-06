@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { BackLink } from "../components/BackLink";
-import type { Article } from "../api/types";
+import type { Article, Feed } from "../api/types";
 import { api } from "../api/client";
+
+/** Format local date for datetime-local input (YYYY-MM-DDTHH:mm). */
+function toDatetimeLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
 
 /** Format ISO date as year-month for display (e.g. 2026年3月). */
 function formatYearMonth(published: string): string {
@@ -31,10 +37,24 @@ function getDateWrapClass(published: string): string {
 
 export function ArticleList() {
   const { feedId } = useParams<{ feedId: string }>();
+  const [feed, setFeed] = useState<Feed | null>(null);
   const [articles, setArticles] = useState<Article[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addUrl, setAddUrl] = useState("");
+  const [addTitle, setAddTitle] = useState("");
+  const [addContent, setAddContent] = useState("");
+  const [addPublished, setAddPublished] = useState(() => toDatetimeLocal(new Date()));
+  const [addSource, setAddSource] = useState("");
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const loadFeed = useCallback(() => {
+    if (!feedId) return;
+    api.getFeed(feedId).then(setFeed).catch(() => setFeed(null));
+  }, [feedId]);
 
   const loadArticles = useCallback(() => {
     if (!feedId) return;
@@ -52,6 +72,10 @@ export function ArticleList() {
   useEffect(() => {
     loadArticles();
   }, [loadArticles]);
+
+  useEffect(() => {
+    loadFeed();
+  }, [loadFeed]);
 
   const filteredArticles = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -104,6 +128,23 @@ export function ArticleList() {
           >
             刷新
           </button>
+          {feed?.feed_type === "virtual" && (
+            <button
+              type="button"
+              onClick={() => {
+                setShowAddForm((v) => !v);
+                setCreateError(null);
+                if (!showAddForm) {
+                  setAddPublished(toDatetimeLocal(new Date()));
+                }
+              }}
+              aria-label="添加自定义文章"
+              data-testid="add-custom-article-toggle"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              添加自定义文章
+            </button>
+          )}
           {!loading && !error && articles.length > 0 && (
             <>
               <label htmlFor="article-search" className="sr-only">
@@ -121,6 +162,131 @@ export function ArticleList() {
             </>
           )}
         </div>
+        {feed?.feed_type === "virtual" && showAddForm && (
+          <section className="mb-4 p-4 rounded-lg border border-border bg-muted/30" aria-label="添加自定义文章表单">
+            <h2 className="text-lg font-medium text-foreground mb-3">添加自定义文章</h2>
+            {createError && (
+              <p className="text-destructive text-sm mb-3" role="alert">
+                {createError}
+              </p>
+            )}
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!feedId) return;
+                setCreating(true);
+                setCreateError(null);
+                const publishedAt = addPublished ? new Date(addPublished).toISOString() : new Date().toISOString();
+                try {
+                  await api.createCustomArticle(feedId, {
+                    title: addTitle,
+                    link: addUrl,
+                    description: addContent,
+                    published_at: publishedAt,
+                    source: addSource.trim() || undefined,
+                  });
+                  setAddUrl("");
+                  setAddTitle("");
+                  setAddContent("");
+                  setAddSource("");
+                  setAddPublished(toDatetimeLocal(new Date()));
+                  setShowAddForm(false);
+                  loadArticles();
+                } catch (err) {
+                  setCreateError(err instanceof Error ? err.message : "创建失败");
+                } finally {
+                  setCreating(false);
+                }
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label htmlFor="custom-article-url" className="block text-sm font-medium text-foreground mb-1">
+                  链接 (URL)
+                </label>
+                <input
+                  id="custom-article-url"
+                  type="url"
+                  value={addUrl}
+                  onChange={(e) => setAddUrl(e.target.value)}
+                  placeholder="https://..."
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label htmlFor="custom-article-title" className="block text-sm font-medium text-foreground mb-1">
+                  标题
+                </label>
+                <input
+                  id="custom-article-title"
+                  type="text"
+                  value={addTitle}
+                  onChange={(e) => setAddTitle(e.target.value)}
+                  placeholder="文章标题"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label htmlFor="custom-article-content" className="block text-sm font-medium text-foreground mb-1">
+                  内容
+                </label>
+                <textarea
+                  id="custom-article-content"
+                  value={addContent}
+                  onChange={(e) => setAddContent(e.target.value)}
+                  placeholder="文章内容或摘要"
+                  rows={3}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+                />
+              </div>
+              <div>
+                <label htmlFor="custom-article-published" className="block text-sm font-medium text-foreground mb-1">
+                  发布时间
+                </label>
+                <input
+                  id="custom-article-published"
+                  type="datetime-local"
+                  value={addPublished}
+                  onChange={(e) => setAddPublished(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div>
+                <label htmlFor="custom-article-source" className="block text-sm font-medium text-foreground mb-1">
+                  来源（可选）
+                </label>
+                <input
+                  id="custom-article-source"
+                  type="text"
+                  value={addSource}
+                  onChange={(e) => setAddSource(e.target.value)}
+                  placeholder="来源说明"
+                  className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  disabled={creating}
+                  data-testid="custom-article-submit"
+                  className="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  {creating ? "提交中…" : "提交"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddForm(false);
+                    setCreateError(null);
+                  }}
+                  className="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                >
+                  取消
+                </button>
+              </div>
+            </form>
+          </section>
+        )}
         {loading && <p className="text-muted-foreground">加载中…</p>}
       {error && (
         <p className="text-destructive whitespace-pre-wrap mb-4" role="alert">

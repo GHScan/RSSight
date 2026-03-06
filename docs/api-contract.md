@@ -12,6 +12,7 @@ At the current stage of the project, the backend implements the **Health**, **Fe
 ## Feeds
 
 - `GET /api/feeds` — returns list of feeds; each item has `id`, `title`, `url` (null for virtual feeds), and `feed_type` (`"rss"` or `"virtual"`). Virtual feeds are collections (e.g. favorites) with no URL.
+- `GET /api/feeds/{feedId}` — returns a single feed by id; 404 if not found.
 - `POST /api/feeds` — create RSS feed (body: `title`, `url`).
 - `POST /api/feeds/virtual` — create virtual feed (body: `name`). Persists with empty URL and `feed_type: "virtual"`. Deleting a virtual feed removes its directory subtree like RSS feeds.
 - `PUT /api/feeds/{feedId}`
@@ -20,6 +21,7 @@ At the current stage of the project, the backend implements the **Health**, **Fe
 ## Articles
 
 - `GET /api/feeds/{feedId}/articles` — returns list with `id`, `title`, `link`, `published`, optional `title_trans`, `favorite`, `favorited_at`, and optional `source` (custom-article source metadata). Sort order: recently favorited first, then by published desc. Custom articles under virtual feeds use the same storage path and appear in this list.
+- `POST /api/feeds/{feedId}/articles` — create a custom article under a virtual feed (body: `title`, `link` optional, `description` optional, `published_at` ISO, `source` optional). Returns 201 with created article; 400 if feed is not virtual, 404 if feed not found.
 - `PUT /api/feeds/{feedId}/articles/{articleId}/favorite` — body `{ "favorite": true | false }`; sets/clears favorite marker file in article folder.
 - `POST /api/feeds/{feedId}/refresh` (manually trigger a fetch)
 

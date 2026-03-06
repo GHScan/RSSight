@@ -34,3 +34,13 @@ class ArticleRead(BaseModel):
     favorite: bool = False
     favorited_at: str | None = None  # ISO datetime when favorited, for sort/display
     source: str | None = None  # Optional; custom article source metadata
+
+
+class CustomArticleCreate(BaseModel):
+    """Payload for creating a custom article under a virtual feed (S027/S028)."""
+
+    title: str
+    link: str = ""
+    description: str = ""
+    published_at: datetime
+    source: str | None = None

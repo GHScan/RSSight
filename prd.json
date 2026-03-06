@@ -346,7 +346,7 @@
         "Create form supports editing URL/title/content/publish time/source metadata with partial empty fields allowed before submit.",
         "Form submission invokes backend create API and keeps user-entered values unchanged before rule-based fill stage."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S029",

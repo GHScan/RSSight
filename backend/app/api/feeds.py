@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from app.models.articles import ArticleRead
+from app.models.articles import ArticleRead, CustomArticleCreate
 from app.models.feeds import FeedCreate, FeedRead, FeedUpdate, VirtualFeedCreate
 from app.services.articles import ArticleNotFoundError, ArticleService
 from app.services.feeds import FeedNotFoundError, FeedService
@@ -102,6 +102,26 @@ def delete_feed(feed_id: str, service: FeedService = Depends(get_feed_service)) 
         ) from exc
 
 
+@router.get("/{feed_id}", response_model=FeedRead)
+def get_feed(
+    feed_id: str,
+    service: FeedService = Depends(get_feed_service),
+) -> FeedRead:
+    """Return a single feed by id; 404 if not found."""
+    try:
+        feed = service.get_feed(feed_id)
+    except FeedNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "FEED_NOT_FOUND",
+                "message": "Feed not found.",
+                "details": {"feedId": exc.feed_id},
+            },
+        ) from exc
+    return FeedRead.model_validate(feed.model_dump())
+
+
 @router.get("/{feed_id}/articles", response_model=List[ArticleRead])
 def list_articles(
     feed_id: str,
@@ -137,6 +157,55 @@ def list_articles(
         )
         for a, favorited_at in pairs
     ]
+
+
+@router.post("/{feed_id}/articles", response_model=ArticleRead, status_code=HTTPStatus.CREATED)
+def create_custom_article(
+    feed_id: str,
+    payload: CustomArticleCreate,
+    feed_service: FeedService = Depends(get_feed_service),
+    article_service: ArticleService = Depends(get_article_service),
+) -> ArticleRead:
+    """Create a custom article under a virtual feed (S027/S028). 400 if not virtual."""
+    try:
+        feed_service.get_feed(feed_id)
+    except FeedNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "FEED_NOT_FOUND",
+                "message": "Feed not found.",
+                "details": {"feedId": exc.feed_id},
+            },
+        ) from exc
+    try:
+        created = article_service.create_custom_article(
+            feed_id,
+            title=payload.title,
+            link=payload.link,
+            description=payload.description,
+            published_at=payload.published_at,
+            source=payload.source,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail={
+                "code": "NOT_VIRTUAL_FEED",
+                "message": str(exc),
+                "details": {"feedId": feed_id},
+            },
+        ) from exc
+    return ArticleRead(
+        id=created.id,
+        title=created.title,
+        link=created.link,
+        published=created.published_at.isoformat(),
+        title_trans=created.title_trans,
+        favorite=False,
+        favorited_at=None,
+        source=created.source,
+    )
 
 
 @router.put("/{feed_id}/articles/{article_id}/favorite", status_code=HTTPStatus.NO_CONTENT)

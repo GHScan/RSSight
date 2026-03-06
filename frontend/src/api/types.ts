@@ -22,6 +22,17 @@ export interface Article {
   title_trans?: string | null;
   favorite?: boolean;
   favorited_at?: string | null;
+  /** Optional source metadata for custom articles. */
+  source?: string | null;
+}
+
+/** Payload for creating a custom article under a virtual feed (S028). */
+export interface CustomArticleCreatePayload {
+  title: string;
+  link?: string;
+  description?: string;
+  published_at: string;
+  source?: string | null;
 }
 
 export interface SummaryProfile {

@@ -15,12 +15,15 @@ import type { Article } from "../api/types";
 vi.mock("../api/client", () => ({
   api: {
     getFeeds: vi.fn(),
+    getFeed: vi.fn(),
     getArticles: vi.fn(),
     getSummaryProfiles: vi.fn(),
     createFeed: vi.fn(),
     updateFeed: vi.fn(),
     deleteFeed: vi.fn(),
+    createVirtualFeed: vi.fn(),
     setArticleFavorite: vi.fn(),
+    createCustomArticle: vi.fn(),
     getSummary: vi.fn(),
     generateSummary: vi.fn(),
     createSummaryProfile: vi.fn(),
@@ -47,6 +50,7 @@ function renderArticleList(feedId = "f1") {
 describe("Article list interaction (S010)", () => {
   beforeEach(() => {
     vi.mocked(api.getFeeds).mockResolvedValue([]);
+    vi.mocked(api.getFeed).mockResolvedValue({ id: "f1", title: "Feed", url: "https://example.com", feed_type: "rss" });
     vi.mocked(api.getSummaryProfiles).mockResolvedValue([]);
     vi.mocked(api.getArticles).mockReset();
     vi.mocked(api.getArticles).mockResolvedValue([...mockArticles]);
@@ -305,6 +309,99 @@ describe("Article list interaction (S010)", () => {
           hasGradient,
           `Date wrap should have border-foreground or bg-foreground (gradient), got: ${className}`,
         ).toBe(true);
+      });
+    });
+  });
+
+  describe("Custom article create form for virtual feed (S028)", () => {
+    it("virtual feed article list shows Add custom article button and form can be toggled", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([]);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /文章列表/i })).toBeInTheDocument();
+      });
+
+      const addButton = screen.getByRole("button", { name: /添加自定义文章/i });
+      expect(addButton).toBeInTheDocument();
+      expect(addButton).toHaveAttribute("data-testid", "add-custom-article-toggle");
+
+      await userEvent.click(addButton);
+      await waitFor(() => {
+        expect(screen.getByLabelText(/链接 \(URL\)/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/标题/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/内容/i)).toBeInTheDocument();
+        expect(screen.getByLabelText(/发布时间/i)).toBeInTheDocument();
+        expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
+      });
+
+      await userEvent.click(addButton);
+      await waitFor(() => {
+        expect(screen.queryByLabelText(/链接 \(URL\)/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it("form submission invokes createCustomArticle and refreshes list", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles)
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: "cust1",
+            title: "My Custom",
+            link: "https://example.com/c",
+            published: "2025-03-01T12:00:00Z",
+          },
+        ]);
+      vi.mocked(api.createCustomArticle).mockResolvedValue({
+        id: "cust1",
+        title: "My Custom",
+        link: "https://example.com/c",
+        published: "2025-03-01T12:00:00Z",
+      });
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/标题/i)).toBeInTheDocument();
+      });
+      await userEvent.type(screen.getByLabelText(/标题/i), "My Custom");
+      await userEvent.type(screen.getByLabelText(/链接 \(URL\)/i), "https://example.com/c");
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(api.createCustomArticle).toHaveBeenCalledWith("vf1", expect.objectContaining({
+          title: "My Custom",
+          link: "https://example.com/c",
+        }));
+      });
+      await waitFor(() => {
+        expect(screen.getByText("My Custom")).toBeInTheDocument();
       });
     });
   });

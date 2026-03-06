@@ -2,7 +2,7 @@
  * API client for backend REST API. Kept separate from UI for testability.
  */
 
-import type { Feed, Article, SummaryProfile, ApiError } from "./types";
+import type { Feed, Article, SummaryProfile, ApiError, CustomArticleCreatePayload } from "./types";
 
 const BASE = "/api";
 
@@ -55,6 +55,9 @@ export const api = {
   deleteFeed(feedId: string): Promise<void> {
     return fetch(`${BASE}/feeds/${feedId}`, { method: "DELETE" }).then(handleResponse);
   },
+  getFeed(feedId: string): Promise<Feed> {
+    return fetch(`${BASE}/feeds/${feedId}`).then(handleResponse);
+  },
   getArticles(feedId: string): Promise<Article[]> {
     return fetch(`${BASE}/feeds/${feedId}/articles`).then(handleResponse);
   },
@@ -63,6 +66,19 @@ export const api = {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ favorite }),
+    }).then(handleResponse);
+  },
+  createCustomArticle(feedId: string, payload: CustomArticleCreatePayload): Promise<Article> {
+    return fetch(`${BASE}/feeds/${feedId}/articles`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        title: payload.title,
+        link: payload.link ?? "",
+        description: payload.description ?? "",
+        published_at: payload.published_at,
+        source: payload.source ?? null,
+      }),
     }).then(handleResponse);
   },
   getSummaryProfiles(): Promise<SummaryProfile[]> {
