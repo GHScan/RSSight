@@ -282,6 +282,38 @@ def create_custom_article(
     )
 
 
+@router.delete("/{feed_id}/articles/{article_id}", status_code=HTTPStatus.NO_CONTENT)
+def delete_article(
+    feed_id: str,
+    article_id: str,
+    feed_service: FeedService = Depends(get_feed_service),
+    article_service: ArticleService = Depends(get_article_service),
+) -> None:
+    """Delete an article from a favorites (virtual) feed. Idempotent. Returns 400 for RSS feeds."""
+    try:
+        feed_service.get_feed(feed_id)
+    except FeedNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "FEED_NOT_FOUND",
+                "message": "Feed not found.",
+                "details": {"feedId": exc.feed_id},
+            },
+        ) from exc
+    try:
+        article_service.delete_article(feed_id, article_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail={
+                "code": "NOT_VIRTUAL_FEED",
+                "message": str(exc),
+                "details": {"feedId": feed_id},
+            },
+        ) from exc
+
+
 @router.put("/{feed_id}/articles/{article_id}/favorite", status_code=HTTPStatus.NO_CONTENT)
 def set_article_favorite(
     feed_id: str,

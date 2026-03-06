@@ -308,3 +308,60 @@ def test_create_custom_article_rejects_non_virtual_feed(tmp_path: Path) -> None:
             description="",
             published_at=datetime.now(timezone.utc),
         )
+
+
+# --- S040: Favorites collection article delete ---
+
+
+def test_delete_article_removes_directory_and_list_empty(tmp_path: Path) -> None:
+    """S040 happy path: delete_article removes article dir; list no longer returns it."""
+    feed_svc = FeedService(tmp_path)
+    feed = feed_svc.create_virtual_feed("Favorites")
+    art_svc = ArticleService(tmp_path)
+    created = art_svc.create_custom_article(
+        feed_id=feed.id,
+        title="To Remove",
+        link="",
+        description="Content",
+        published_at=datetime(2026, 3, 7, 10, 0, 0, tzinfo=timezone.utc),
+    )
+    article_dir = tmp_path / "feeds" / feed.id / "articles" / created.id
+    assert article_dir.is_dir()
+    art_svc.delete_article(feed.id, created.id)
+    assert not article_dir.exists()
+    listed = art_svc.list_articles_for_feed(feed.id)
+    assert len(listed) == 0
+
+
+def test_delete_article_rejects_non_virtual_feed(tmp_path: Path) -> None:
+    """S040: delete_article for RSS feed raises ValueError."""
+    feed_svc = FeedService(tmp_path)
+    feed = feed_svc.create_feed(FeedCreate(title="RSS", url="https://example.com/feed.xml"))
+    article_dir = tmp_path / "feeds" / feed.id / "articles" / "art1"
+    article_dir.mkdir(parents=True)
+    article = Article(
+        id="art1",
+        feed_id=feed.id,
+        title="T",
+        link="",
+        description="",
+        guid=None,
+        published_at=datetime.now(timezone.utc),
+    )
+    article_dir.joinpath("article.json").write_text(
+        json.dumps(article.model_dump(mode="json"), indent=2),
+        encoding="utf-8",
+    )
+    art_svc = ArticleService(tmp_path)
+    with pytest.raises(ValueError, match="virtual"):
+        art_svc.delete_article(feed.id, "art1")
+
+
+def test_delete_article_idempotent_when_already_gone(tmp_path: Path) -> None:
+    """S040: delete_article when article dir does not exist is no-op (idempotent)."""
+    feed_svc = FeedService(tmp_path)
+    feed = feed_svc.create_virtual_feed("Favorites")
+    art_svc = ArticleService(tmp_path)
+    art_svc.delete_article(feed.id, "nonexistent-id")  # does not raise
+    listed = art_svc.list_articles_for_feed(feed.id)
+    assert len(listed) == 0

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import shutil
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -268,6 +269,20 @@ class ArticleService:
             encoding="utf-8",
         )
         return article
+
+    def delete_article(self, feed_id: str, article_id: str) -> None:
+        """
+        Delete an article from a virtual (favorites) feed. Removes the article
+        directory subtree. Idempotent: if the article dir does not exist, no-op.
+        Raises ValueError if the feed is not virtual (RSS articles are not deletable via this API).
+        """
+        feed = self._feed_service.get_feed(feed_id)
+        if feed.feed_type != "virtual":
+            raise ValueError("Articles can only be deleted from virtual (favorites) feeds")
+        article_dir = self._feeds_dir / feed_id / "articles" / article_id
+        if not article_dir.exists():
+            return
+        shutil.rmtree(article_dir)
 
     @staticmethod
     def _default_fetch_rss(url: str) -> str:

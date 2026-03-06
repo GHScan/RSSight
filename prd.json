@@ -62,7 +62,7 @@
         "Deletion persists across refresh/restart and does not affect unrelated data.",
         "Backend tests cover happy path, missing article, and repeated delete idempotency."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S041",

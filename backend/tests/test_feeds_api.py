@@ -755,3 +755,131 @@ def test_list_feeds_domain_invalid_returns_422(tmp_path: Path, monkeypatch) -> N
 
     r = client.get("/api/feeds", params={"domain": "invalid"})
     assert r.status_code == 422
+
+
+# --- S040: Favorites collection article delete API and persistence ---
+
+
+def test_delete_article_from_favorites_returns_204_and_persists(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """
+    S040 happy path: DELETE article from favorites collection; 204; article gone after list/refresh.
+    Deletion persists (article dir removed); unrelated data unchanged.
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_feed = client.post("/api/feeds/virtual", json={"name": "My Favorites"})
+    assert create_feed.status_code == 201
+    feed_id = create_feed.json()["id"]
+
+    create_art = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "To Delete",
+            "link": "",
+            "description": "Content",
+            "published_at": "2025-03-07T10:00:00Z",
+        },
+    )
+    assert create_art.status_code == 201
+    article_id = create_art.json()["id"]
+
+    delete_r = client.delete(f"/api/feeds/{feed_id}/articles/{article_id}")
+    assert delete_r.status_code == 204
+
+    list_r = client.get(f"/api/feeds/{feed_id}/articles")
+    assert list_r.status_code == 200
+    assert list_r.json() == []
+
+    # Persistence: article directory is removed
+    article_dir = tmp_path / "feeds" / feed_id / "articles" / article_id
+    assert not article_dir.exists()
+
+
+def test_delete_article_missing_returns_204_idempotent(tmp_path: Path, monkeypatch) -> None:
+    """
+    S040 boundary: DELETE non-existent article from virtual feed returns 204 (idempotent no-op).
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_feed = client.post("/api/feeds/virtual", json={"name": "Favorites"})
+    assert create_feed.status_code == 201
+    feed_id = create_feed.json()["id"]
+
+    delete_r = client.delete(f"/api/feeds/{feed_id}/articles/nonexistent-article-id")
+    assert delete_r.status_code == 204
+
+
+def test_delete_article_repeated_idempotent(tmp_path: Path, monkeypatch) -> None:
+    """
+    S040: Repeated DELETE same article returns 204 both times (idempotent).
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_feed = client.post("/api/feeds/virtual", json={"name": "Favorites"})
+    assert create_feed.status_code == 201
+    feed_id = create_feed.json()["id"]
+
+    create_art = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "One",
+            "link": "",
+            "description": "D",
+            "published_at": "2025-03-07T10:00:00Z",
+        },
+    )
+    assert create_art.status_code == 201
+    article_id = create_art.json()["id"]
+
+    first = client.delete(f"/api/feeds/{feed_id}/articles/{article_id}")
+    assert first.status_code == 204
+    second = client.delete(f"/api/feeds/{feed_id}/articles/{article_id}")
+    assert second.status_code == 204
+
+
+def test_delete_article_from_rss_feed_returns_400(tmp_path: Path, monkeypatch) -> None:
+    """
+    S040 regression: DELETE article is only for favorites (virtual) feeds; RSS feed returns 400.
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_feed = client.post(
+        "/api/feeds",
+        json={"title": "RSS Feed", "url": "https://example.com/rss"},
+    )
+    assert create_feed.status_code == 201
+    feed_id = create_feed.json()["id"]
+    article_dir = tmp_path / "feeds" / feed_id / "articles" / "art1"
+    article_dir.mkdir(parents=True)
+    article = Article(
+        id="art1",
+        feed_id=feed_id,
+        title="T",
+        link="https://example.com/1",
+        description="",
+        guid="g1",
+        published_at=datetime.now(timezone.utc),
+    )
+    article_dir.joinpath("article.json").write_text(
+        json.dumps(article.model_dump(mode="json"), indent=2),
+        encoding="utf-8",
+    )
+
+    delete_r = client.delete(f"/api/feeds/{feed_id}/articles/art1")
+    assert delete_r.status_code == 400
+    body = delete_r.json()
+    assert body.get("detail", {}).get("code") == "NOT_VIRTUAL_FEED"
