@@ -128,6 +128,78 @@ def test_delete_feed_removes_index_and_directory(tmp_path: Path, monkeypatch) ->
     assert not feed_dir.exists()
 
 
+def test_create_virtual_feed_via_api_and_list_includes_type_marker(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S024: Create virtual feed via API; list returns feed_type and url null."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_response = client.post(
+        "/api/feeds/virtual",
+        json={"name": "My Favorites"},
+    )
+    assert create_response.status_code == 201
+    created = create_response.json()
+    assert created["title"] == "My Favorites"
+    assert created["url"] is None
+    assert created["feed_type"] == "virtual"
+    assert isinstance(created["id"], str) and created["id"]
+
+    list_response = client.get("/api/feeds")
+    assert list_response.status_code == 200
+    feeds = list_response.json()
+    assert len(feeds) == 1
+    assert feeds[0]["feed_type"] == "virtual"
+    assert feeds[0]["url"] is None
+    assert feeds[0]["title"] == "My Favorites"
+
+
+def test_delete_virtual_feed_removes_directory(tmp_path: Path, monkeypatch) -> None:
+    """
+    S024: Deleting virtual feed removes its feed directory subtree.
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "To Delete"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+    feed_dir = tmp_path / "feeds" / feed_id
+    assert feed_dir.exists()
+
+    delete_response = client.delete(f"/api/feeds/{feed_id}")
+    assert delete_response.status_code == 204
+
+    list_response = client.get("/api/feeds")
+    assert list_response.status_code == 200
+    assert list_response.json() == []
+
+    assert not feed_dir.exists()
+
+
+def test_rss_feed_list_returns_feed_type_for_backward_compat(tmp_path: Path, monkeypatch) -> None:
+    """
+    S024 regression: Existing RSS feed create/list still returns feed_type rss.
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    client.post("/api/feeds", json={"title": "RSS Feed", "url": "https://example.com/rss"})
+    list_response = client.get("/api/feeds")
+    assert list_response.status_code == 200
+    feeds = list_response.json()
+    assert len(feeds) == 1
+    assert feeds[0]["feed_type"] == "rss"
+    assert feeds[0]["url"] == "https://example.com/rss"
+
+
 def test_article_favorite_api_and_list_includes_favorite(tmp_path: Path, monkeypatch) -> None:
     """PUT favorite sets marker; GET list returns favorite and favorited_at."""
     from app import main as app_main

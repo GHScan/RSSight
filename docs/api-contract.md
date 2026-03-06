@@ -12,7 +12,8 @@ At the current stage of the project, the backend implements the **Health**, **Fe
 ## Feeds
 
 - `GET /api/feeds` — returns list of feeds; each item has `id`, `title`, `url` (null for virtual feeds), and `feed_type` (`"rss"` or `"virtual"`). Virtual feeds are collections (e.g. favorites) with no URL.
-- `POST /api/feeds` — create RSS feed (body: `title`, `url`). Virtual feed creation is a separate API (see virtual feed stories).
+- `POST /api/feeds` — create RSS feed (body: `title`, `url`).
+- `POST /api/feeds/virtual` — create virtual feed (body: `name`). Persists with empty URL and `feed_type: "virtual"`. Deleting a virtual feed removes its directory subtree like RSS feeds.
 - `PUT /api/feeds/{feedId}`
 - `DELETE /api/feeds/{feedId}`
 

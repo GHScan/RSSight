@@ -9,13 +9,14 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
 from app.models.articles import ArticleRead
-from app.models.feeds import FeedCreate, FeedRead, FeedUpdate
+from app.models.feeds import FeedCreate, FeedRead, FeedUpdate, VirtualFeedCreate
 from app.services.articles import ArticleNotFoundError, ArticleService
 from app.services.feeds import FeedNotFoundError, FeedService
 
 
 class FavoriteUpdate(BaseModel):
     favorite: bool
+
 
 router = APIRouter(prefix="/api/feeds", tags=["feeds"])
 
@@ -50,6 +51,16 @@ def list_feeds(service: FeedService = Depends(get_feed_service)) -> List[FeedRea
 @router.post("", response_model=FeedRead, status_code=HTTPStatus.CREATED)
 def create_feed(payload: FeedCreate, service: FeedService = Depends(get_feed_service)) -> FeedRead:
     created = service.create_feed(payload)
+    return FeedRead.model_validate(created.model_dump())
+
+
+@router.post("/virtual", response_model=FeedRead, status_code=HTTPStatus.CREATED)
+def create_virtual_feed(
+    payload: VirtualFeedCreate,
+    service: FeedService = Depends(get_feed_service),
+) -> FeedRead:
+    """Create a virtual feed (e.g. article favorites collection) with name only; no URL."""
+    created = service.create_virtual_feed(payload.name)
     return FeedRead.model_validate(created.model_dump())
 
 

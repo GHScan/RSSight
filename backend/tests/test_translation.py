@@ -21,7 +21,6 @@ from app.services.profiles import ProfileNotFoundError, SummaryProfileService
 from app.services.summary import make_openai_call_ai
 from app.services.translation import (
     TRANSLATION_PROFILE_NAME,
-    FIXED_PROMPT,
     run_translation_pass,
     translate_batch,
 )
@@ -39,6 +38,7 @@ def test_translate_batch_empty_keys() -> None:
 
 def test_translate_batch_returns_parsed_json() -> None:
     """AI response is parsed as JSON and returned as dict (only requested keys, string values)."""
+
     def call_ai(prompt: str, profile_name: str) -> str:
         assert profile_name == TRANSLATION_PROFILE_NAME
         assert "Hello World" in prompt
@@ -50,6 +50,7 @@ def test_translate_batch_returns_parsed_json() -> None:
 
 def test_translate_batch_multiple_keys() -> None:
     """Multiple keys: payload is JSON dict with empty values; response dict returned."""
+
     def call_ai(prompt: str, profile_name: str) -> str:
         assert profile_name == TRANSLATION_PROFILE_NAME
         assert "english" in prompt and "bus" in prompt and "china" in prompt
@@ -61,6 +62,7 @@ def test_translate_batch_multiple_keys() -> None:
 
 def test_translate_batch_uses_fixed_prompt() -> None:
     """Prompt contains fixed instruction and example, plus payload JSON."""
+
     def call_ai(prompt: str, profile_name: str) -> str:
         assert "用中文翻译补全下面json" in prompt
         assert "america" in prompt and "美洲" in prompt
@@ -73,6 +75,7 @@ def test_translate_batch_uses_fixed_prompt() -> None:
 
 def test_translate_batch_invalid_json_returns_empty() -> None:
     """When AI response is not valid JSON, return empty dict."""
+
     def call_ai(prompt: str, profile_name: str) -> str:
         return "not json at all"
 
@@ -81,6 +84,7 @@ def test_translate_batch_invalid_json_returns_empty() -> None:
 
 def test_translate_batch_non_dict_json_returns_empty() -> None:
     """When parsed JSON is not a dict, return empty dict."""
+
     def call_ai(prompt: str, profile_name: str) -> str:
         return "[1, 2, 3]"
 
@@ -89,6 +93,7 @@ def test_translate_batch_non_dict_json_returns_empty() -> None:
 
 def test_translate_batch_only_includes_requested_keys_and_string_values() -> None:
     """Extra keys in response or non-string values are ignored for requested keys."""
+
     def call_ai(prompt: str, profile_name: str) -> str:
         return json.dumps({"a": "一", "b": 2, "c": "三", "extra": "x"})
 

@@ -126,11 +126,11 @@ def test_delete_summary_returns_204(tmp_path: Path) -> None:
     app.dependency_overrides[get_summary_service] = lambda: summary_svc
     try:
         feed_id, article_id, profile_name = _setup_feed_article_profile(tmp_path)
-        summary_svc.generate_summary(feed_id=feed_id, article_id=article_id, profile_name=profile_name)
-        client = TestClient(app)
-        resp = client.delete(
-            f"/api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}"
+        summary_svc.generate_summary(
+            feed_id=feed_id, article_id=article_id, profile_name=profile_name
         )
+        client = TestClient(app)
+        resp = client.delete(f"/api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}")
         assert resp.status_code == 204
         get_resp = client.get(
             f"/api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}"

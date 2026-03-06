@@ -298,7 +298,7 @@
         "Deleting virtual feed removes its corresponding feed directory subtree safely.",
         "Existing normal RSS feed API behavior remains backward compatible."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S025",

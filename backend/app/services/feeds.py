@@ -51,6 +51,24 @@ class FeedService:
 
         return feed
 
+    def create_virtual_feed(self, name: str) -> Feed:
+        """Create a virtual feed (e.g. article favorites collection) with no URL."""
+        feeds = self._load_feeds()
+        feed_id = uuid.uuid4().hex
+        feed = Feed(
+            id=feed_id,
+            title=name,
+            url=None,
+            feed_type="virtual",
+        )
+        feeds[feed_id] = feed
+        self._save_feeds(feeds)
+
+        feed_dir = self._feeds_dir / feed_id
+        feed_dir.mkdir(parents=True, exist_ok=True)
+
+        return feed
+
     def update_feed(self, feed_id: str, payload: FeedUpdate) -> Feed:
         feeds = self._load_feeds()
         if feed_id not in feeds:

@@ -15,9 +15,10 @@ from __future__ import annotations
 import json
 import logging
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 from app.services.articles import ArticleService
+from app.services.feeds import FeedService
 from app.services.profiles import ProfileNotFoundError, SummaryProfileService
 
 # Callable: (prompt: str, profile_name: str) -> str
@@ -35,7 +36,7 @@ FIXED_PROMPT = """用中文翻译补全下面json字段中的value，返回json
 
 
 def _strip_json_code_block(raw: str) -> str:
-    """Remove optional markdown code fence (e.g. ```json\\n...\\n```) so response can be parsed as JSON."""
+    """Remove optional markdown code fence (e.g. ```json...) so response parses as JSON."""
     s = raw.strip()
     if s.startswith("```"):
         # Skip past first line (```json or ```)
@@ -46,7 +47,7 @@ def _strip_json_code_block(raw: str) -> str:
     return s
 
 
-def _parse_translation_response(response: str) -> dict | None:
+def _parse_translation_response(response: str) -> dict[str, Any] | None:
     """Parse AI response as JSON dict. Returns None on failure."""
     raw = _strip_json_code_block(response.strip())
     try:
@@ -76,11 +77,7 @@ def translate_batch(
     data = _parse_translation_response(response)
     if data is None:
         return {}
-    return {
-        k: str(v)
-        for k, v in data.items()
-        if isinstance(v, str) and k in keys
-    }
+    return {k: str(v) for k, v in data.items() if isinstance(v, str) and k in keys}
 
 
 def run_translation_pass(
@@ -88,7 +85,7 @@ def run_translation_pass(
     call_ai: CallAiCallable,
     article_service: ArticleService | None = None,
     profile_service: SummaryProfileService | None = None,
-    feed_service: "FeedService | None" = None,  # noqa: F821
+    feed_service: FeedService | None = None,
     logger: logging.Logger | None = None,
 ) -> int:
     """
@@ -150,7 +147,8 @@ def run_translation_pass(
     if not trans_map:
         if logger:
             logger.warning(
-                "Translation pass: API returned no valid JSON translations (check model response format)"
+                "Translation pass: API returned no valid JSON translations "
+                "(check model response format)"
             )
         return 0
 
@@ -159,9 +157,7 @@ def run_translation_pass(
         if title not in trans_map:
             continue
         try:
-            art_svc.update_article_title_trans(
-                feed_id, article_id, trans_map[title]
-            )
+            art_svc.update_article_title_trans(feed_id, article_id, trans_map[title])
             updated += 1
         except Exception:  # noqa: BLE001
             if logger:

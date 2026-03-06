@@ -126,7 +126,7 @@ class ArticleService:
             pairs.append((article, favorited_at))
 
         # Sort: favorited first (by favorited_at desc), then non-favorited by published_at desc.
-        def sort_key(item: Tuple[Article, datetime | None]) -> tuple:
+        def sort_key(item: Tuple[Article, datetime | None]) -> Tuple[float, float, float]:
             art, fav_at = item
             # Favorited first: (False,) then (True, -ts); then non-fav: (True,) then -pub_ts
             if fav_at is not None:

@@ -38,7 +38,7 @@ TRANSLATION_PASS_INTERVAL_SECONDS = 600.0
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
     """Start the feed fetch and translation schedulers on startup; stop them on shutdown."""
-    # Ensure app loggers (e.g. translation pass) emit INFO to stderr so background job logs are visible
+    # Ensure app loggers (e.g. translation pass) emit INFO to stderr for background jobs
     app_log = logging.getLogger("app")
     app_log.setLevel(logging.INFO)
     if not app_log.handlers:
@@ -57,12 +57,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
     def _translation_job() -> None:
         profile_service = SummaryProfileService(data_root)
         call_ai = make_openai_call_ai(profile_service)
-        while run_translation_pass(
-            data_root,
-            call_ai,
-            article_service=article_service,
-            logger=log,
-        ) > 0:
+        while (
+            run_translation_pass(
+                data_root,
+                call_ai,
+                article_service=article_service,
+                logger=log,
+            )
+            > 0
+        ):
             pass  # continue until no untranslated titles left, then sleep
 
     translation_scheduler = FeedFetchScheduler(

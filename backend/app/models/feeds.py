@@ -38,6 +38,15 @@ class FeedCreate(BaseModel):
     url: HttpUrl
 
 
+class VirtualFeedCreate(BaseModel):
+    """
+    Payload for creating a virtual feed (e.g. article favorites collection).
+    Only name is required; URL is not used for virtual feeds.
+    """
+
+    name: str
+
+
 class FeedUpdate(BaseModel):
     """
     Payload for updating an existing feed.

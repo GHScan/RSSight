@@ -118,3 +118,26 @@ def test_storage_roundtrip_mixed_rss_and_virtual(tmp_path: Path) -> None:
 
     got = service.get_feed(virtual.id)
     assert got.feed_type == "virtual" and got.url is None
+
+
+def test_create_virtual_feed_persists_and_list_returns_it(tmp_path: Path) -> None:
+    """
+    S024: create_virtual_feed persists virtual feed to disk; list and get_feed return it.
+    """
+    service = FeedService(tmp_path)
+    created = service.create_virtual_feed("My Favorites")
+
+    assert created.feed_type == "virtual"
+    assert created.url is None
+    assert created.title == "My Favorites"
+    assert created.id
+
+    feed_dir = tmp_path / "feeds" / created.id
+    assert feed_dir.exists() and feed_dir.is_dir()
+
+    listed = service.list_feeds()
+    assert len(listed) == 1
+    assert listed[0].feed_type == "virtual" and listed[0].url is None
+
+    got = service.get_feed(created.id)
+    assert got.feed_type == "virtual" and got.url is None

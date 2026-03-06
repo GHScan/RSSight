@@ -8,11 +8,10 @@ from unittest.mock import MagicMock
 
 from app.models.articles import Article
 from app.models.feeds import FeedCreate
-from app.services.articles import ArticleService, FAVORITE_MARKER
+from app.services.articles import FAVORITE_MARKER, ArticleService
 from app.services.feeds import FeedService
 
-SAMPLE_RSS = dedent(
-    """\
+SAMPLE_RSS = dedent("""\
     <?xml version='1.0' encoding='UTF-8'?>
     <rss version="2.0">
       <channel>
@@ -35,8 +34,7 @@ SAMPLE_RSS = dedent(
         </item>
       </channel>
     </rss>
-    """
-)
+    """)
 
 
 def _make_feed_service(tmp_path: Path) -> FeedService:
@@ -178,9 +176,7 @@ def test_feed_failure_is_logged_when_logger_provided(tmp_path: Path) -> None:
 def test_set_article_favorite_creates_and_removes_marker(tmp_path: Path) -> None:
     """Favorite state is persisted via marker file; set False removes it."""
     feed_svc = FeedService(tmp_path)
-    feed = feed_svc.create_feed(
-        FeedCreate(title="F", url="https://example.com/feed.xml")
-    )
+    feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
     article = Article(
         id="art-1",
         feed_id=feed.id,
@@ -207,9 +203,7 @@ def test_set_article_favorite_creates_and_removes_marker(tmp_path: Path) -> None
 def test_list_articles_with_favorites_sort_order(tmp_path: Path) -> None:
     """List order: recently favorited first, then earlier favorited, then by published_at desc."""
     feed_svc = FeedService(tmp_path)
-    feed = feed_svc.create_feed(
-        FeedCreate(title="F", url="https://example.com/feed.xml")
-    )
+    feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
     base = datetime(2026, 3, 1, 12, 0, 0, tzinfo=timezone.utc)
     for i, (aid, pub) in enumerate(
         [("a1", base), ("a2", base.replace(day=2)), ("a3", base.replace(day=3))]

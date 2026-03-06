@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 from urllib.request import Request, urlopen
 
 from app.services.articles import ArticleNotFoundError, ArticleService
@@ -32,10 +32,10 @@ def _is_volcengine(base_url: str) -> bool:
     return "volces.com" in url or "volcengine" in url
 
 
-def _call_ai_volcengine(client, profile, prompt: str) -> str:
+def _call_ai_volcengine(client: Any, profile: Any, prompt: str) -> str:
     """
     Volcengine Ark Responses API (参见火山引擎示例):
-    client.responses.create(model=..., input=prompt, stream=True, extra_body={"thinking": {"type": "enabled"}})
+    client.responses.create(..., extra_body={"thinking": {"type": "enabled"}}).
     流式消费 response.output_text.delta 的 event.delta 作为最终回复正文。
     """
     kwargs = {
@@ -54,7 +54,7 @@ def _call_ai_volcengine(client, profile, prompt: str) -> str:
     return "".join(parts).strip()
 
 
-def _call_ai_chat_completions(client, profile, prompt: str) -> str:
+def _call_ai_chat_completions(client: Any, profile: Any, prompt: str) -> str:
     """OpenAI-compatible Chat Completions API: stream and collect content."""
     kwargs = {
         "model": profile.model,
@@ -142,9 +142,7 @@ class SummaryService:
             title_trans = trans_map.get(article.title)
             if not title_trans:
                 raise ValueError("Translation failed or profile not configured.")
-            self._article_service.update_article_title_trans(
-                feed_id, article_id, title_trans
-            )
+            self._article_service.update_article_title_trans(feed_id, article_id, title_trans)
             self._profile_service.touch_profile(profile_name)
             return title_trans
 

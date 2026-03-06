@@ -21,9 +21,7 @@ class Article(BaseModel):
 
 
 class ArticleRead(BaseModel):
-    """
-    Response model for article list API (id, title, link, published, optional title_trans, favorite).
-    """
+    """Response model for article list (id, title, link, published, title_trans, favorite)."""
 
     id: str
     title: str

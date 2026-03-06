@@ -119,7 +119,10 @@ def generate_summary(
             status_code=HTTPStatus.SERVICE_UNAVAILABLE,
             detail={
                 "code": "AI_NOT_CONFIGURED",
-                "message": "AI summary is not configured. Configure an OpenAI-compatible API key in the summary profile.",
+                "message": (
+                    "AI summary is not configured. "
+                    "Configure an OpenAI-compatible API key in the summary profile."
+                ),
             },
         ) from None
     except ValueError as exc:

@@ -1,5 +1,4 @@
 import { useEffect, useState, useCallback } from "react";
-import { Link } from "react-router-dom";
 import { BackLink } from "../components/BackLink";
 import type { SummaryProfile } from "../api/types";
 import { api } from "../api/client";

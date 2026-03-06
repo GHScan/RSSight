@@ -98,7 +98,9 @@ class SummaryProfileService:
             else existing.prompt_template
         )
         reasoning_effort = (
-            payload.reasoning_effort if "reasoning_effort" in payload.model_fields_set else existing.reasoning_effort
+            payload.reasoning_effort
+            if "reasoning_effort" in payload.model_fields_set
+            else existing.reasoning_effort
         )
         if reasoning_effort == "":
             reasoning_effort = None

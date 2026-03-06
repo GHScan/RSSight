@@ -20,7 +20,8 @@ class SummaryProfile(BaseModel):
     model: str
     fields: List[str]
     prompt_template: str
-    reasoning_effort: Optional[str] = None  # e.g. "low" | "medium" | "high" for APIs that support reasoning.effort
+    # e.g. "low" | "medium" | "high" for APIs that support reasoning.effort
+    reasoning_effort: Optional[str] = None
     last_used_at: Optional[datetime] = None  # 最后使用时间，用于按使用顺序排序
 
 
