@@ -188,4 +188,90 @@ test.describe("Article list E2E (S011)", () => {
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
     await expect(page.getByText("Article Third")).toBeVisible();
   });
+
+  test("S026: navigate from virtual feed to article list shows empty state", async ({
+    page,
+  }) => {
+    const feedsWithVirtual = [
+      { id: "f1", title: "Feed One", url: "https://example.com/one.xml", feed_type: "rss" as const },
+      { id: "v1", title: "My Favorites", url: null, feed_type: "virtual" as const },
+    ];
+    await page.route("**/api/feeds**", async (route) => {
+      const url = route.request().url();
+      const method = route.request().method();
+      if (method === "GET" && !url.includes("/articles")) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(feedsWithVirtual),
+        });
+      }
+      if (method === "GET" && url.includes("/feeds/v1/articles")) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([]),
+        });
+      }
+      if (method === "GET" && url.includes("/articles")) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(mockArticles),
+        });
+      }
+      return route.continue();
+    });
+    await page.route("**/api/summary-profiles**", async (route) => {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.goto("/feeds");
+    await expect(page.getByRole("link", { name: "My Favorites" })).toBeVisible();
+    await page.getByRole("link", { name: "My Favorites" }).click();
+    await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
+    await expect(page.getByText(/暂无文章/)).toBeVisible();
+    await expect(page.getByRole("link", { name: /返回RSS 订阅/ })).toBeVisible();
+  });
+
+  test("S026: virtual feed article list error state shows retry", async ({
+    page,
+  }) => {
+    await page.route("**/api/feeds/**", async (route) => {
+      const reqUrl = route.request().url();
+      const method = route.request().method();
+      if (method === "GET" && !reqUrl.includes("/articles")) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify([
+            { id: "v1", title: "Virtual", url: null, feed_type: "virtual" },
+          ]),
+        });
+      }
+      if (method === "GET" && reqUrl.includes("/feeds/v1/articles")) {
+        return route.fulfill({
+          status: 500,
+          contentType: "application/json",
+          body: JSON.stringify({ message: "Server error" }),
+        });
+      }
+      return route.continue();
+    });
+    await page.route("**/api/summary-profiles**", async (route) => {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.goto("/feeds/v1/articles");
+    await expect(page.getByText(/错误|失败/)).toBeVisible();
+    await expect(page.getByTestId("retry-articles")).toBeVisible();
+  });
 });

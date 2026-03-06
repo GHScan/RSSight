@@ -322,7 +322,7 @@
         "Virtual feed article list handles loading, empty, and error states with visible feedback.",
         "Navigation and baseline list rendering remain stable for both virtual and normal feeds."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S027",

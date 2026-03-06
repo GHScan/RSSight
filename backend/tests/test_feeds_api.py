@@ -182,6 +182,25 @@ def test_delete_virtual_feed_removes_directory(tmp_path: Path, monkeypatch) -> N
     assert not feed_dir.exists()
 
 
+def test_virtual_feed_articles_list_returns_empty(tmp_path: Path, monkeypatch) -> None:
+    """
+    S026: GET /api/feeds/{feedId}/articles for a virtual feed returns 200 and empty list.
+    Virtual feed has no RSS; article list is empty until custom articles are added.
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "My Favorites"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    articles_response = client.get(f"/api/feeds/{feed_id}/articles")
+    assert articles_response.status_code == 200
+    assert articles_response.json() == []
+
+
 def test_rss_feed_list_returns_feed_type_for_backward_compat(tmp_path: Path, monkeypatch) -> None:
     """
     S024 regression: Existing RSS feed create/list still returns feed_type rss.

@@ -163,6 +163,86 @@ describe("Article list interaction (S010)", () => {
     });
   });
 
+  describe("Virtual feed article list (S026)", () => {
+    it("navigating from virtual feed item opens article list page", async () => {
+      vi.mocked(api.getFeeds).mockResolvedValue([
+        { id: "v1", title: "My Favorites", url: null, feed_type: "virtual" },
+        { id: "f1", title: "RSS Feed", url: "https://example.com/feed.xml", feed_type: "rss" },
+      ]);
+      vi.mocked(api.getArticles).mockResolvedValue([]);
+      render(
+        <MemoryRouter initialEntries={["/feeds"]}>
+          <App />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByRole("link", { name: "My Favorites" })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("link", { name: "My Favorites" }));
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /文章列表/i })).toBeInTheDocument();
+      });
+      expect(api.getArticles).toHaveBeenCalledWith("v1");
+      expect(screen.getByText(/暂无文章|没有文章/)).toBeInTheDocument();
+    });
+
+    it("virtual feed article list shows loading then empty state", async () => {
+      vi.mocked(api.getArticles).mockResolvedValue([]);
+      renderArticleList("v1");
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /文章列表/i })).toBeInTheDocument();
+      });
+      expect(screen.getByText(/暂无文章|没有文章/)).toBeInTheDocument();
+    });
+
+    it("virtual feed article list shows error and retry when fetch fails", async () => {
+      vi.mocked(api.getArticles).mockRejectedValueOnce(new Error("Network error"));
+      renderArticleList("v1");
+      await waitFor(() => {
+        expect(screen.getByText(/错误|失败|error/i)).toBeInTheDocument();
+      });
+      const retryBtn = screen.getByRole("button", { name: /重试|retry/i });
+      expect(retryBtn).toBeInTheDocument();
+      vi.mocked(api.getArticles).mockResolvedValueOnce([]);
+      await userEvent.click(retryBtn);
+      await waitFor(() => {
+        expect(screen.getByText(/暂无文章|没有文章/)).toBeInTheDocument();
+        expect(screen.queryByText(/错误|失败/i)).not.toBeInTheDocument();
+      });
+    });
+
+    it("regression: normal feed article list still works after virtual feed flow", async () => {
+      vi.mocked(api.getFeeds).mockResolvedValue([
+        { id: "v1", title: "Virtual", url: null, feed_type: "virtual" },
+        { id: "f1", title: "RSS One", url: "https://example.com/feed.xml", feed_type: "rss" },
+      ]);
+      vi.mocked(api.getArticles)
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([...mockArticles]);
+      render(
+        <MemoryRouter initialEntries={["/feeds"]}>
+          <App />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByRole("link", { name: "Virtual" })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("link", { name: "Virtual" }));
+      await waitFor(() => {
+        expect(screen.getByText(/暂无文章|没有文章/)).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("link", { name: /返回RSS 订阅/ }));
+      await waitFor(() => {
+        expect(screen.getByRole("link", { name: "RSS One" })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("link", { name: "RSS One" }));
+      await waitFor(() => {
+        expect(screen.getByText("Article First")).toBeInTheDocument();
+      });
+      expect(screen.getByText("Article Third")).toBeInTheDocument();
+    });
+  });
+
   describe("Search filter (S021)", () => {
     it("typing in search filters articles by title in real time", async () => {
       renderArticleList();
