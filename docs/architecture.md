@@ -30,7 +30,7 @@ flowchart LR
 ## File storage conventions (core)
 
 - Feed index (recommended):
-  - `data/feeds.json`
+  - `data/feeds.json` — JSON object mapping feed id to feed record. Each record: `id`, `title`, `url` (required for RSS feeds, null for virtual), `feed_type` (optional, one of `"rss"` or `"virtual"`; default `"rss"` when omitted for backward compatibility). Virtual feeds represent collections (e.g. article favorites) and have empty URL and `feed_type: "virtual"`. Normal RSS feeds have a non-empty `url` and `feed_type: "rss"` (or omit `feed_type`). The scheduler and RSS fetch logic skip virtual feeds.
 - Article metadata (recommended):
   - `data/feeds/{feedId}/articles/{articleId}/article.json`
 - AI summary body (required):

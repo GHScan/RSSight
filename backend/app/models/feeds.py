@@ -1,18 +1,32 @@
 from __future__ import annotations
 
-from typing import Optional
+from typing import Literal, Optional
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, model_validator
+
+FeedType = Literal["rss", "virtual"]
 
 
 class Feed(BaseModel):
     """
-    Domain model for a single RSS feed as stored in the index.
+    Domain model for a feed as stored in the index.
+
+    Supports normal RSS feeds (feed_type="rss", url required) and virtual feeds
+    (feed_type="virtual", url empty/null) e.g. for article favorites collections.
     """
 
     id: str
     title: str
-    url: HttpUrl
+    url: Optional[HttpUrl] = None
+    feed_type: FeedType = "rss"
+
+    @model_validator(mode="after")
+    def _validate_feed_type_and_url(self) -> "Feed":
+        if self.feed_type == "rss" and self.url is None:
+            raise ValueError("RSS feed must have a non-empty url")
+        if self.feed_type == "virtual" and self.url is not None:
+            raise ValueError("Virtual feed must have empty url")
+        return self
 
 
 class FeedCreate(BaseModel):

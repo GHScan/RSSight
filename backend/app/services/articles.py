@@ -66,6 +66,8 @@ class ArticleService:
 
         feeds = self._feed_service.list_feeds()
         for feed in feeds:
+            if feed.feed_type == "virtual" or feed.url is None:
+                continue
             try:
                 xml = self._fetch_rss(str(feed.url))
                 items = self._parse_rss(xml)

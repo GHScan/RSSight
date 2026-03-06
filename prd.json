@@ -285,7 +285,7 @@
         "Schema/documentation updates describe virtual feed fields and compatibility behavior.",
         "Existing normal RSS feed flow remains backward compatible and unaffected."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S024",
