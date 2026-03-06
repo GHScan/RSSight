@@ -50,7 +50,7 @@
         "Automation verifies favorites top-level entry is visible and usable.",
         "Regression checks ensure existing RSS management still works."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S040",

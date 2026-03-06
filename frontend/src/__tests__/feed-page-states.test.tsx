@@ -109,4 +109,27 @@ describe("Feed page states", () => {
       expect(favLinks[0]).toHaveAttribute("href", "/feeds/v1/articles");
     });
   });
+
+  it("S039: RSS and favorites are rendered in separate lists", async () => {
+    vi.mocked(api.getFeeds).mockResolvedValue([
+      { id: "f1", title: "RSS One", url: "https://example.com/one.xml", feed_type: "rss" },
+      { id: "f2", title: "RSS Two", url: "https://example.com/two.xml", feed_type: "rss" },
+      { id: "v1", title: "My Favorites", url: null, feed_type: "virtual" },
+    ]);
+    renderFeedsPage();
+    await waitFor(() => {
+      expect(screen.getAllByRole("link", { name: "RSS One" }).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByRole("link", { name: "RSS Two" }).length).toBeGreaterThanOrEqual(1);
+      expect(screen.getAllByRole("link", { name: "My Favorites" }).length).toBeGreaterThanOrEqual(1);
+    });
+    const rssOneLinks = screen.getAllByRole("link", { name: "RSS One" });
+    const rssTwoLinks = screen.getAllByRole("link", { name: "RSS Two" });
+    const myFavLinks = screen.getAllByRole("link", { name: "My Favorites" });
+    expect(rssOneLinks[0].closest("[aria-labelledby='rss-heading']")).toBeInTheDocument();
+    expect(rssTwoLinks[0].closest("[aria-labelledby='rss-heading']")).toBeInTheDocument();
+    expect(myFavLinks[0].closest("[aria-labelledby='rss-heading']")).toBeNull();
+    expect(myFavLinks[0].closest("[aria-labelledby='favorites-heading']")).toBeInTheDocument();
+    expect(rssOneLinks[0].closest("[aria-labelledby='favorites-heading']")).toBeNull();
+    expect(rssTwoLinks[0].closest("[aria-labelledby='favorites-heading']")).toBeNull();
+  });
 });

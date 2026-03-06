@@ -32,7 +32,7 @@ describe("Routing and page structure", () => {
   it("shows feed management page at /feeds", async () => {
     renderWithRouter(["/feeds"]);
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /RSS 订阅|Feed management/i })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 1, name: "RSS 订阅" })).toBeInTheDocument();
     });
   });
 
@@ -49,7 +49,7 @@ describe("Routing and page structure", () => {
     renderWithRouter(["/"]);
     await userEvent.click(screen.getByRole("link", { name: /订阅|Feeds/i }));
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /RSS 订阅|Feed management/i })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 1, name: "RSS 订阅" })).toBeInTheDocument();
     });
   });
 
