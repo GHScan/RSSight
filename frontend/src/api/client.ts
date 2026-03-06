@@ -86,6 +86,11 @@ export const api = {
       }),
     }).then(handleResponse);
   },
+  deleteArticle(feedId: string, articleId: string): Promise<void> {
+    return fetch(`${BASE}/feeds/${feedId}/articles/${encodeURIComponent(articleId)}`, {
+      method: "DELETE",
+    }).then(handleResponse);
+  },
   getSummaryProfiles(): Promise<SummaryProfile[]> {
     return fetch(`${BASE}/summary-profiles`).then(handleResponse);
   },

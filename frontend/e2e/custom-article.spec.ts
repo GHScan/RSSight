@@ -442,6 +442,77 @@ test.describe("Custom article create flow E2E (S035)", () => {
     await expect(page.getByText("RSS One")).toBeVisible();
     await expect(page.getByRole("button", { name: /添加文章/ })).not.toBeVisible();
     await page.getByRole("link", { name: /返回RSS 订阅/ }).click();
-    await expect(page.getByRole("heading", { name: /RSS 订阅/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /RSS 订阅/, level: 1 })).toBeVisible();
+  });
+
+  test("S042: delete article from favorites list and see persistent removal after re-entry", async ({
+    page,
+  }) => {
+    const feeds = [
+      ...baseFeeds,
+      { id: "v1", title: "Favorites", url: null, feed_type: "virtual" as const },
+    ];
+    let articles: Array<{ id: string; title: string; link: string; published: string }> = [
+      { id: "del1", title: "To Delete", link: "https://example.com/d", published: "2025-03-01T12:00:00Z" },
+    ];
+    await page.route("**/api/feeds**", async (route) => {
+      const method = route.request().method();
+      const url = route.request().url();
+      const deleteMatch = url.match(/^.*\/api\/feeds\/([^/]+)\/articles\/([^/]+)\/?$/);
+      if (method === "DELETE" && deleteMatch) {
+        const [, feedId, articleId] = deleteMatch;
+        if (feedId === "v1") {
+          articles = articles.filter((a) => a.id !== articleId);
+          return route.fulfill({ status: 204 });
+        }
+      }
+      const { isList, feedId, isArticles } = parseFeedsPath(url);
+      if (method === "GET") {
+        if (isList) {
+          return route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify(feeds),
+          });
+        }
+        if (feedId && !isArticles) {
+          const feed = feeds.find((f) => f.id === feedId);
+          if (feed) {
+            return route.fulfill({
+              status: 200,
+              contentType: "application/json",
+              body: JSON.stringify(feed),
+            });
+          }
+        }
+        if (feedId && isArticles) {
+          return route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify(feedId === "v1" ? articles : []),
+          });
+        }
+      }
+      return route.continue();
+    });
+    await page.route("**/api/summary-profiles**", async (route) => {
+      await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
+    });
+
+    await page.goto("/feeds/v1/articles");
+    await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
+    await expect(page.getByText("To Delete")).toBeVisible();
+    await expect(page.getByRole("button", { name: "删除" })).toBeVisible();
+
+    await page.getByTestId("delete-article-del1").click();
+    await expect(page.getByText("已删除")).toBeVisible();
+    await expect(page.getByText("To Delete")).not.toBeVisible();
+    await expect(page.getByText(/暂无文章/)).toBeVisible();
+
+    await page.goto("/feeds");
+    await page.getByRole("link", { name: "Favorites" }).click();
+    await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
+    await expect(page.getByText("To Delete")).not.toBeVisible();
+    await expect(page.getByText(/暂无文章/)).toBeVisible();
   });
 });

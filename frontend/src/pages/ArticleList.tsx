@@ -54,6 +54,10 @@ export function ArticleList() {
   /** S032: true after first submit in no-URL path when we filled defaults; second click creates. */
   const [pendingConfirm, setPendingConfirm] = useState(false);
   const [createPendingMessage, setCreatePendingMessage] = useState<string | null>(null);
+  /** S042: delete feedback for favorites collection articles. */
+  const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadFeed = useCallback(() => {
     if (!feedId) return;
@@ -86,6 +90,12 @@ export function ArticleList() {
     const t = setTimeout(() => setCreateSuccess(null), 3000);
     return () => clearTimeout(t);
   }, [createSuccess]);
+
+  useEffect(() => {
+    if (!deleteSuccess) return;
+    const t = setTimeout(() => setDeleteSuccess(null), 3000);
+    return () => clearTimeout(t);
+  }, [deleteSuccess]);
 
   const filteredArticles = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -342,6 +352,16 @@ export function ArticleList() {
             {createSuccess}
           </p>
         )}
+        {deleteSuccess && (
+          <p className="mb-4 px-4 py-2 rounded-lg bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30" role="status">
+            {deleteSuccess}
+          </p>
+        )}
+        {deleteError && (
+          <p className="mb-4 px-4 py-2 rounded-lg bg-destructive/15 text-destructive border border-destructive/30" role="alert">
+            {deleteError}
+          </p>
+        )}
         {loading && <p className="text-muted-foreground">加载中…</p>}
       {error && (
         <p className="text-destructive whitespace-pre-wrap mb-4" role="alert">
@@ -363,20 +383,47 @@ export function ArticleList() {
               key={a.id}
               className="border-b border-border py-2 last:border-b-0 flex items-center gap-2"
             >
-              <button
-                type="button"
-                onClick={async () => {
-                  if (!feedId) return;
-                  const next = !a.favorite;
-                  await api.setArticleFavorite(feedId, a.id, next);
-                  loadArticles();
-                }}
-                aria-label={a.favorite ? "取消收藏" : "收藏"}
-                title={a.favorite ? "取消收藏" : "收藏"}
-                className="shrink-0 text-lg leading-none p-1 rounded focus:outline-none focus:ring-2 focus:ring-ring"
-              >
-                {a.favorite ? "★" : "☆"}
-              </button>
+              {feed?.feed_type === "virtual" ? (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!feedId) return;
+                    setDeleteError(null);
+                    setDeletingId(a.id);
+                    try {
+                      await api.deleteArticle(feedId, a.id);
+                      setDeleteSuccess("已删除");
+                      loadArticles();
+                    } catch (err) {
+                      setDeleteError(err instanceof Error ? err.message : "删除失败");
+                    } finally {
+                      setDeletingId(null);
+                    }
+                  }}
+                  disabled={deletingId === a.id}
+                  aria-label="删除"
+                  title="删除"
+                  data-testid={`delete-article-${a.id}`}
+                  className="shrink-0 text-lg leading-none p-1 rounded text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                >
+                  删除
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!feedId) return;
+                    const next = !a.favorite;
+                    await api.setArticleFavorite(feedId, a.id, next);
+                    loadArticles();
+                  }}
+                  aria-label={a.favorite ? "取消收藏" : "收藏"}
+                  title={a.favorite ? "取消收藏" : "收藏"}
+                  className="shrink-0 text-lg leading-none p-1 rounded focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {a.favorite ? "★" : "☆"}
+                </button>
+              )}
               <div
                 className={`shrink-0 flex items-center gap-2 rounded-md border-l-4 py-0.5 pl-2 pr-2 min-w-[6rem] ${getDateWrapClass(a.published)}`}
                 aria-hidden

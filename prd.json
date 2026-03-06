@@ -86,7 +86,7 @@
         "Users can delete an article and see persistent removal after refresh/re-entry.",
         "UI shows clear success/failure feedback for create and delete."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S043",

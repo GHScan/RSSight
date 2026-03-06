@@ -24,6 +24,7 @@ vi.mock("../api/client", () => ({
     createVirtualFeed: vi.fn(),
     setArticleFavorite: vi.fn(),
     createCustomArticle: vi.fn(),
+    deleteArticle: vi.fn(),
     getSummary: vi.fn(),
     generateSummary: vi.fn(),
     createSummaryProfile: vi.fn(),
@@ -741,6 +742,101 @@ describe("Article list interaction (S010)", () => {
       await waitFor(() => {
         expect(screen.getByText("创建成功")).toBeInTheDocument();
       });
+    });
+  });
+
+  describe("S042: favorites article delete flow", () => {
+    it("virtual feed article list shows delete button per article", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([
+        { id: "art1", title: "Custom One", link: "https://example.com/1", published: "2025-03-01T12:00:00Z" },
+        { id: "art2", title: "Custom Two", link: "https://example.com/2", published: "2025-03-02T12:00:00Z" },
+      ]);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Custom One")).toBeInTheDocument();
+        expect(screen.getByText("Custom Two")).toBeInTheDocument();
+      });
+      expect(screen.getByTestId("delete-article-art1")).toBeInTheDocument();
+      expect(screen.getByTestId("delete-article-art2")).toBeInTheDocument();
+      expect(screen.queryByRole("button", { name: /收藏/i })).not.toBeInTheDocument();
+    });
+
+    it("clicking delete calls deleteArticle, refreshes list and shows success", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles)
+        .mockResolvedValueOnce([
+          { id: "art1", title: "To Remove", link: "https://example.com/1", published: "2025-03-01T12:00:00Z" },
+        ])
+        .mockResolvedValueOnce([]);
+      vi.mocked(api.deleteArticle).mockResolvedValue(undefined);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("To Remove")).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByTestId("delete-article-art1"));
+
+      await waitFor(() => {
+        expect(api.deleteArticle).toHaveBeenCalledWith("vf1", "art1");
+      });
+      await waitFor(() => {
+        expect(screen.getByText("已删除")).toBeInTheDocument();
+      });
+      await waitFor(() => {
+        expect(screen.getByText(/暂无文章/)).toBeInTheDocument();
+      });
+    });
+
+    it("delete failure shows error message", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([
+        { id: "art1", title: "To Remove", link: "https://example.com/1", published: "2025-03-01T12:00:00Z" },
+      ]);
+      vi.mocked(api.deleteArticle).mockRejectedValue(new Error("Network error"));
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("To Remove")).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByTestId("delete-article-art1"));
+
+      await waitFor(() => {
+        const alert = screen.getByRole("alert");
+        expect(alert.textContent).toMatch(/Network error|删除失败/);
+      });
+      expect(screen.getByText("To Remove")).toBeInTheDocument();
     });
   });
 });
