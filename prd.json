@@ -273,6 +273,165 @@
         "Date display is consistent with sort order and does not break layout."
       ],
       "passes": true
+    },
+    {
+      "id": "S023",
+      "priority": 23,
+      "title": "Add virtual feed schema in feed storage",
+      "description": "Extend feed storage schema to represent virtual feeds for article favorites collections with name + empty URL + explicit type marker.",
+      "acceptanceCriteria": [
+        "Feed storage supports virtual feed records with name, empty URL, and a clear type/marker to distinguish from normal RSS feeds.",
+        "Existing feed read/write logic can load both normal and virtual feeds without schema break.",
+        "Schema/documentation updates describe virtual feed fields and compatibility behavior.",
+        "Existing normal RSS feed flow remains backward compatible and unaffected."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S024",
+      "priority": 24,
+      "title": "Implement virtual feed CRUD API endpoints",
+      "description": "Add backend API support to create/list/delete virtual feeds while preserving existing feed API behavior.",
+      "acceptanceCriteria": [
+        "API supports creating virtual feed with required name and empty URL persisted to disk.",
+        "API list/read responses include virtual feed records with distinguishable type marker.",
+        "Deleting virtual feed removes its corresponding feed directory subtree safely.",
+        "Existing normal RSS feed API behavior remains backward compatible."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S025",
+      "priority": 25,
+      "title": "Add \"Article Favorites\" button in feed management UI",
+      "description": "On feed management UI, add an \"Article Favorites\" button beside RSS subscription entry and provide create-virtual-feed interaction.",
+      "acceptanceCriteria": [
+        "Feed management page shows an \"Article Favorites\" button adjacent to RSS subscription entry.",
+        "Clicking the button opens create-virtual-feed interaction requiring only feed name.",
+        "After successful creation, the new virtual feed appears in feed list with clear visual distinction from normal feeds."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S026",
+      "priority": 26,
+      "title": "Support virtual feed article list entry and baseline states",
+      "description": "Allow opening virtual feed article list from feed list and show stable loading/empty/error states before custom article creation is enabled.",
+      "acceptanceCriteria": [
+        "Users can navigate from virtual feed item to its article list page.",
+        "Virtual feed article list handles loading, empty, and error states with visible feedback.",
+        "Navigation and baseline list rendering remain stable for both virtual and normal feeds."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S027",
+      "priority": 27,
+      "title": "Define custom article schema and persistence for virtual feeds",
+      "description": "Define storage contract for custom articles under virtual feeds (including URL/title/content/time/source metadata) and persist consistently with existing article layout.",
+      "acceptanceCriteria": [
+        "Custom article storage schema is defined with required and optional fields.",
+        "Custom article records are written under virtual feed article storage using existing article directory conventions.",
+        "Persisted custom articles can be loaded and rendered by article list APIs."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S028",
+      "priority": 28,
+      "title": "Add custom article create form in virtual feed article list",
+      "description": "In virtual feed article list UI, add \"Add custom article\" entry and editable form fields for URL/title/content/publish time/source metadata.",
+      "acceptanceCriteria": [
+        "Virtual feed article list shows visible \"Add custom article\" interaction entry.",
+        "Create form supports editing URL/title/content/publish time/source metadata with partial empty fields allowed before submit.",
+        "Form submission invokes backend create API and keeps user-entered values unchanged before rule-based fill stage."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S029",
+      "priority": 29,
+      "title": "Implement URL-branch missing-field autofill in backend",
+      "description": "When URL is provided for custom article creation, backend fetches/parses page content to fill only missing fields and never overwrite user-provided values.",
+      "acceptanceCriteria": [
+        "If URL is provided and fields are missing, backend attempts URL fetch/parsing and fills empty fields only.",
+        "User-provided non-empty fields are never overwritten by autofill.",
+        "Autofill failure or incomplete required fields returns explicit actionable error response."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S030",
+      "priority": 30,
+      "title": "Finalize URL-branch create success and UI feedback",
+      "description": "Complete frontend/backend integration for URL branch so creation succeeds in one submit when required fields become non-empty after autofill.",
+      "acceptanceCriteria": [
+        "When URL autofill yields all required non-empty fields, article is created successfully in same submit flow.",
+        "UI shows clear success/failure feedback for URL-based creation attempts.",
+        "Created custom article appears in virtual feed article list after creation."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S031",
+      "priority": 31,
+      "title": "Implement no-URL mandatory validation rules",
+      "description": "For custom article creation without URL, enforce title and content as mandatory fields and block creation when either is missing.",
+      "acceptanceCriteria": [
+        "No-URL create path validates title and content as mandatory fields.",
+        "Missing title or content blocks creation and returns explicit validation messages.",
+        "Validation behavior is consistent across backend API and frontend form feedback."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S032",
+      "priority": 32,
+      "title": "Implement no-URL first-click default fill behavior",
+      "description": "When URL is absent and title/content are present but other fields are empty, first click fills reasonable defaults and enters pending-confirm state without creating article.",
+      "acceptanceCriteria": [
+        "No-URL path with title/content present and other empty fields triggers default fill on first click.",
+        "Reasonable defaults are applied (for example current timestamp and placeholder URL such as https://).",
+        "First click does not create article and UI clearly indicates pending confirmation state."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S033",
+      "priority": 33,
+      "title": "Implement no-URL second-click confirmation create flow",
+      "description": "After default fill in no-URL path, allow users to review/edit values and create on second click when all required fields are non-empty.",
+      "acceptanceCriteria": [
+        "Users can review and edit default-filled values before confirmation.",
+        "Second create click succeeds when required fields are non-empty.",
+        "UI feedback clearly differentiates first-click fill stage and second-click creation stage."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S034",
+      "priority": 34,
+      "title": "Add backend tests for virtual feed and custom article rules",
+      "description": "Add backend automated tests covering virtual feed APIs and custom article create logic for URL branch and no-URL branch.",
+      "acceptanceCriteria": [
+        "Tests cover virtual feed create/list/delete persistence behaviors.",
+        "Tests cover URL-branch autofill success and failure/incomplete-field scenarios.",
+        "Tests cover no-URL mandatory validation and two-step default-fill/confirm behavior."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S035",
+      "priority": 35,
+      "title": "Add frontend/UI automation for custom article create flows",
+      "description": "Add frontend tests and UI automation for creating virtual feeds and custom articles, including URL autofill and no-URL two-step confirmation with regression checks.",
+      "acceptanceCriteria": [
+        "Frontend/UI automation covers create virtual feed and open virtual feed article list.",
+        "Automation covers URL branch custom article creation with visible success/failure feedback assertions.",
+        "Automation covers no-URL two-step flow (first-click fill, second-click confirm) and regression of existing RSS feed interactions.",
+        "Existing normal RSS feed flow remains backward compatible and unaffected."
+      ],
+      "passes": false
     }
   ]
 }
