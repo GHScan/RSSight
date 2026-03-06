@@ -260,7 +260,7 @@
         "Typing filters the displayed articles in real time (e.g. by title or other visible fields).",
         "Empty search shows all articles; no server round-trip for filtering."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S022",
