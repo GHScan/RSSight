@@ -12,7 +12,7 @@ describe("App smoke", () => {
       </MemoryRouter>,
     );
     expect(screen.getByRole("heading", { name: "RSSight" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "订阅管理" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "RSS 订阅" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "摘要配置" })).toBeInTheDocument();
   });
 });

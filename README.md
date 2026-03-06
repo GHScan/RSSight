@@ -55,7 +55,7 @@ Then open the frontend in your browser (default port 5173; use `http://127.0.0.1
 
 ## Usage
 
-1. Open the app and go to **订阅管理** (Feed management). Add one or more RSS feed URLs.
+1. Open the app and go to **RSS 订阅** (Feed management). Add one or more RSS feed URLs.
 2. Open a feed and browse its articles.
 3. Go to **摘要配置** (Summary config) and create a summary profile.
 4. On an article page, select a profile and trigger summary generation.

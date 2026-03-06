@@ -65,7 +65,7 @@ describe("Article list interaction (S010)", () => {
       expect(screen.getByText("Article First")).toBeInTheDocument();
       expect(screen.getByText("Article Second")).toBeInTheDocument();
       expect(screen.getByText("Article Third")).toBeInTheDocument();
-      expect(screen.getByRole("link", { name: /返回订阅管理/i })).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: /返回RSS 订阅/i })).toBeInTheDocument();
     });
 
     it("refresh list without losing current context", async () => {

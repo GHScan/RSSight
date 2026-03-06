@@ -68,7 +68,7 @@ export function ArticleList() {
     return (
       <main className="max-w-4xl mx-auto px-4 py-6">
         <header className="flex items-center gap-3 mb-4">
-          <BackLink to="/feeds" aria-label="返回订阅管理" />
+          <BackLink to="/feeds" aria-label="返回RSS 订阅" />
           <h1 className="text-2xl font-semibold text-foreground">文章列表</h1>
         </header>
         <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
@@ -90,7 +90,7 @@ export function ArticleList() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-6">
       <header className="flex items-center gap-3 mb-4">
-        <BackLink to="/feeds" aria-label="返回订阅管理" />
+        <BackLink to="/feeds" aria-label="返回RSS 订阅" />
         <h1 className="text-2xl font-semibold text-foreground">文章列表</h1>
       </header>
       <div className="rounded-xl border border-border bg-background p-4 sm:p-5">

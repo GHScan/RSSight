@@ -6,7 +6,7 @@ export function Home() {
       <h1 className="text-2xl font-semibold text-foreground mb-4">RSSight</h1>
       <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
         <nav className="flex flex-wrap gap-3">
-          <NavLink to="/feeds">订阅管理</NavLink>
+          <NavLink to="/feeds">RSS 订阅</NavLink>
           <NavLink to="/profiles">摘要配置</NavLink>
         </nav>
       </div>

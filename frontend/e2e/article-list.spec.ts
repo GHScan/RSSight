@@ -53,7 +53,7 @@ test.describe("Article list E2E (S011)", () => {
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
     await expect(page.getByText("Article Third")).toBeVisible();
     await expect(page.getByText("Article First")).toBeVisible();
-    await expect(page.getByRole("link", { name: /返回订阅管理/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /返回RSS 订阅/ })).toBeVisible();
   });
 
   test("Happy path: feed entry to article list loading and visible list", async ({
@@ -182,8 +182,8 @@ test.describe("Article list E2E (S011)", () => {
     expect(links[1]).toBe("Article Second");
     expect(links[2]).toBe("Article First");
 
-    await page.getByRole("link", { name: /返回订阅管理/ }).click();
-    await expect(page.getByRole("heading", { name: /订阅管理/ })).toBeVisible();
+    await page.getByRole("link", { name: /返回RSS 订阅/ }).click();
+    await expect(page.getByRole("heading", { name: /RSS 订阅/ })).toBeVisible();
     await page.getByRole("link", { name: "Feed One" }).click();
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
     await expect(page.getByText("Article Third")).toBeVisible();

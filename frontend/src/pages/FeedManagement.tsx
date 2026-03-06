@@ -78,7 +78,7 @@ export function FeedManagement() {
     <main className="max-w-4xl mx-auto px-4 py-6 sm:px-6">
       <header className="flex items-center gap-3 mb-4">
         <BackLink to="/" aria-label="首页" />
-        <h1 className="text-2xl font-semibold text-foreground">订阅管理</h1>
+        <h1 className="text-2xl font-semibold text-foreground">RSS 订阅</h1>
       </header>
       <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
         {loading && <p className="text-muted-foreground">加载中…</p>}

@@ -22,6 +22,6 @@ describe("Tailwind foundation", () => {
       </MemoryRouter>,
     );
     expect(screen.getAllByText("RSSight").length).toBeGreaterThanOrEqual(1);
-    expect(screen.getAllByRole("link", { name: "订阅管理" }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("link", { name: "RSS 订阅" }).length).toBeGreaterThanOrEqual(1);
   });
 });
