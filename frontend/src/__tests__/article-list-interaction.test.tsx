@@ -513,6 +513,41 @@ describe("Article list interaction (S010)", () => {
       });
     });
 
+    it("S044: URL submit when API returns MISSING_REQUIRED_FIELDS (empty title/content after extraction) shows error and form stays open", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([]);
+      vi.mocked(api.createCustomArticle).mockRejectedValue(
+        new Error("400 Bad Request: Title and content are required; URL extraction did not provide them."),
+      );
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
+      await waitFor(() => {
+        expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
+      });
+      await userEvent.type(screen.getByLabelText(/链接 \(URL\)/i), "https://example.com/no-meta");
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(screen.getByRole("alert")).toHaveTextContent(/required|标题|内容|extraction|创建失败/i);
+      });
+      expect(screen.getByLabelText(/标题/i)).toBeInTheDocument();
+      expect(api.createCustomArticle).toHaveBeenCalledTimes(1);
+    });
+
     it("S031: no-URL submit with missing title shows validation message and does not call API", async () => {
       vi.mocked(api.createCustomArticle).mockClear();
       vi.mocked(api.getFeed).mockResolvedValue({

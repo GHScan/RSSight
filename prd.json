@@ -111,7 +111,7 @@
         "Backend/frontend tests cover create failure when title/content stay empty after extraction.",
         "Tests verify time-source precedence and regressions for URL/no-URL paths."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

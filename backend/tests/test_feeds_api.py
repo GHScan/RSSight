@@ -485,6 +485,47 @@ def test_create_custom_article_url_autofill_extraction_called_once_per_request(
     assert call_count == 1
 
 
+def test_create_custom_article_two_posts_each_calls_fetch_once(tmp_path: Path, monkeypatch) -> None:
+    """S044: Two POSTs each trigger exactly one fetch; no cross-request caching."""
+    from datetime import datetime, timezone
+
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    call_count = 0
+
+    def mock_fetch(url: str):
+        nonlocal call_count
+        call_count += 1
+        return {
+            "title": "Fetched",
+            "description": "Desc",
+            "published_at": datetime(2025, 3, 5, 14, 0, 0, tzinfo=timezone.utc),
+        }
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch)
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    for _ in range(2):
+        post_response = client.post(
+            f"/api/feeds/{feed_id}/articles",
+            json={
+                "title": "",
+                "link": "https://example.com/article",
+                "description": "",
+                "published_at": None,
+            },
+        )
+        assert post_response.status_code == 201
+    assert call_count == 2
+
+
 def test_create_custom_article_url_autofill_empty_description_after_extraction_rejected(
     tmp_path: Path, monkeypatch
 ) -> None:
@@ -607,6 +648,51 @@ def test_create_custom_article_time_precedence_url_over_default(
     assert post_response.status_code == 201
     article = post_response.json()
     assert article["published"] == "2025-04-10T08:30:00+00:00"
+
+
+def test_create_custom_article_time_precedence_default_when_extraction_has_no_published(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S043/S044: When URL extraction returns no published_at, backend uses default (now)."""
+    from datetime import datetime, timezone
+
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+
+    def mock_fetch_no_published(url: str):
+        return {
+            "title": "T",
+            "description": "D",
+            "published_at": None,
+        }
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch_no_published)
+    client = TestClient(app)
+
+    create_response = client.post("/api/feeds/virtual", json={"name": "Collected"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    before = datetime.now(timezone.utc)
+    post_response = client.post(
+        f"/api/feeds/{feed_id}/articles",
+        json={
+            "title": "",
+            "link": "https://example.com/page",
+            "description": "",
+            "published_at": None,
+            "source": None,
+        },
+    )
+    after = datetime.now(timezone.utc)
+    assert post_response.status_code == 201
+    article = post_response.json()
+    pub_str = article["published"].replace("Z", "+00:00")
+    pub = datetime.fromisoformat(pub_str)
+    assert before <= pub <= after or abs((pub - before).total_seconds()) < 5
 
 
 def test_create_custom_article_no_url_missing_title_returns_400(
