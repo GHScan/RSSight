@@ -652,5 +652,74 @@ describe("Article list interaction (S010)", () => {
         expect(screen.getByText("创建成功")).toBeInTheDocument();
       });
     });
+
+    it("S033: no-URL after default fill user can edit values and second click creates with edited values", async () => {
+      vi.mocked(api.createCustomArticle).mockClear();
+      vi.mocked(api.createCustomArticle).mockResolvedValue({
+        id: "cust2",
+        title: "Edited Title",
+        link: "https://example.com/custom",
+        published: "2025-01-15T08:30:00Z",
+      });
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles)
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([{
+          id: "cust2",
+          title: "Edited Title",
+          link: "https://example.com/custom",
+          published: "2025-01-15T08:30:00Z",
+        }]);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await waitFor(() => {
+        expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
+      });
+      await userEvent.type(screen.getByLabelText(/标题/i), "Edited Title");
+      await userEvent.type(screen.getByLabelText(/内容/i), "Edited content");
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(screen.getByText(/已填充默认值|请确认|待确认/i)).toBeInTheDocument();
+      });
+      expect(screen.getByRole("button", { name: /确认创建/i })).toBeInTheDocument();
+      expect(api.createCustomArticle).not.toHaveBeenCalled();
+
+      // S033: user edits default-filled URL and published before confirming
+      await userEvent.clear(screen.getByLabelText(/链接 \(URL\)/i));
+      await userEvent.type(screen.getByLabelText(/链接 \(URL\)/i), "https://example.com/custom");
+      await userEvent.clear(screen.getByLabelText(/发布时间/i));
+      await userEvent.type(screen.getByLabelText(/发布时间/i), "2025-01-15T08:30");
+
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(api.createCustomArticle).toHaveBeenCalledWith("vf1", expect.objectContaining({
+          title: "Edited Title",
+          description: "Edited content",
+          link: "https://example.com/custom",
+        }));
+      });
+      const call = vi.mocked(api.createCustomArticle).mock.calls[0][1];
+      expect(call.published_at).toBeDefined();
+      expect(call.published_at).toContain("2025-01-15");
+      await waitFor(() => {
+        expect(screen.getByText("创建成功")).toBeInTheDocument();
+      });
+    });
   });
 });

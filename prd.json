@@ -406,7 +406,7 @@
         "Second create click succeeds when required fields are non-empty.",
         "UI feedback clearly differentiates first-click fill stage and second-click creation stage."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S034",
