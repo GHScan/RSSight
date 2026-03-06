@@ -398,10 +398,10 @@ def test_create_custom_article_url_autofill_failure_returns_400(
         assert "autofill" in str(detail).lower() or "fetch" in str(detail).lower()
 
 
-def test_create_custom_article_url_autofill_incomplete_required_returns_400(
+def test_create_custom_article_url_autofill_incomplete_defaults_title_and_published(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """S029 boundary: After autofill required fields still missing returns explicit error."""
+    """S029: After autofill when title or published_at still missing, backend defaults them so only-URL submit succeeds."""
     from datetime import datetime, timezone
 
     from app import main as app_main
@@ -433,16 +433,11 @@ def test_create_custom_article_url_autofill_incomplete_required_returns_400(
             "published_at": None,
         },
     )
-    assert post_response.status_code == 400
-    body = post_response.json()
-    detail = body.get("detail") or body.get("message")
-    if isinstance(detail, dict):
-        assert (
-            detail.get("code") == "MISSING_REQUIRED_FIELDS"
-            or "required" in (detail.get("message") or "").lower()
-        )
-    else:
-        assert "required" in str(detail).lower() or "title" in str(detail).lower()
+    assert post_response.status_code == 201
+    article = post_response.json()
+    assert article["title"] == "https://example.com/no-title"
+    assert article["description"] == "Some description"
+    assert "published" in article
 
 
 def test_create_custom_article_no_url_missing_title_returns_400(

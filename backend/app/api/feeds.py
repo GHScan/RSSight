@@ -213,21 +213,11 @@ def _resolve_custom_article_payload(payload: CustomArticleCreate) -> tuple[str, 
             published_at = datetime.now(timezone.utc)
         return title, link, description, published_at
 
-    # URL path: require title and published_at after autofill.
-    if not title or published_at is None:
-        missing: List[str] = []
-        if not title:
-            missing.append("title")
-        if published_at is None:
-            missing.append("published_at")
-        raise HTTPException(
-            status_code=HTTPStatus.BAD_REQUEST,
-            detail={
-                "code": "MISSING_REQUIRED_FIELDS",
-                "message": "Title and published_at required; use URL autofill or provide them.",
-                "details": {"missing": missing},
-            },
-        )
+    # URL path: after autofill, default any still-missing required fields so "only URL" works.
+    if not title:
+        title = link or "Untitled"
+    if published_at is None:
+        published_at = datetime.now(timezone.utc)
     return title, link, description, published_at
 
 
