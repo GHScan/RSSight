@@ -171,7 +171,7 @@ export function ArticleSummary() {
                       {deleting ? "删除中…" : "删除"}
                     </button>
                   </div>
-                  <div data-testid="summary-content" className="rounded-md border border-border p-4 bg-secondary/30 overflow-auto max-h-[70vh]">
+                  <div data-testid="summary-content" className="mt-4">
                     <MarkdownContent content={summary} />
                   </div>
                 </div>

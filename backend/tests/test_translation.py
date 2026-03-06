@@ -1,5 +1,5 @@
 """
-Tests for title translation (S019): translation profile, parsing, persistence, background pass.
+Tests for title translation (S019): title_translation profile, parsing, persistence, background pass.
 """
 
 from __future__ import annotations
@@ -57,10 +57,10 @@ def test_parse_translation_response_english_to_chinese() -> None:
 @pytest.mark.integration
 def test_translation_profile_english_to_chinese_with_real_profile(tmp_path: Path) -> None:
     """
-    使用 data 目录下真实的 translation profile 和真实 API 测翻译：
+    使用 data 目录下真实的 title_translation profile 和真实 API 测翻译：
     标题 "english" 的翻译结果应为 "英语"。
     仅在手选时跑（pytest -m integration），且需 RUN_TRANSLATION_INTEGRATION=1；
-    若 data 中无 translation profile 则跳过。
+    若 data 中无 title_translation profile 则跳过。
     """
     if os.environ.get("RUN_TRANSLATION_INTEGRATION") != "1":
         pytest.skip("需要 RUN_TRANSLATION_INTEGRATION=1 才执行真实 API 翻译测试")
@@ -99,7 +99,7 @@ def test_translation_profile_english_to_chinese_with_real_profile(tmp_path: Path
 
     loaded = art_svc.get_article(feed.id, article.id)
     assert loaded.title_trans == "英语", (
-        f'使用 data 中真实 translation profile 时，"english" 的翻译结果应为 "英语"，实际为 {loaded.title_trans!r}'
+        f'使用 data 中真实 title_translation profile 时，"english" 的翻译结果应为 "英语"，实际为 {loaded.title_trans!r}'
     )
 
 
@@ -137,7 +137,7 @@ def test_translate_article_title_persists_title_trans(tmp_path: Path) -> None:
 
 
 def test_translate_article_title_skips_when_profile_missing(tmp_path: Path) -> None:
-    """When translation profile does not exist, translate_article_title returns False."""
+    """When title_translation profile does not exist, translate_article_title returns False."""
     feed_svc = FeedService(tmp_path)
     feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
     article = Article(
@@ -167,7 +167,7 @@ def test_translate_article_title_skips_when_profile_missing(tmp_path: Path) -> N
 
 
 def test_run_translation_pass_skips_when_no_translation_profile(tmp_path: Path) -> None:
-    """When translation profile is not configured, pass does nothing and does not raise."""
+    """When title_translation profile is not configured, pass does nothing and does not raise."""
     feed_svc = FeedService(tmp_path)
     feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
     article = Article(
@@ -192,7 +192,7 @@ def test_run_translation_pass_skips_when_no_translation_profile(tmp_path: Path) 
 
 
 def test_run_translation_pass_populates_title_trans_when_profile_exists(tmp_path: Path) -> None:
-    """When translation profile exists, articles without title_trans get translated."""
+    """When title_translation profile exists, articles without title_trans get translated."""
     feed_svc = FeedService(tmp_path)
     feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
     article = Article(

@@ -228,11 +228,11 @@
     {
       "id": "S019",
       "priority": 19,
-      "title": "Background process to add title_trans to articles via translation profile",
-      "description": "Add a background process that gradually populates a title_trans field for articles. It uses a user-configured AI profile named \"translation\": the text to translate is passed as title; the returned result is split by \" (ASCII double quote) and the last non-empty segment is taken as title_trans. title_trans is then shown instead of title in the article list and in the summary page header.",
+      "title": "Background process to add title_trans to articles via title_translation profile",
+      "description": "Add a background process that gradually populates a title_trans field for articles. It uses a user-configured AI profile named \"title_translation\": the text to translate is passed as title; the returned result is split by \" (ASCII double quote) and the last non-empty segment is taken as title_trans. title_trans is then shown instead of title in the article list and in the summary page header.",
       "acceptanceCriteria": [
         "Background process runs and processes articles incrementally without blocking the main app.",
-        "Translation is performed via the configured \"translation\" profile; input is article title, output is parsed per spec (split by \", last non-empty = title_trans).",
+        "Translation is performed via the configured \"title_translation\" profile; input is article title, output is parsed per spec (split by \", last non-empty = title_trans).",
         "title_trans is persisted (e.g. in article data) and exposed to frontend.",
         "Article list and summary page header display title_trans when present, otherwise fall back to title."
       ],

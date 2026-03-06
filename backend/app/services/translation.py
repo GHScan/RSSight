@@ -1,7 +1,7 @@
 """
 Background title translation for articles (S019).
 
-Uses a summary profile named "translation": the article title is sent as the
+Uses a summary profile named "title_translation": the article title is sent as the
 prompt; the API response is split by ASCII double quote (") and the last
 non-empty segment is used as title_trans. title_trans is persisted on the
 article and shown in the UI when present.
@@ -22,7 +22,7 @@ from app.services.profiles import ProfileNotFoundError, SummaryProfileService
 # Callable: (prompt: str, profile_name: str) -> str
 CallAiCallable = Callable[[str, str], str]
 
-TRANSLATION_PROFILE_NAME = "translation"
+TRANSLATION_PROFILE_NAME = "title_translation"
 
 
 def parse_translation_response(raw: str) -> str | None:
@@ -85,8 +85,8 @@ def run_translation_pass(
 ) -> None:
     """
     One pass: for each feed, list articles; for each article without title_trans,
-    try to translate via the "translation" profile. Failures for one article
-    do not stop the pass. If the translation profile does not exist, the pass
+    try to translate via the "title_translation" profile. Failures for one article
+    do not stop the pass. If the title_translation profile does not exist, the pass
     does nothing (no exception).
     """
     from app.services.feeds import FeedService

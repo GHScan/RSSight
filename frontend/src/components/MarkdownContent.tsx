@@ -33,6 +33,35 @@ const proseClasses = {
   td: "px-4 py-2.5 text-foreground border border-border",
 };
 
+/** Fallback for mobile / insecure context where navigator.clipboard is unavailable or fails. */
+function fallbackCopy(toCopy: string): boolean {
+  const textarea = document.createElement("textarea");
+  textarea.value = toCopy;
+  textarea.setAttribute("readonly", "");
+  textarea.style.position = "fixed";
+  textarea.style.left = "-9999px";
+  textarea.style.top = "0";
+  document.body.appendChild(textarea);
+  if (navigator.userAgent.match(/iphone|ipad|ipod/i)) {
+    const range = document.createRange();
+    range.selectNodeContents(textarea);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  } else {
+    textarea.select();
+  }
+  textarea.focus();
+  try {
+    const ok = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return ok;
+  } catch {
+    document.body.removeChild(textarea);
+    return false;
+  }
+}
+
 function CopyButton({
   text,
   getText,
@@ -43,15 +72,28 @@ function CopyButton({
   className?: string;
 }) {
   const [copied, setCopied] = useState(false);
-  const handleCopy = async () => {
+  const handleCopy = () => {
     const toCopy = getText ? getText() : text ?? "";
     if (!toCopy) return;
-    try {
-      await navigator.clipboard.writeText(toCopy);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
+    const usedAsync = typeof navigator !== "undefined" && !!navigator.clipboard?.writeText;
+    if (usedAsync) {
+      navigator.clipboard
+        .writeText(toCopy)
+        .then(() => {
+          setCopied(true);
+          setTimeout(() => setCopied(false), 2000);
+        })
+        .catch(() => {
+          if (fallbackCopy(toCopy)) {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          }
+        });
+    } else {
+      if (fallbackCopy(toCopy)) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
     }
   };
   return (
