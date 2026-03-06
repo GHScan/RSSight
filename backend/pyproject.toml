@@ -32,6 +32,11 @@ include = ["app*"]
 [tool.pytest.ini_options]
 pythonpath = ["."]
 testpaths = ["tests"]
+# 日常/CI 默认不跑需真实 API 的集成测试；手工跑时用: pytest -m integration
+addopts = '-m "not integration"'
+markers = [
+  "integration: 需真实 profile/API 的集成测试，仅在手选时运行 (pytest -m integration)",
+]
 
 [tool.black]
 line-length = 100

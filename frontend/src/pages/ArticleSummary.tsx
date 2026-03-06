@@ -13,6 +13,7 @@ export function ArticleSummary() {
   const [summary, setSummary] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
 
@@ -70,6 +71,20 @@ export function ArticleSummary() {
       setError(e instanceof Error ? e.message : "生成失败");
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!feedId || !articleId || !selectedProfile) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      await api.deleteSummary(feedId, articleId, selectedProfile);
+      setSummary(null);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "删除失败");
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -137,15 +152,26 @@ export function ArticleSummary() {
                   <div data-testid="summary-content" className="rounded-md border border-border p-4 bg-secondary/30 overflow-auto max-h-[70vh]">
                     <MarkdownContent content={summary} />
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleGenerate}
-                    disabled={generating}
-                    aria-label="重新生成"
-                    className={btnPrimary}
-                  >
-                    {generating ? "生成中…" : "重新生成"}
-                  </button>
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      onClick={handleGenerate}
+                      disabled={generating}
+                      aria-label="重新生成"
+                      className={btnPrimary}
+                    >
+                      {generating ? "生成中…" : "重新生成"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleDelete}
+                      disabled={deleting}
+                      aria-label="删除摘要"
+                      className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
+                    >
+                      {deleting ? "删除中…" : "删除"}
+                    </button>
+                  </div>
                 </div>
               )}
               {error && (

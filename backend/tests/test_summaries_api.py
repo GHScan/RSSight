@@ -118,6 +118,28 @@ def test_get_summary_not_found_returns_404(tmp_path: Path) -> None:
         app.dependency_overrides.pop(get_summary_service, None)
 
 
+def test_delete_summary_returns_204(tmp_path: Path) -> None:
+    """DELETE summary returns 204; subsequent GET returns 404."""
+    from app.api.summaries import get_summary_service
+
+    summary_svc = SummaryService(tmp_path, call_ai=lambda p, n: "x")
+    app.dependency_overrides[get_summary_service] = lambda: summary_svc
+    try:
+        feed_id, article_id, profile_name = _setup_feed_article_profile(tmp_path)
+        summary_svc.generate_summary(feed_id=feed_id, article_id=article_id, profile_name=profile_name)
+        client = TestClient(app)
+        resp = client.delete(
+            f"/api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}"
+        )
+        assert resp.status_code == 204
+        get_resp = client.get(
+            f"/api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}"
+        )
+        assert get_resp.status_code == 404
+    finally:
+        app.dependency_overrides.pop(get_summary_service, None)
+
+
 def test_post_generate_ai_not_configured_returns_503(tmp_path: Path) -> None:
     """POST generate when no AI callable is injected returns 503 with clear message."""
     from app.api.summaries import get_summary_service

@@ -5,22 +5,29 @@ Tests for title translation (S019): translation profile, parsing, persistence, b
 from __future__ import annotations
 
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 from unittest.mock import MagicMock
+
+import pytest
 
 from app.models.articles import Article
 from app.models.feeds import FeedCreate
 from app.models.profiles import SummaryProfileCreate
 from app.services.articles import ArticleService
 from app.services.feeds import FeedService
-from app.services.profiles import SummaryProfileService
+from app.services.profiles import ProfileNotFoundError, SummaryProfileService
+from app.services.summary import make_openai_call_ai
 from app.services.translation import (
     TRANSLATION_PROFILE_NAME,
     parse_translation_response,
     run_translation_pass,
     translate_article_title,
 )
+
+# 项目 data 目录（backend/tests -> backend -> 项目根 -> data）
+_REAL_DATA_ROOT = Path(__file__).resolve().parents[2] / "data"
 
 
 def test_parse_translation_response_last_non_empty_segment() -> None:
@@ -36,6 +43,64 @@ def test_parse_translation_response_empty_returns_none() -> None:
     """When no non-empty segment, return None."""
     assert parse_translation_response("") is None
     assert parse_translation_response('  "  "  ') is None
+
+
+def test_parse_translation_response_english_to_chinese() -> None:
+    """Typical translation API response: 'english' => '英语' parses to 英语."""
+    # 无引号时整段即译文
+    assert parse_translation_response("英语") == "英语"
+    # 带引号的模板式回复，取最后一对引号内的内容
+    assert parse_translation_response('翻译成中文："english"=>"英语"') == "英语"
+    assert parse_translation_response('prefix " 英语 "') == "英语"
+
+
+@pytest.mark.integration
+def test_translation_profile_english_to_chinese_with_real_profile(tmp_path: Path) -> None:
+    """
+    使用 data 目录下真实的 translation profile 和真实 API 测翻译：
+    标题 "english" 的翻译结果应为 "英语"。
+    仅在手选时跑（pytest -m integration），且需 RUN_TRANSLATION_INTEGRATION=1；
+    若 data 中无 translation profile 则跳过。
+    """
+    if os.environ.get("RUN_TRANSLATION_INTEGRATION") != "1":
+        pytest.skip("需要 RUN_TRANSLATION_INTEGRATION=1 才执行真实 API 翻译测试")
+
+    profile_service = SummaryProfileService(_REAL_DATA_ROOT)
+    try:
+        profile_service.get_profile(TRANSLATION_PROFILE_NAME)
+    except ProfileNotFoundError:
+        pytest.skip(f"data 中未找到 profile {TRANSLATION_PROFILE_NAME!r}")
+
+    feed_svc = FeedService(tmp_path)
+    feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
+    article = Article(
+        id="art-1",
+        feed_id=feed.id,
+        title="english",
+        link="https://example.com/1",
+        description="",
+        guid="g1",
+        published_at=datetime.now(timezone.utc),
+    )
+    article_dir = tmp_path / "feeds" / feed.id / "articles" / article.id
+    article_dir.mkdir(parents=True)
+    article_dir.joinpath("article.json").write_text(
+        json.dumps(article.model_dump(mode="json"), indent=2),
+        encoding="utf-8",
+    )
+
+    call_ai = make_openai_call_ai(profile_service)
+    art_svc = ArticleService(tmp_path)
+    result = translate_article_title(
+        call_ai, art_svc, feed.id, article.id, "english", TRANSLATION_PROFILE_NAME,
+        profile_service=profile_service,
+    )
+    assert result is True, "翻译应成功并写入 title_trans"
+
+    loaded = art_svc.get_article(feed.id, article.id)
+    assert loaded.title_trans == "英语", (
+        f'使用 data 中真实 translation profile 时，"english" 的翻译结果应为 "英语"，实际为 {loaded.title_trans!r}'
+    )
 
 
 def test_translate_article_title_persists_title_trans(tmp_path: Path) -> None:
@@ -90,8 +155,6 @@ def test_translate_article_title_skips_when_profile_missing(tmp_path: Path) -> N
         json.dumps(article.model_dump(mode="json"), indent=2),
         encoding="utf-8",
     )
-
-    from app.services.profiles import ProfileNotFoundError
 
     def failing_call_ai(_prompt: str, _profile_name: str) -> str:
         raise ProfileNotFoundError(TRANSLATION_PROFILE_NAME)
@@ -148,7 +211,8 @@ def test_run_translation_pass_populates_title_trans_when_profile_exists(tmp_path
         encoding="utf-8",
     )
 
-    SummaryProfileService(tmp_path).create_profile(
+    profile_svc = SummaryProfileService(tmp_path)
+    profile_svc.create_profile(
         SummaryProfileCreate(
             name=TRANSLATION_PROFILE_NAME,
             base_url="https://api.example.com",
@@ -158,6 +222,7 @@ def test_run_translation_pass_populates_title_trans_when_profile_exists(tmp_path
             prompt_template="{title}",
         )
     )
+    profile_svc.touch_profile = MagicMock()  # 后台翻译不得更新 last_used_at
 
     def fake_call_ai(prompt: str, profile_name: str) -> str:
         assert profile_name == TRANSLATION_PROFILE_NAME
@@ -168,9 +233,11 @@ def test_run_translation_pass_populates_title_trans_when_profile_exists(tmp_path
         tmp_path,
         fake_call_ai,
         article_service=art_svc,
+        profile_service=profile_svc,
     )
     loaded = art_svc.get_article(feed.id, article.id)
     assert loaded.title_trans == "translated:Original Title"
+    profile_svc.touch_profile.assert_not_called()
 
 
 def test_article_persist_preserves_title_trans_on_refetch(tmp_path: Path) -> None:

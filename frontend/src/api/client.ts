@@ -101,4 +101,10 @@ export const api = {
       return res.text();
     });
   },
+  deleteSummary(feedId: string, articleId: string, profileName: string): Promise<void> {
+    return fetch(
+      `${BASE}/feeds/${feedId}/articles/${articleId}/summaries/${encodeURIComponent(profileName)}`,
+      { method: "DELETE" },
+    ).then(handleResponse);
+  },
 };

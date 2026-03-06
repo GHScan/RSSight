@@ -20,6 +20,7 @@ from app.services.articles import ArticleNotFoundError
 from app.services.feeds import FeedService
 from app.services.profiles import ProfileNotFoundError, SummaryProfileService
 from app.services.summary import SummaryService
+from app.services.translation import TRANSLATION_PROFILE_NAME
 
 
 def _make_feed_and_article(tmp_path: Path) -> tuple[str, str]:
@@ -180,3 +181,90 @@ def test_get_summary_returns_none_when_not_generated(tmp_path: Path) -> None:
     )
 
     assert content is None
+
+
+def test_delete_summary_removes_markdown_file(tmp_path: Path) -> None:
+    """delete_summary removes the .md file; get_summary then returns None."""
+    feed_id, article_id = _make_feed_and_article(tmp_path)
+    _make_profile_service_and_profile(tmp_path)
+    summary_svc = SummaryService(tmp_path, call_ai=lambda p, n: "body")
+    summary_svc.generate_summary(feed_id=feed_id, article_id=article_id, profile_name="default")
+
+    md_path = tmp_path / "feeds" / feed_id / "articles" / article_id / "summaries" / "default.md"
+    assert md_path.exists()
+
+    summary_svc.delete_summary(feed_id=feed_id, article_id=article_id, profile_name="default")
+    assert not md_path.exists()
+    assert summary_svc.get_summary(feed_id=feed_id, article_id=article_id, profile_name="default") is None
+
+
+def test_translation_profile_get_summary_returns_title_trans(tmp_path: Path) -> None:
+    """For profile 'translation', get_summary returns article.title_trans (or None)."""
+    feed_id, article_id = _make_feed_and_article(tmp_path)
+    profile_svc = SummaryProfileService(tmp_path)
+    profile_svc.create_profile(
+        SummaryProfileCreate(
+            name=TRANSLATION_PROFILE_NAME,
+            base_url="https://api.example.com",
+            key="k",
+            model="m",
+            fields=["title"],
+            prompt_template='翻译："{title}"=>"',
+        )
+    )
+    summary_svc = SummaryService(tmp_path, call_ai=lambda p, n: "x")
+    art_svc = summary_svc._article_service
+    art_svc.update_article_title_trans(feed_id, article_id, "已译标题")
+    assert summary_svc.get_summary(feed_id=feed_id, article_id=article_id, profile_name=TRANSLATION_PROFILE_NAME) == "已译标题"
+    art_svc.clear_article_title_trans(feed_id, article_id)
+    assert summary_svc.get_summary(feed_id=feed_id, article_id=article_id, profile_name=TRANSLATION_PROFILE_NAME) is None
+
+
+def test_translation_profile_generate_updates_title_trans(tmp_path: Path) -> None:
+    """For profile 'translation', generate_summary updates title_trans and returns it."""
+    feed_id, article_id = _make_feed_and_article(tmp_path)
+    profile_svc = SummaryProfileService(tmp_path)
+    profile_svc.create_profile(
+        SummaryProfileCreate(
+            name=TRANSLATION_PROFILE_NAME,
+            base_url="https://api.example.com",
+            key="k",
+            model="m",
+            fields=["title"],
+            prompt_template='翻译："{title}"=>"',
+        )
+    )
+
+    def fake_call_ai(prompt: str, profile_name: str) -> str:
+        return 'ignored " 新译文 "'
+
+    summary_svc = SummaryService(tmp_path, call_ai=fake_call_ai, profile_service=profile_svc)
+    result = summary_svc.generate_summary(
+        feed_id=feed_id, article_id=article_id, profile_name=TRANSLATION_PROFILE_NAME
+    )
+    assert result == "新译文"
+    article = summary_svc._article_service.get_article(feed_id, article_id)
+    assert article.title_trans == "新译文"
+
+
+def test_translation_profile_delete_clears_title_trans(tmp_path: Path) -> None:
+    """For profile 'translation', delete_summary clears article.title_trans."""
+    feed_id, article_id = _make_feed_and_article(tmp_path)
+    profile_svc = SummaryProfileService(tmp_path)
+    profile_svc.create_profile(
+        SummaryProfileCreate(
+            name=TRANSLATION_PROFILE_NAME,
+            base_url="https://api.example.com",
+            key="k",
+            model="m",
+            fields=["title"],
+            prompt_template="{title}",
+        )
+    )
+    summary_svc = SummaryService(tmp_path, call_ai=lambda p, n: "x")
+    summary_svc._article_service.update_article_title_trans(feed_id, article_id, "待删除")
+    assert summary_svc.get_summary(feed_id=feed_id, article_id=article_id, profile_name=TRANSLATION_PROFILE_NAME) == "待删除"
+    summary_svc.delete_summary(feed_id=feed_id, article_id=article_id, profile_name=TRANSLATION_PROFILE_NAME)
+    assert summary_svc.get_summary(feed_id=feed_id, article_id=article_id, profile_name=TRANSLATION_PROFILE_NAME) is None
+    article = summary_svc._article_service.get_article(feed_id, article_id)
+    assert article.title_trans is None

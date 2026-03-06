@@ -201,6 +201,20 @@ class ArticleService:
             encoding="utf-8",
         )
 
+    def clear_article_title_trans(self, feed_id: str, article_id: str) -> None:
+        """
+        Clear the title_trans field of an article and persist to disk.
+        Raises ArticleNotFoundError if the article does not exist.
+        """
+        article = self.get_article(feed_id, article_id)
+        updated = article.model_copy(update={"title_trans": None})
+        article_dir = self._feeds_dir / feed_id / "articles" / article_id
+        payload = updated.model_dump(mode="json")
+        (article_dir / "article.json").write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+
     def set_article_favorite(self, feed_id: str, article_id: str, favorite: bool) -> None:
         """
         Set or clear the favorite marker for an article. Raises ArticleNotFoundError

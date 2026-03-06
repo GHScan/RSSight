@@ -1,8 +1,9 @@
 """
 API routes for article summary generation and retrieval (S004).
 
-GET  /api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}
-POST /api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}/generate
+GET    /api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}
+POST   /api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}/generate
+DELETE /api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}
 """
 
 from __future__ import annotations
@@ -59,6 +60,22 @@ def get_summary(
     return content
 
 
+@router.delete(
+    "/{feed_id}/articles/{article_id}/summaries/{profile_name}",
+    status_code=HTTPStatus.NO_CONTENT,
+)
+def delete_summary(
+    feed_id: str,
+    article_id: str,
+    profile_name: str,
+    service: SummaryService = Depends(get_summary_service),
+) -> None:
+    """
+    Delete the summary for the given article and profile. No-op if not present.
+    """
+    service.delete_summary(feed_id=feed_id, article_id=article_id, profile_name=profile_name)
+
+
 @router.post(
     "/{feed_id}/articles/{article_id}/summaries/{profile_name}/generate",
     response_class=PlainTextResponse,
@@ -105,3 +122,11 @@ def generate_summary(
                 "message": "AI summary is not configured. Configure an OpenAI-compatible API key in the summary profile.",
             },
         ) from None
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail={
+                "code": "GENERATION_FAILED",
+                "message": str(exc),
+            },
+        ) from exc

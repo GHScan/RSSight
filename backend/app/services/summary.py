@@ -18,6 +18,7 @@ from urllib.request import Request, urlopen
 
 from app.services.articles import ArticleNotFoundError, ArticleService
 from app.services.profiles import ProfileNotFoundError, SummaryProfileService
+from app.services.translation import TRANSLATION_PROFILE_NAME, translate_article_title
 
 if TYPE_CHECKING:
     from app.models.articles import Article
@@ -124,6 +125,7 @@ class SummaryService:
         """
         Load article and profile, build prompt from template (with title/content
         variables), call the AI, and write the result to a .md file.
+        For profile "translation", updates article.title_trans instead and returns it.
         Returns the generated summary body.
         """
         try:
@@ -134,6 +136,23 @@ class SummaryService:
             profile = self._profile_service.get_profile(profile_name)
         except ProfileNotFoundError:
             raise
+
+        if profile_name == TRANSLATION_PROFILE_NAME:
+            ok = translate_article_title(
+                self._call_ai,
+                self._article_service,
+                feed_id,
+                article_id,
+                article.title,
+                profile_name=profile_name,
+                profile_service=self._profile_service,
+            )
+            if not ok:
+                raise ValueError("Translation failed or profile not configured.")
+            self._profile_service.touch_profile(profile_name)
+            updated = self._article_service.get_article(feed_id, article_id)
+            assert updated.title_trans is not None
+            return updated.title_trans
 
         # 若 RSS 只有标题/短描述（如 description 与 title 相同），从文章链接抓取正文
         content_override = None
@@ -159,14 +178,44 @@ class SummaryService:
     ) -> str | None:
         """
         Return the content of an existing summary .md file, or None if it
-        does not exist.
+        does not exist. For profile "translation", returns article.title_trans.
         """
+        if profile_name == TRANSLATION_PROFILE_NAME:
+            try:
+                article = self._article_service.get_article(feed_id, article_id)
+            except ArticleNotFoundError:
+                return None
+            return article.title_trans if article.title_trans else None
+
         md_path = (
             self._feeds_dir / feed_id / "articles" / article_id / "summaries" / f"{profile_name}.md"
         )
         if not md_path.exists():
             return None
         return md_path.read_text(encoding="utf-8")
+
+    def delete_summary(
+        self,
+        feed_id: str,
+        article_id: str,
+        profile_name: str,
+    ) -> None:
+        """
+        Remove the summary for the given article and profile (.md and .meta.json if present).
+        For profile "translation", clears article.title_trans.
+        No-op if the summary does not exist.
+        """
+        if profile_name == TRANSLATION_PROFILE_NAME:
+            try:
+                self._article_service.clear_article_title_trans(feed_id, article_id)
+            except ArticleNotFoundError:
+                pass
+            return
+        summary_dir = self._feeds_dir / feed_id / "articles" / article_id / "summaries"
+        for name in (f"{profile_name}.md", f"{profile_name}.meta.json"):
+            path = summary_dir / name
+            if path.exists():
+                path.unlink()
 
 
 def _strip_html_to_text(html: str) -> str:

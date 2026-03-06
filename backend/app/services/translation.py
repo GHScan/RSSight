@@ -5,6 +5,9 @@ Uses a summary profile named "translation": the article title is sent as the
 prompt; the API response is split by ASCII double quote (") and the last
 non-empty segment is used as title_trans. title_trans is persisted on the
 article and shown in the UI when present.
+
+Note: Background translation must NOT update the profile's last_used_at; that
+field is only updated when the user explicitly uses a profile (e.g. for summary).
 """
 
 from __future__ import annotations
@@ -35,6 +38,11 @@ def parse_translation_response(raw: str) -> str | None:
     return None
 
 
+def _render_translation_prompt(template: str, title: str) -> str:
+    """Fill prompt template with title; use empty string for content/description/link."""
+    return template.format(title=title, content="", description="", link="")
+
+
 def translate_article_title(
     call_ai: CallAiCallable,
     article_service: ArticleService,
@@ -42,14 +50,22 @@ def translate_article_title(
     article_id: str,
     title: str,
     profile_name: str = TRANSLATION_PROFILE_NAME,
+    profile_service: SummaryProfileService | None = None,
 ) -> bool:
     """
     Translate an article title using the named profile and persist title_trans.
+    When profile_service is given, the prompt is built from the profile's prompt_template;
+    otherwise the raw title is sent as the prompt (for backward compatibility).
     Returns True if translation was applied, False if skipped (e.g. profile missing).
     Raises only on unexpected errors (e.g. article not found).
     """
     try:
-        response = call_ai(title, profile_name)
+        if profile_service is not None:
+            profile = profile_service.get_profile(profile_name)
+            prompt = _render_translation_prompt(profile.prompt_template, title)
+        else:
+            prompt = title
+        response = call_ai(prompt, profile_name)
     except ProfileNotFoundError:
         return False
     title_trans = parse_translation_response(response)
@@ -95,7 +111,10 @@ def run_translation_pass(
             if article.title_trans:
                 continue
             try:
-                translate_article_title(call_ai, art_svc, feed.id, article.id, article.title)
+                translate_article_title(
+                    call_ai, art_svc, feed.id, article.id, article.title,
+                    profile_service=profile_svc,
+                )
             except Exception:  # noqa: BLE001
                 if logger:
                     logger.warning(
