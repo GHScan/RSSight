@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { NavLink } from "../components/NavLink";
+import { BackLink } from "../components/BackLink";
 import type { Feed } from "../api/types";
 import { api } from "../api/client";
 
@@ -12,6 +12,7 @@ export function FeedManagement() {
   const [addTitle, setAddTitle] = useState("");
   const [addUrl, setAddUrl] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadFeeds = useCallback(() => {
     setLoading(true);
@@ -51,13 +52,33 @@ export function FeedManagement() {
     }
   };
 
+  const handleDelete = async (feedId: string, title: string) => {
+    if (!window.confirm(`确认删除订阅「${title}」？`)) return;
+    setDeletingId(feedId);
+    setError(null);
+    try {
+      await api.deleteFeed(feedId);
+      loadFeeds();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "删除失败");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  const btnBase =
+    "inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg text-base font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
+  const btnPrimary = `${btnBase} bg-primary text-primary-foreground hover:opacity-90`;
+  const btnSecondary = `${btnBase} border border-border bg-background text-foreground hover:bg-accent`;
+
   return (
     <main className="max-w-4xl mx-auto px-4 py-6 sm:px-6">
-      <h1 className="text-2xl font-semibold text-foreground mb-4">订阅管理</h1>
-      <nav className="flex flex-wrap gap-3 items-center mb-6">
-        <NavLink to="/">首页</NavLink>
-      </nav>
-      {loading && <p className="text-muted-foreground">加载中…</p>}
+      <header className="flex items-center gap-3 mb-4">
+        <BackLink to="/" aria-label="首页" />
+        <h1 className="text-2xl font-semibold text-foreground">订阅管理</h1>
+      </header>
+      <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
+        {loading && <p className="text-muted-foreground">加载中…</p>}
       {error && (
         <p className="text-destructive whitespace-pre-wrap mb-4" role="alert">
           错误：{error}
@@ -77,7 +98,7 @@ export function FeedManagement() {
               setFormError(null);
             }}
             aria-label="添加"
-            className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            className={btnPrimary}
           >
             添加
           </button>
@@ -110,10 +131,7 @@ export function FeedManagement() {
             placeholder="https://example.com/feed.xml"
           />
           <div className="flex gap-2 mt-4">
-            <button
-              type="submit"
-              className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-            >
+            <button type="submit" className={btnPrimary}>
               确定
             </button>
             <button
@@ -122,7 +140,7 @@ export function FeedManagement() {
                 setShowAddForm(false);
                 setFormError(null);
               }}
-              className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              className={btnSecondary}
             >
               取消
             </button>
@@ -133,19 +151,33 @@ export function FeedManagement() {
         <p className="text-muted-foreground">暂无订阅，请先添加订阅源。</p>
       )}
       {!loading && !error && feeds.length > 0 && (
-        <ul className="space-y-2 list-none p-0">
+        <ul className="space-y-4 list-none p-0">
           {feeds.map((f) => (
-            <li key={f.id} className="border-b border-border py-2 last:border-b-0">
-              <Link
-                to={`/feeds/${f.id}/articles`}
-                className="text-primary hover:underline break-words focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
-              >
-                {f.title}
-              </Link>
+            <li key={f.id} className="border border-border rounded-lg p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <Link
+                  to={`/feeds/${f.id}/articles`}
+                  className="font-medium text-primary hover:underline break-words min-w-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
+                >
+                  {f.title}
+                </Link>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(f.id, f.title)}
+                    disabled={deletingId === f.id}
+                    aria-label={`删除 ${f.title}`}
+                    className={`${btnBase} bg-destructive text-destructive-foreground hover:opacity-90 disabled:opacity-50`}
+                  >
+                    {deletingId === f.id ? "删除中…" : "删除"}
+                  </button>
+                </div>
+              </div>
             </li>
           ))}
         </ul>
       )}
+      </div>
     </main>
   );
 }

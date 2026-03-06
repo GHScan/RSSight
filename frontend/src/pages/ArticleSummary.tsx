@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import type { SummaryProfile } from "../api/types";
 import { api } from "../api/client";
 import { MarkdownContent } from "../components/MarkdownContent";
-import { NavLink } from "../components/NavLink";
+import { BackLink } from "../components/BackLink";
 
 export function ArticleSummary() {
   const { feedId, articleId } = useParams<{ feedId: string; articleId: string }>();
@@ -76,6 +76,7 @@ export function ArticleSummary() {
 
   const handleDelete = async () => {
     if (!feedId || !articleId || !selectedProfile) return;
+    if (!window.confirm("确认删除该摘要？")) return;
     setDeleting(true);
     setError(null);
     try {
@@ -95,11 +96,12 @@ export function ArticleSummary() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-semibold text-foreground mb-4">文章摘要</h1>
-      <nav className="flex flex-wrap gap-3 mb-4">
-        <NavLink to={`/feeds/${feedId}/articles`}>返回文章列表</NavLink>
-      </nav>
-      {articleTitle && (
+      <header className="flex items-center gap-3 mb-4">
+        <BackLink to={`/feeds/${feedId}/articles`} aria-label="返回文章列表" />
+        <h1 className="text-2xl font-semibold text-foreground">文章摘要</h1>
+      </header>
+      <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
+        {articleTitle && (
         <p className="text-lg font-medium text-foreground mb-4 break-words border-b border-border pb-3">
           {articleTitle}
         </p>
@@ -149,9 +151,6 @@ export function ArticleSummary() {
               )}
               {!loadingSummary && summary !== null && (
                 <div className="space-y-4">
-                  <div data-testid="summary-content" className="rounded-md border border-border p-4 bg-secondary/30 overflow-auto max-h-[70vh]">
-                    <MarkdownContent content={summary} />
-                  </div>
                   <div className="flex flex-wrap gap-3">
                     <button
                       type="button"
@@ -171,6 +170,9 @@ export function ArticleSummary() {
                     >
                       {deleting ? "删除中…" : "删除"}
                     </button>
+                  </div>
+                  <div data-testid="summary-content" className="rounded-md border border-border p-4 bg-secondary/30 overflow-auto max-h-[70vh]">
+                    <MarkdownContent content={summary} />
                   </div>
                 </div>
               )}
@@ -194,6 +196,7 @@ export function ArticleSummary() {
           )}
         </div>
       )}
+      </div>
     </main>
   );
 }

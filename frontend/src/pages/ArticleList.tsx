@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { NavLink } from "../components/NavLink";
+import { BackLink } from "../components/BackLink";
 import type { Article } from "../api/types";
 import { api } from "../api/client";
 
@@ -13,20 +13,20 @@ function formatYearMonth(published: string): string {
   return `${y}年${m}月`;
 }
 
-/** Age-based color: same day darkest, gradually lighter for older, lightest for 3+ months. */
-function getDateFadeClass(published: string): string {
+/** Age-based wrapper: border + bg both fade (same day darkest, 3+ months lightest). */
+function getDateWrapClass(published: string): string {
   const pub = new Date(published);
   const now = new Date();
-  if (Number.isNaN(pub.getTime())) return "text-muted-foreground/50";
+  if (Number.isNaN(pub.getTime())) return "border-foreground/25 bg-foreground/5";
   const sameDay =
     pub.getUTCDate() === now.getUTCDate() &&
     pub.getUTCMonth() === now.getUTCMonth() &&
     pub.getUTCFullYear() === now.getUTCFullYear();
   const daysAgo = (now.getTime() - pub.getTime()) / (24 * 60 * 60 * 1000);
-  if (sameDay) return "text-foreground";
-  if (daysAgo <= 30) return "text-foreground/90";
-  if (daysAgo <= 90) return "text-muted-foreground";
-  return "text-muted-foreground/50";
+  if (sameDay) return "border-foreground bg-foreground/15";       // 当天最深
+  if (daysAgo <= 30) return "border-foreground/75 bg-foreground/10";
+  if (daysAgo <= 90) return "border-foreground/45 bg-foreground/5";
+  return "border-foreground/25 bg-foreground/5";                  // 3 个月以上最浅
 }
 
 export function ArticleList() {
@@ -67,40 +67,61 @@ export function ArticleList() {
   if (error && articles.length === 0) {
     return (
       <main className="max-w-4xl mx-auto px-4 py-6">
-        <h1 className="text-2xl font-semibold text-foreground mb-4">文章列表</h1>
-        <nav className="flex flex-wrap gap-3 mb-6">
-          <NavLink to="/feeds">返回订阅管理</NavLink>
-        </nav>
-        <p className="text-destructive whitespace-pre-wrap mb-4" role="alert">错误：{error}</p>
-        <button
-          type="button"
-          onClick={loadArticles}
-          aria-label="重试"
-          data-testid="retry-articles"
-          className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-        >
-          重试
-        </button>
+        <header className="flex items-center gap-3 mb-4">
+          <BackLink to="/feeds" aria-label="返回订阅管理" />
+          <h1 className="text-2xl font-semibold text-foreground">文章列表</h1>
+        </header>
+        <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
+          <p className="text-destructive whitespace-pre-wrap mb-4" role="alert">错误：{error}</p>
+          <button
+            type="button"
+            onClick={loadArticles}
+            aria-label="重试"
+            data-testid="retry-articles"
+            className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            重试
+          </button>
+        </div>
       </main>
     );
   }
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-semibold text-foreground mb-4">文章列表</h1>
-      <nav className="flex flex-wrap gap-3 mb-6 items-center">
-        <NavLink to="/feeds">返回订阅管理</NavLink>
-        <button
-          type="button"
-          onClick={loadArticles}
-          disabled={loading}
-          aria-label="刷新"
-          className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-accent disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-        >
-          刷新
-        </button>
-      </nav>
-      {loading && <p className="text-muted-foreground">加载中…</p>}
+      <header className="flex items-center gap-3 mb-4">
+        <BackLink to="/feeds" aria-label="返回订阅管理" />
+        <h1 className="text-2xl font-semibold text-foreground">文章列表</h1>
+      </header>
+      <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <button
+            type="button"
+            onClick={loadArticles}
+            disabled={loading}
+            aria-label="刷新"
+            className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-accent disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            刷新
+          </button>
+          {!loading && !error && articles.length > 0 && (
+            <>
+              <label htmlFor="article-search" className="sr-only">
+                搜索文章
+              </label>
+              <input
+                id="article-search"
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="搜索文章标题…"
+                aria-label="搜索文章"
+                className="flex-1 min-w-[12rem] max-w-md px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+              />
+            </>
+          )}
+        </div>
+        {loading && <p className="text-muted-foreground">加载中…</p>}
       {error && (
         <p className="text-destructive whitespace-pre-wrap mb-4" role="alert">
           错误：{error}
@@ -111,18 +132,6 @@ export function ArticleList() {
       )}
       {!loading && !error && articles.length > 0 && (
         <>
-          <label htmlFor="article-search" className="sr-only">
-            搜索文章
-          </label>
-          <input
-            id="article-search"
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="搜索文章标题…"
-            aria-label="搜索文章"
-            className="w-full max-w-md mb-4 px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          />
           {filteredArticles.length === 0 && (
             <p className="text-muted-foreground">无匹配文章</p>
           )}
@@ -133,12 +142,6 @@ export function ArticleList() {
               key={a.id}
               className="border-b border-border py-2 last:border-b-0 flex items-center gap-2"
             >
-              <span
-                className={`shrink-0 w-20 text-sm tabular-nums ${getDateFadeClass(a.published)}`}
-                aria-hidden
-              >
-                {formatYearMonth(a.published)}
-              </span>
               <button
                 type="button"
                 onClick={async () => {
@@ -153,6 +156,15 @@ export function ArticleList() {
               >
                 {a.favorite ? "★" : "☆"}
               </button>
+              <div
+                className={`shrink-0 flex items-center gap-2 rounded-md border-l-4 py-0.5 pl-2 pr-2 min-w-[6rem] ${getDateWrapClass(a.published)}`}
+                aria-hidden
+                title={formatYearMonth(a.published)}
+              >
+                <span className="text-sm tabular-nums text-muted-foreground">
+                  {formatYearMonth(a.published)}
+                </span>
+              </div>
               <Link
                 to={`/feeds/${feedId}/articles/${a.id}`}
                 className="text-primary hover:underline break-words focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded flex-1 min-w-0"
@@ -165,6 +177,7 @@ export function ArticleList() {
           )}
         </>
       )}
+      </div>
     </main>
   );
 }

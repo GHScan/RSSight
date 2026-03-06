@@ -206,5 +206,26 @@ describe("Article list interaction (S010)", () => {
       const dateLabels = screen.getAllByText("2025年3月");
       expect(dateLabels.length).toBe(3);
     });
+
+    it("each row has an age-based date wrap (rounded block + text, gradient by recency)", async () => {
+      renderArticleList();
+      await waitFor(() => {
+        expect(screen.getByText("Article First")).toBeInTheDocument();
+      });
+      const list = screen.getByRole("list");
+      const rows = within(list).getAllByRole("listitem");
+      expect(rows.length).toBe(3);
+      rows.forEach((row) => {
+        const wrap = row.querySelector('[aria-hidden][title*="年"]');
+        expect(wrap).toBeTruthy();
+        const className = wrap?.getAttribute("class") ?? "";
+        const hasGradient =
+          /border-foreground(\/\d+)?/.test(className) || /bg-foreground(\/\d+)?/.test(className);
+        expect(
+          hasGradient,
+          `Date wrap should have border-foreground or bg-foreground (gradient), got: ${className}`,
+        ).toBe(true);
+      });
+    });
   });
 });

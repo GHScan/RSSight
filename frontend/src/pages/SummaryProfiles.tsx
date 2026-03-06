@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
-import { NavLink } from "../components/NavLink";
+import { BackLink } from "../components/BackLink";
 import type { SummaryProfile } from "../api/types";
 import { api } from "../api/client";
 
@@ -139,11 +139,12 @@ export function SummaryProfiles() {
 
   return (
     <main className="max-w-4xl mx-auto px-4 py-6">
-      <h1 className="text-2xl font-semibold text-foreground mb-4">摘要配置</h1>
-      <nav className="flex flex-wrap gap-3 mb-6">
-        <NavLink to="/">首页</NavLink>
-      </nav>
-      {loading && <p className="text-muted-foreground">加载中…</p>}
+      <header className="flex items-center gap-3 mb-4">
+        <BackLink to="/" aria-label="首页" />
+        <h1 className="text-2xl font-semibold text-foreground">摘要配置</h1>
+      </header>
+      <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
+        {loading && <p className="text-muted-foreground">加载中…</p>}
       {error && (
         <p className="text-destructive whitespace-pre-wrap mb-4" role="alert">
           错误：{error}
@@ -157,6 +158,9 @@ export function SummaryProfiles() {
       {!loading && !error && (
         <>
           <div className="flex flex-wrap gap-2 mb-6">
+            <button type="button" onClick={loadProfiles} aria-label="刷新" className={btnSecondary}>
+              刷新
+            </button>
             <button
               type="button"
               onClick={() => setShowAddForm(!showAddForm)}
@@ -164,9 +168,6 @@ export function SummaryProfiles() {
               className={btnPrimary}
             >
               添加
-            </button>
-            <button type="button" onClick={loadProfiles} aria-label="刷新" className={btnSecondary}>
-              刷新
             </button>
           </div>
           {showAddForm && (
@@ -226,32 +227,35 @@ export function SummaryProfiles() {
                       </div>
                     </form>
                   ) : (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="font-medium text-foreground break-words">{p.name}</span>
-                      <button type="button" onClick={() => startEdit(p)} aria-label={`编辑 ${p.name}`} className={btnSecondary}>
-                        编辑
-                      </button>
-                      <button type="button" onClick={() => confirmDelete(p.name)} aria-label={`删除 ${p.name}`} className={`${btnBase} bg-destructive text-destructive-foreground hover:opacity-90`}>
-                        删除
-                      </button>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <span className="font-medium text-foreground break-words min-w-0">{p.name}</span>
+                      <div className="flex gap-2 shrink-0">
+                        <button type="button" onClick={() => startEdit(p)} aria-label={`编辑 ${p.name}`} className={btnSecondary}>
+                          编辑
+                        </button>
+                        <button type="button" onClick={() => confirmDelete(p.name)} aria-label={`删除 ${p.name}`} className={`${btnBase} bg-destructive text-destructive-foreground hover:opacity-90`}>
+                          删除
+                        </button>
+                      </div>
                     </div>
                   )}
                 </li>
               ))}
             </ul>
           )}
-          {deletingName && (
-            <div role="dialog" aria-modal="true" aria-labelledby="delete-profile-title" className="fixed inset-0 flex items-center justify-center bg-black/50 p-4">
-              <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full shadow-lg">
-                <p id="delete-profile-title" className="text-foreground mb-4">确认删除该摘要配置？</p>
-                <div className="flex gap-2">
-                  <button type="button" onClick={handleDeleteConfirm} className={btnPrimary}>确认</button>
-                  <button type="button" onClick={() => setDeletingName(null)} className={btnSecondary}>取消</button>
-                </div>
-              </div>
-            </div>
-          )}
         </>
+      )}
+      </div>
+      {deletingName && (
+        <div role="dialog" aria-modal="true" aria-labelledby="delete-profile-title" className="fixed inset-0 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full shadow-lg">
+            <p id="delete-profile-title" className="text-foreground mb-4">确认删除该摘要配置？</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={handleDeleteConfirm} className={btnPrimary}>确认</button>
+              <button type="button" onClick={() => setDeletingName(null)} className={btnSecondary}>取消</button>
+            </div>
+          </div>
+        </div>
       )}
     </main>
   );

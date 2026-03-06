@@ -286,7 +286,7 @@ test.describe("Feed management E2E (S009)", () => {
     await page.goto("/feeds");
     await expect(page.getByRole("heading", { name: /订阅管理/ })).toBeVisible();
     await page.getByRole("link", { name: /首页/ }).click();
-    await expect(page.getByRole("heading", { name: /WebRSSReader/ })).toBeVisible();
+    await expect(page.getByRole("heading", { name: /智能 RSS 阅读器/ })).toBeVisible();
     await page.getByRole("link", { name: /订阅管理/ }).click();
     await expect(page.getByRole("heading", { name: /订阅管理/ })).toBeVisible();
     await expect(page.getByText("Feed One")).toBeVisible();

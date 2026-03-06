@@ -11,7 +11,7 @@ describe("App smoke", () => {
         <App />
       </MemoryRouter>,
     );
-    expect(screen.getByRole("heading", { name: "WebRSSReader" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "智能 RSS 阅读器" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "订阅管理" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "摘要配置" })).toBeInTheDocument();
   });

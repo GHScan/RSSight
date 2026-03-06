@@ -211,7 +211,7 @@ describe("Summary profile management interaction (S014)", () => {
       expect(screen.getByRole("heading", { name: /摘要配置/i })).toBeInTheDocument();
       await userEvent.click(screen.getByRole("link", { name: /首页|home/i }));
       await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /WebRSSReader/i })).toBeInTheDocument();
+        expect(screen.getByRole("heading", { name: /智能 RSS 阅读器/i })).toBeInTheDocument();
       });
       await userEvent.click(screen.getByRole("link", { name: /摘要配置/i }));
       await waitFor(() => {
