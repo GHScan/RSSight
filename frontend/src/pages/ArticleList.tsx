@@ -51,6 +51,9 @@ export function ArticleList() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  /** S032: true after first submit in no-URL path when we filled defaults; second click creates. */
+  const [pendingConfirm, setPendingConfirm] = useState(false);
+  const [createPendingMessage, setCreatePendingMessage] = useState<string | null>(null);
 
   const loadFeed = useCallback(() => {
     if (!feedId) return;
@@ -142,6 +145,8 @@ export function ArticleList() {
                 setShowAddForm((v) => !v);
                 setCreateError(null);
                 setCreateSuccess(null);
+                setCreatePendingMessage(null);
+                setPendingConfirm(false);
                 if (!showAddForm) {
                   setAddPublished(toDatetimeLocal(new Date()));
                 }
@@ -178,11 +183,18 @@ export function ArticleList() {
                 {createError}
               </p>
             )}
+            {createPendingMessage && (
+              <p className="text-muted-foreground text-sm mb-3" role="status">
+                {createPendingMessage}
+              </p>
+            )}
             <form
+              noValidate
               onSubmit={async (e) => {
                 e.preventDefault();
                 if (!feedId) return;
                 setCreateError(null);
+                setCreatePendingMessage(null);
                 // S031: No-URL path requires title and content (mandatory validation).
                 const urlTrimmed = addUrl.trim();
                 if (!urlTrimmed) {
@@ -192,6 +204,16 @@ export function ArticleList() {
                     setCreateError("不填链接时，标题和内容为必填项。");
                     return;
                   }
+                  // S032: First click in no-URL path fills defaults and enters pending-confirm; no API call.
+                  if (!pendingConfirm) {
+                    setAddUrl("https://");
+                    setAddPublished(toDatetimeLocal(new Date()));
+                    setPendingConfirm(true);
+                    setCreatePendingMessage("已填充默认值（链接、发布时间），请确认后再次点击「提交」创建文章。");
+                    return;
+                  }
+                } else {
+                  setPendingConfirm(false);
                 }
                 setCreating(true);
                 const publishedAt = addPublished ? new Date(addPublished).toISOString() : new Date().toISOString();
@@ -209,6 +231,8 @@ export function ArticleList() {
                   setAddSource("");
                   setAddPublished(toDatetimeLocal(new Date()));
                   setCreateError(null);
+                  setCreatePendingMessage(null);
+                  setPendingConfirm(false);
                   setShowAddForm(false);
                   setCreateSuccess("创建成功");
                   loadArticles();
@@ -228,7 +252,13 @@ export function ArticleList() {
                   id="custom-article-url"
                   type="url"
                   value={addUrl}
-                  onChange={(e) => setAddUrl(e.target.value)}
+                  onChange={(e) => {
+                    setAddUrl(e.target.value);
+                    if (e.target.value.trim()) {
+                      setPendingConfirm(false);
+                      setCreatePendingMessage(null);
+                    }
+                  }}
                   placeholder="https://..."
                   className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
                 />
@@ -291,7 +321,7 @@ export function ArticleList() {
                   data-testid="custom-article-submit"
                   className="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
-                  {creating ? "提交中…" : "提交"}
+                  {creating ? "提交中…" : pendingConfirm ? "确认创建" : "提交"}
                 </button>
                 <button
                   type="button"

@@ -394,7 +394,7 @@
         "Reasonable defaults are applied (for example current timestamp and placeholder URL such as https://).",
         "First click does not create article and UI clearly indicates pending confirmation state."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S033",

@@ -556,5 +556,101 @@ describe("Article list interaction (S010)", () => {
       });
       expect(api.createCustomArticle).not.toHaveBeenCalled();
     });
+
+    it("S032: no-URL first click fills defaults and shows pending confirm without calling API", async () => {
+      vi.mocked(api.createCustomArticle).mockClear();
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([]);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await waitFor(() => {
+        expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
+      });
+      // No URL, title and content present, other fields empty
+      await userEvent.type(screen.getByLabelText(/标题/i), "My Note");
+      await userEvent.type(screen.getByLabelText(/内容/i), "Some note content");
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(screen.getByText(/已填充默认值|请确认后再次点击|待确认/i)).toBeInTheDocument();
+      });
+      expect(api.createCustomArticle).not.toHaveBeenCalled();
+      // URL and published should be filled with defaults
+      expect(screen.getByLabelText(/链接 \(URL\)/i)).toHaveValue("https://");
+    });
+
+    it("S032: no-URL second click after default fill creates article", async () => {
+      vi.mocked(api.createCustomArticle).mockResolvedValue({
+        id: "cust1",
+        title: "My Note",
+        link: "https://",
+        published: "2025-03-07T12:00:00Z",
+      });
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles)
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          {
+            id: "cust1",
+            title: "My Note",
+            link: "https://",
+            published: "2025-03-07T12:00:00Z",
+          },
+        ]);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await waitFor(() => {
+        expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
+      });
+      await userEvent.type(screen.getByLabelText(/标题/i), "My Note");
+      await userEvent.type(screen.getByLabelText(/内容/i), "Some content");
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(screen.getByText(/已填充默认值|请确认|待确认/i)).toBeInTheDocument();
+      });
+      expect(api.createCustomArticle).not.toHaveBeenCalled();
+
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(api.createCustomArticle).toHaveBeenCalledWith("vf1", expect.objectContaining({
+          title: "My Note",
+          description: "Some content",
+          link: "https://",
+        }));
+      });
+      await waitFor(() => {
+        expect(screen.getByText("创建成功")).toBeInTheDocument();
+      });
+    });
   });
 });
