@@ -13,13 +13,13 @@ if errorlevel 1 (
 if errorlevel 1 goto done
 
 set /a ITERATION+=1
-echo [ralph-serial] iteration %ITERATION%
-python "%~dp0stream-progress.py" "Complete one story from prd.json and commit"
+echo [serial] iteration %ITERATION%
+python "%~dp0cursorcli-progress.py" "Complete one story from prd.json and commit"
 set AGENT_EXIT=%errorlevel%
 if %AGENT_EXIT% equ 0 goto loop
-echo [ralph-serial] agent exited with code %AGENT_EXIT%
+echo [serial] agent exited with code %AGENT_EXIT%
 exit /b %AGENT_EXIT%
 
 :done
-echo [ralph-serial] all stories pass; done.
+echo [serial] all stories pass; done.
 exit /b 0

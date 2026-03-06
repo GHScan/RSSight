@@ -1,5 +1,5 @@
 """
-Stream progress tracker for Cursor agent runs.
+Stream progress tracker for Cursor CLI (agent) runs.
 Runs agent with --output-format stream-json --stream-partial-output,
 parses NDJSON and prints progress (model, char count, tool calls, result).
 Exits with the agent process exit code.

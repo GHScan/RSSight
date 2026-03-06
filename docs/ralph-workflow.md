@@ -19,7 +19,7 @@ This document focuses only on Ralph execution mechanics.
 For a simple serial run without wave scheduling, use the Cursor CLI (command name: `agent`). From the repo root:
 
 ```cmd
-scripts\ralph\ralph-serial.cmd
+scripts\ralph\serial.cmd
 ```
 
 This script loops while `prd.json` has any story with `passes=false`, and each time runs:
