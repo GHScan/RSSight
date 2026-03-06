@@ -38,6 +38,13 @@ export const api = {
       body: JSON.stringify(body),
     }).then(handleResponse);
   },
+  createVirtualFeed(name: string): Promise<Feed> {
+    return fetch(`${BASE}/feeds/virtual`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name }),
+    }).then(handleResponse);
+  },
   updateFeed(feedId: string, body: { title?: string; url?: string }): Promise<Feed> {
     return fetch(`${BASE}/feeds/${feedId}`, {
       method: "PUT",

@@ -7,14 +7,15 @@
 import { test, expect } from "@playwright/test";
 
 const initialFeeds = [
-  { id: "f1", title: "Feed One", url: "https://example.com/one.xml" },
-  { id: "f2", title: "Feed Two", url: "https://example.com/two.xml" },
+  { id: "f1", title: "Feed One", url: "https://example.com/one.xml", feed_type: "rss" as const },
+  { id: "f2", title: "Feed Two", url: "https://example.com/two.xml", feed_type: "rss" as const },
 ];
 
 test.describe("Feed management E2E (S009)", () => {
   test.beforeEach(async ({ page }) => {
     await page.route("**/api/feeds**", async (route) => {
       const method = route.request().method();
+      const url = route.request().url();
       if (method === "GET") {
         return route.fulfill({
           status: 200,
@@ -24,6 +25,18 @@ test.describe("Feed management E2E (S009)", () => {
       }
       if (method === "POST") {
         const body = JSON.parse(route.request().postData() ?? "{}");
+        if (url.endsWith("/feeds/virtual") || url.includes("/feeds/virtual")) {
+          return route.fulfill({
+            status: 201,
+            contentType: "application/json",
+            body: JSON.stringify({
+              id: "v1",
+              title: body.name ?? "Virtual",
+              url: null,
+              feed_type: "virtual",
+            }),
+          });
+        }
         return route.fulfill({
           status: 201,
           contentType: "application/json",
@@ -31,6 +44,7 @@ test.describe("Feed management E2E (S009)", () => {
             id: "f3",
             title: body.title ?? "New",
             url: body.url ?? "",
+            feed_type: "rss",
           }),
         });
       }
@@ -43,6 +57,7 @@ test.describe("Feed management E2E (S009)", () => {
             id: "f1",
             title: body.title ?? "Updated",
             url: body.url ?? "https://example.com/one.xml",
+            feed_type: "rss",
           }),
         });
       }
@@ -290,5 +305,57 @@ test.describe("Feed management E2E (S009)", () => {
     await page.getByRole("link", { name: /RSS 订阅/ }).click();
     await expect(page.getByRole("heading", { name: /RSS 订阅/ })).toBeVisible();
     await expect(page.getByText("Feed One")).toBeVisible();
+  });
+
+  test("S025 Happy path: create virtual feed (Article Favorites) then list shows it with visual distinction", async ({
+    page,
+  }) => {
+    const feeds = [...initialFeeds];
+    await page.route("**/api/feeds**", async (route) => {
+      const method = route.request().method();
+      const url = route.request().url();
+      if (method === "GET") {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(feeds),
+        });
+      }
+      if (method === "POST" && (url.endsWith("/feeds/virtual") || url.includes("/feeds/virtual"))) {
+        const body = JSON.parse(route.request().postData() ?? "{}");
+        const newFeed = {
+          id: "v1",
+          title: body.name ?? "收藏夹",
+          url: null,
+          feed_type: "virtual",
+        };
+        feeds.push(newFeed);
+        return route.fulfill({
+          status: 201,
+          contentType: "application/json",
+          body: JSON.stringify(newFeed),
+        });
+      }
+      return route.continue();
+    });
+    await page.route("**/api/summary-profiles**", async (route) => {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify([]),
+      });
+    });
+
+    await page.goto("/feeds");
+    await expect(page.getByRole("button", { name: /文章收藏/ })).toBeVisible();
+    await page.getByRole("button", { name: /文章收藏/ }).click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await expect(page.getByLabel(/名称/)).toBeVisible();
+    await page.getByPlaceholder(/收藏夹名称/).fill("我的收藏");
+    await page.getByRole("button", { name: "确定" }).click();
+
+    await expect(page.getByRole("dialog")).not.toBeVisible();
+    await expect(page.getByText("我的收藏")).toBeVisible();
+    await expect(page.getByText("收藏夹")).toBeVisible();
   });
 });

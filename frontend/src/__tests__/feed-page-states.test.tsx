@@ -9,6 +9,7 @@ vi.mock("../api/client", () => ({
   api: {
     getFeeds: vi.fn(),
     getSummaryProfiles: vi.fn(),
+    createVirtualFeed: vi.fn(),
   },
 }));
 
@@ -44,5 +45,33 @@ describe("Feed page states", () => {
     await waitFor(() => {
       expect(screen.getByText(/错误|error|失败/i)).toBeInTheDocument();
     });
+  });
+
+  it("S025: shows Article Favorites button and virtual feed with visual distinction", async () => {
+    vi.mocked(api.getFeeds).mockResolvedValue([
+      { id: "v1", title: "My Favorites", url: null, feed_type: "virtual" },
+      { id: "f1", title: "RSS Feed", url: "https://example.com/feed.xml", feed_type: "rss" },
+    ]);
+    renderFeedsPage();
+    await waitFor(() => {
+      expect(screen.getByText("My Favorites")).toBeInTheDocument();
+    });
+    expect(screen.getAllByRole("button", { name: /文章收藏/ }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getByText("收藏夹")).toBeInTheDocument();
+    expect(screen.getByText("RSS Feed")).toBeInTheDocument();
+  });
+
+  it("S025: clicking Article Favorites opens create-virtual-feed dialog with name field", async () => {
+    vi.mocked(api.getFeeds).mockResolvedValue([]);
+    renderFeedsPage();
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: /文章收藏/ }).length).toBeGreaterThanOrEqual(1);
+    });
+    screen.getAllByRole("button", { name: /文章收藏/ })[0].click();
+    await waitFor(() => {
+      expect(screen.getByRole("dialog")).toBeInTheDocument();
+    });
+    expect(screen.getByLabelText(/名称/)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/收藏夹名称/)).toBeInTheDocument();
   });
 });

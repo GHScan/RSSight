@@ -310,7 +310,7 @@
         "Clicking the button opens create-virtual-feed interaction requiring only feed name.",
         "After successful creation, the new virtual feed appears in feed list with clear visual distinction from normal feeds."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S026",

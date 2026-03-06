@@ -2,10 +2,15 @@
  * Shared types for API responses (aligned with backend).
  */
 
+export type FeedType = "rss" | "virtual";
+
 export interface Feed {
   id: string;
   title: string;
-  url: string;
+  /** URL for RSS feeds; null for virtual feeds (e.g. article favorites collection). */
+  url: string | null;
+  /** "rss" for normal feeds, "virtual" for collections; default "rss" when omitted. */
+  feed_type?: FeedType;
 }
 
 export interface Article {

@@ -14,6 +14,9 @@ export function FeedManagement() {
   const [formError, setFormError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteFeed, setConfirmDeleteFeed] = useState<{ id: string; title: string } | null>(null);
+  const [showVirtualForm, setShowVirtualForm] = useState(false);
+  const [virtualFeedName, setVirtualFeedName] = useState("");
+  const [virtualFormError, setVirtualFormError] = useState<string | null>(null);
 
   const loadFeeds = useCallback(() => {
     setLoading(true);
@@ -50,6 +53,24 @@ export function FeedManagement() {
       loadFeeds();
     } catch (e) {
       setFormError(e instanceof Error ? e.message : "添加失败");
+    }
+  };
+
+  const handleCreateVirtualSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setVirtualFormError(null);
+    const name = virtualFeedName.trim();
+    if (!name) {
+      setVirtualFormError("请填写收藏夹名称");
+      return;
+    }
+    try {
+      await api.createVirtualFeed(name);
+      setVirtualFeedName("");
+      setShowVirtualForm(false);
+      loadFeeds();
+    } catch (e) {
+      setVirtualFormError(e instanceof Error ? e.message : "创建失败");
     }
   };
 
@@ -105,6 +126,18 @@ export function FeedManagement() {
           >
             添加
           </button>
+          <button
+            type="button"
+            onClick={() => {
+              setShowVirtualForm(true);
+              setVirtualFeedName("");
+              setVirtualFormError(null);
+            }}
+            aria-label="文章收藏"
+            className={btnSecondary}
+          >
+            文章收藏
+          </button>
         </div>
       )}
       {showAddForm && !loading && !error && (
@@ -156,14 +189,24 @@ export function FeedManagement() {
       {!loading && !error && feeds.length > 0 && (
         <ul className="space-y-4 list-none p-0">
           {feeds.map((f) => (
-            <li key={f.id} className="border border-border rounded-lg p-4">
+            <li
+              key={f.id}
+              className={`border rounded-lg p-4 ${f.feed_type === "virtual" ? "border-muted-foreground/30 bg-muted/20" : "border-border"}`}
+            >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <Link
-                  to={`/feeds/${f.id}/articles`}
-                  className="font-medium text-primary hover:underline break-words min-w-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
-                >
-                  {f.title}
-                </Link>
+                <div className="flex items-center gap-2 min-w-0 flex-1">
+                  <Link
+                    to={`/feeds/${f.id}/articles`}
+                    className="font-medium text-primary hover:underline break-words min-w-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
+                  >
+                    {f.title}
+                  </Link>
+                  {f.feed_type === "virtual" && (
+                    <span className="shrink-0 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground" aria-label="收藏夹">
+                      收藏夹
+                    </span>
+                  )}
+                </div>
                 <div className="flex gap-2 shrink-0">
                   <button
                     type="button"
@@ -181,6 +224,41 @@ export function FeedManagement() {
         </ul>
       )}
       </div>
+      {showVirtualForm && (
+        <div role="dialog" aria-modal="true" aria-labelledby="virtual-feed-title" className="fixed inset-0 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full shadow-lg">
+            <h2 id="virtual-feed-title" className="text-lg font-medium text-foreground mb-4">新建文章收藏夹</h2>
+            {virtualFormError && (
+              <p className="text-destructive text-sm mb-3" role="alert">{virtualFormError}</p>
+            )}
+            <form onSubmit={handleCreateVirtualSubmit}>
+              <label htmlFor="virtual-feed-name" className="block text-sm font-medium text-foreground mb-1">名称</label>
+              <input
+                id="virtual-feed-name"
+                className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 mb-4"
+                value={virtualFeedName}
+                onChange={(e) => setVirtualFeedName(e.target.value)}
+                placeholder="收藏夹名称"
+                autoFocus
+              />
+              <div className="flex gap-2">
+                <button type="submit" className={btnPrimary}>确定</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowVirtualForm(false);
+                    setVirtualFeedName("");
+                    setVirtualFormError(null);
+                  }}
+                  className={btnSecondary}
+                >
+                  取消
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
       {confirmDeleteFeed && (
         <div role="dialog" aria-modal="true" aria-labelledby="delete-feed-title" className="fixed inset-0 flex items-center justify-center bg-black/50 p-4">
           <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full shadow-lg">
