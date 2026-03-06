@@ -151,11 +151,11 @@ export function ArticleList() {
                   setAddPublished(toDatetimeLocal(new Date()));
                 }
               }}
-              aria-label="添加自定义文章"
+              aria-label="添加文章"
               data-testid="add-custom-article-toggle"
               className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
-              添加自定义文章
+              添加文章
             </button>
           )}
           {!loading && !error && articles.length > 0 && (
@@ -176,8 +176,8 @@ export function ArticleList() {
           )}
         </div>
         {feed?.feed_type === "virtual" && showAddForm && (
-          <section className="mb-4 p-4 rounded-lg border border-border bg-muted/30" aria-label="添加自定义文章表单">
-            <h2 className="text-lg font-medium text-foreground mb-3">添加自定义文章</h2>
+          <section className="mb-4 p-4 rounded-lg border border-border bg-muted/30" aria-label="添加文章表单">
+            <h2 className="text-lg font-medium text-foreground mb-3">添加文章</h2>
             {createError && (
               <p className="text-destructive text-sm mb-3" role="alert">
                 {createError}

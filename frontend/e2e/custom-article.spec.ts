@@ -88,7 +88,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
 
     await page.getByRole("link", { name: "My Favorites" }).click();
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /添加自定义文章/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /添加文章/ })).toBeVisible();
     await expect(page.getByText(/暂无文章/)).toBeVisible();
   });
 
@@ -150,8 +150,8 @@ test.describe("Custom article create flow E2E (S035)", () => {
     });
 
     await page.goto("/feeds/v1/articles");
-    await expect(page.getByRole("button", { name: /添加自定义文章/ })).toBeVisible();
-    await page.getByRole("button", { name: /添加自定义文章/ }).click();
+    await expect(page.getByRole("button", { name: /添加文章/ })).toBeVisible();
+    await page.getByRole("button", { name: /添加文章/ }).click();
     await expect(page.getByLabel(/链接 \(URL\)/)).toBeVisible();
     await page.getByPlaceholder("https://...").fill("https://example.com/page");
     await page.getByRole("button", { name: "提交" }).click();
@@ -209,7 +209,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
     });
 
     await page.goto("/feeds/v1/articles");
-    await page.getByRole("button", { name: /添加自定义文章/ }).click();
+    await page.getByRole("button", { name: /添加文章/ }).click();
     await page.getByPlaceholder("https://...").fill("https://bad.example/");
     await page.getByRole("button", { name: "提交" }).click();
 
@@ -276,7 +276,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
     });
 
     await page.goto("/feeds/v1/articles");
-    await page.getByRole("button", { name: /添加自定义文章/ }).click();
+    await page.getByRole("button", { name: /添加文章/ }).click();
     await page.getByLabel(/标题/).fill("My Note");
     await page.getByLabel(/内容/).fill("Some content");
     await page.getByRole("button", { name: "提交" }).click();
@@ -331,7 +331,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
     });
 
     await page.goto("/feeds/v1/articles");
-    await page.getByRole("button", { name: /添加自定义文章/ }).click();
+    await page.getByRole("button", { name: /添加文章/ }).click();
     await page.getByLabel(/内容/).fill("Only content");
     await page.getByRole("button", { name: "提交" }).click();
 
@@ -383,7 +383,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
     await page.goto("/feeds/f1/articles");
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
     await expect(page.getByText("RSS Article")).toBeVisible();
-    await expect(page.getByRole("button", { name: /添加自定义文章/ })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: /添加文章/ })).not.toBeVisible();
   });
 
   test("Regression: feed management and RSS list navigation still work after custom-article flow", async ({
@@ -440,7 +440,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
     await page.getByRole("link", { name: "Feed One" }).click();
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
     await expect(page.getByText("RSS One")).toBeVisible();
-    await expect(page.getByRole("button", { name: /添加自定义文章/ })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: /添加文章/ })).not.toBeVisible();
     await page.getByRole("link", { name: /返回RSS 订阅/ }).click();
     await expect(page.getByRole("heading", { name: /RSS 订阅/ })).toBeVisible();
   });

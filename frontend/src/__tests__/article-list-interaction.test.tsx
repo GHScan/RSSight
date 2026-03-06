@@ -314,7 +314,28 @@ describe("Article list interaction (S010)", () => {
   });
 
   describe("Custom article create form for virtual feed (S028)", () => {
-    it("virtual feed article list shows Add custom article button and form can be toggled", async () => {
+    it("S041: create button text does not contain 'Add custom article' wording", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([]);
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /文章列表/i })).toBeInTheDocument();
+      });
+      const addButton = screen.getByRole("button", { name: /添加文章/i });
+      expect(addButton).toBeInTheDocument();
+      expect(addButton.textContent).not.toMatch(/添加自定义文章|Add custom article/i);
+    });
+
+    it("virtual feed article list shows add-article button and form can be toggled (S041: no 'Add custom article' wording)", async () => {
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
         title: "My Favorites",
@@ -333,7 +354,7 @@ describe("Article list interaction (S010)", () => {
         expect(screen.getByRole("heading", { name: /文章列表/i })).toBeInTheDocument();
       });
 
-      const addButton = screen.getByRole("button", { name: /添加自定义文章/i });
+      const addButton = screen.getByRole("button", { name: /添加文章/i });
       expect(addButton).toBeInTheDocument();
       expect(addButton).toHaveAttribute("data-testid", "add-custom-article-toggle");
 
@@ -383,9 +404,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/标题/i)).toBeInTheDocument();
@@ -436,9 +457,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
       await waitFor(() => {
         expect(screen.getByLabelText(/链接 \(URL\)/i)).toBeInTheDocument();
       });
@@ -477,9 +498,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -508,9 +529,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -541,9 +562,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -574,9 +595,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -624,9 +645,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -683,9 +704,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加自定义文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加自定义文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });

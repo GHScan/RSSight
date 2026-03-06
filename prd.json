@@ -74,7 +74,7 @@
         "Create entry remains visible and reachable in favorites article list.",
         "Existing article create form flow remains functional."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S042",
