@@ -33,5 +33,5 @@ if exist "%ROOT%\backend\.venv\Scripts\activate.bat" (
 start "RSSight Backend" cmd /k "%BACKEND_CMD%"
 start "RSSight Frontend" cmd /k "set BACKEND_PORT=%BACKEND_PORT% && set FRONTEND_PORT=%FRONTEND_PORT% && cd /d ""%ROOT%\frontend"" && npm run dev -- --port %FRONTEND_PORT% --host"
 
-echo Both processes started. Open http://localhost:%FRONTEND_PORT% (or http://YOUR_IP:%FRONTEND_PORT% from other devices) in your browser.
+echo Both processes started. Open http://127.0.0.1:%FRONTEND_PORT% (or http://YOUR_IP:%FRONTEND_PORT% from other devices) in your browser.
 exit /b 0

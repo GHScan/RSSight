@@ -39,7 +39,7 @@ For each story, include:
 - **Commands (from repo root or frontend):**
   - `cd frontend && npm run test:e2e` — run E2E (headless). Playwright starts the dev server automatically.
   - `cd frontend && npm run test:e2e:headed` — run with visible browser.
-- **Base URL:** Default `http://localhost:5173`. Override with `PLAYWRIGHT_BASE_URL` when the app is already running elsewhere.
+- **Base URL:** Default `http://127.0.0.1:5173`. Override with `PLAYWRIGHT_BASE_URL` when the app is already running elsewhere.
 
 ## Visual regression (S018)
 

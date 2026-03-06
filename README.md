@@ -1,86 +1,81 @@
 # RSSight
 
-RSSight is a Windows-oriented web service for RSS reading and AI summary generation.
-It provides a browser UI to manage feeds, browse articles, configure summary profiles, and generate Markdown summaries.
+> **AI-powered RSS reader**: summarization and translation for your feeds. Plug in any OpenAI-compatible AI (OpenAI, Azure, local models, etc.), use multiple profiles at once, and run on Windows, macOS, or Linux.
 
-## What you can do
+[![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
+[![Node 20+](https://img.shields.io/badge/node-20+-green.svg)](https://nodejs.org/)
 
-- Manage RSS subscriptions (add, edit, delete).
-- Fetch and store feed articles, then browse article lists by feed.
-- Configure multiple AI summary profiles (OpenAI-compatible API).
-- Generate article summaries on demand and view existing summaries.
-- Keep summary content as Markdown files in `data/` for easy backup and manual editing.
+## Features
 
-## Quick start (for service users)
+- **AI summarization & translation** — Generate article summaries and translate titles on demand; custom prompts and multiple profiles (e.g. “brief”, “Chinese”, “title_translation”).
+- **Multiple AI providers** — Works with any OpenAI-compatible API: OpenAI, Azure OpenAI, local LLMs (Ollama, LM Studio, etc.). One app, swap providers via config.
+- **Cross-platform** — Backend (Python/FastAPI) and frontend (React/Vite) run on **Windows**, **macOS**, and **Linux**. Develop and self-host wherever you prefer.
+- **RSS + browser UI** — Manage feeds, browse articles, trigger summaries and translations from a simple web interface.
+- **Markdown-first** — Summaries and metadata live under `data/` as Markdown and JSON for easy backup, versioning, and manual editing.
 
-### Prerequisites
+## Requirements
 
-- Windows 10/11 or Windows Server
+- Windows 10/11, macOS, or Linux
 - Python 3.12+
 - Node.js 20+
 
-### First-time setup
+## Installation
 
-1. Open `cmd` in the repository root.
-2. Prepare backend dependencies:
+From the repository root in `cmd`:
 
-   ```bat
-   cd backend
-   python -m venv .venv
-   .venv\Scripts\activate.bat
-   pip install -e .[dev]
-   ```
+**Backend:**
 
-3. Prepare frontend dependencies:
+```bat
+cd backend
+python -m venv .venv
+.venv\Scripts\activate.bat
+pip install -e .[dev]
+```
 
-   ```bat
-   cd ..\frontend
-   npm install
-   ```
+**Frontend:**
 
-### Start the service
+```bat
+cd ..\frontend
+npm install
+```
 
-From repository root:
+## Quick start
+
+**Windows** — From the repository root:
 
 ```bat
 scripts\start.cmd
 ```
 
-Optional custom ports:
+Optional ports: `scripts\start.cmd [backend_port] [frontend_port]`. Defaults: backend `8000`, frontend `5173`.
 
-```bat
-scripts\start.cmd [backend_port] [frontend_port]
-```
+**macOS / Linux** — Start backend and frontend separately (see [developer guide](docs/developer-guide.md)).
 
-Default ports are `8000` (backend) and `5173` (frontend).
-After startup, open <http://localhost:5173>.
+Then open the frontend in your browser (default port 5173; use `http://127.0.0.1:5173` if needed).
 
-## User flow
+## Usage
 
-1. Open the home page and go to **订阅管理**.
-2. Add one or more RSS feed URLs.
-3. Open a feed and browse its articles.
-4. Go to **摘要配置** and create a summary profile.
-5. In an article page, select a profile and trigger summary generation.
+1. Open the app and go to **订阅管理** (Feed management). Add one or more RSS feed URLs.
+2. Open a feed and browse its articles.
+3. Go to **摘要配置** (Summary config) and create a summary profile.
+4. On an article page, select a profile and trigger summary generation.
 
-## Data and backup notes
+## Data and backup
 
-- Runtime data is stored only under `data/`.
-- AI summary body files are Markdown, recommended path:
-  - `data/feeds/{feedId}/articles/{articleId}/summaries/{profileName}.md`
+- Runtime data lives only under `data/`.
+- Summary body path: `data/feeds/{feedId}/articles/{articleId}/summaries/{profileName}.md`
 - Deleting a feed removes its full data subtree.
-- Deleting or renaming a summary profile removes summaries and metadata with that profile name across all feeds.
+- Deleting or renaming a summary profile removes all summaries and metadata for that profile across feeds.
 
-## Deployment
+## Documentation
 
-For production deployment on Windows (reverse proxy, static assets, process supervision), see:
+| Topic | Doc |
+|-------|-----|
+| Production deployment | [docs/deployment-windows.md](docs/deployment-windows.md) |
+| Engineering rules | [AGENTS.md](AGENTS.md) |
+| Developer guide | [docs/developer-guide.md](docs/developer-guide.md) |
+| Docs index | [docs/README.md](docs/README.md) |
 
-- `docs/deployment-windows.md`
+## Contributing
 
-## If you are developing this project
-
-Developer workflow entry content lives in:
-
-- `AGENTS.md` (authoritative engineering rules and navigation)
-- `docs/developer-guide.md`
-- `docs/README.md`
+Read [AGENTS.md](AGENTS.md) and [docs/developer-guide.md](docs/developer-guide.md) for rules, local run, and quality gates (e.g. `scripts\ci-check.cmd`).
