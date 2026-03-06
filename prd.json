@@ -5,433 +5,113 @@
   "notes": "Windows + Cursor CLI (agent) + Ralph method (no upstream bash script). One iteration handles one story.",
   "userStories": [
     {
-      "id": "S001",
+      "id": "S036",
       "priority": 1,
-      "title": "Implement feed CRUD API and file storage",
-      "description": "Support creating, updating, deleting, and querying the feed list, and write to the data/feeds index.",
+      "title": "Define feed-management split model for RSS and favorites collections",
+      "description": "Define backend/frontend contract for presenting RSS subscriptions and favorites collections as separate top-level list domains under feed management.",
       "acceptanceCriteria": [
-        "Tests are written first and cover feed create/update/delete/query.",
-        "Deleting a feed deletes its corresponding directory.",
-        "API contract documentation is consistent with tests."
+        "Data contract supports two list groups: RSS feeds and favorites collections.",
+        "API contract and architecture docs document split behavior and compatibility.",
+        "Existing RSS storage/fetch behavior remains unchanged."
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "S002",
+      "id": "S037",
       "priority": 2,
-      "title": "Implement RSS fetching and article persistence",
-      "description": "Fetch articles per feed and provide queries in reverse chronological order, writing to data/feeds/{feedId}/articles.",
+      "title": "Implement backend list/query support for split RSS and favorites views",
+      "description": "Implement backend read APIs so feed management can request and render RSS subscription list and favorites collection list separately.",
       "acceptanceCriteria": [
-        "Tests cover inserting new articles and idempotency for duplicates.",
-        "Article lists are sorted by published time in descending order.",
-        "Failures for one feed do not affect fetching for other feeds."
+        "Backend response includes deterministic markers for RSS vs favorites collections.",
+        "Normal RSS flow remains backward compatible.",
+        "Backend tests cover mixed-data coexistence."
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "S003",
+      "id": "S038",
       "priority": 3,
-      "title": "Implement summary profile management",
-      "description": "Support configuring multiple AI summary profiles, including name/base_url/key/model/fields/prompt_template.",
+      "title": "Build feed-management UI with top-level favorites and separate lists",
+      "description": "Update feed management page layout and interactions so Article Favorites is a top-level peer of RSS subscriptions, and favorites collections render in their own list block.",
       "acceptanceCriteria": [
-        "Tests cover creating, updating, deleting, and querying profiles.",
-        "The uniqueness constraint for profile names is clearly enforced.",
-        "The configuration storage structure is documented."
+        "UI shows a top-level favorites entry parallel to RSS subscriptions.",
+        "Favorites and RSS are rendered in separate, clearly distinguishable lists.",
+        "Navigation from both lists to article list remains stable."
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "S004",
+      "id": "S039",
       "priority": 4,
-      "title": "Implement manual triggering of article AI summaries",
-      "description": "Allow users to select an article and a profile to trigger a summary, then write the result to a markdown file.",
+      "title": "Add frontend and UI automation regression coverage for split feed domains",
+      "description": "Add frontend tests and E2E checks for two-list feed management behavior to prevent regressions in RSS and favorites collection interactions.",
       "acceptanceCriteria": [
-        "Templates support variables such as title and content.",
-        "Summary results are written to `.md` files.",
-        "Tests cover mocked AI calls and writing the output to disk."
+        "Tests verify RSS and favorites are rendered in separate lists.",
+        "Automation verifies favorites top-level entry is visible and usable.",
+        "Regression checks ensure existing RSS management still works."
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "S005",
+      "id": "S040",
       "priority": 5,
-      "title": "Implement global cascading cleanup for profile delete/edit",
-      "description": "When deleting or renaming a profile, remove all summary markdown and metadata with the same name under all feed articles.",
+      "title": "Implement favorites collection article delete API and persistence",
+      "description": "Provide backend capability to delete articles from favorites collections and persist deletion safely without impacting other feeds/articles.",
       "acceptanceCriteria": [
-        "Tests cover the full scope of global cleanup.",
-        "Summaries for other profiles are not accidentally deleted.",
-        "The cleanup process tolerates missing files."
+        "Backend API supports deleting an article from a favorites collection.",
+        "Deletion persists across refresh/restart and does not affect unrelated data.",
+        "Backend tests cover happy path, missing article, and repeated delete idempotency."
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "S006",
+      "id": "S041",
       "priority": 6,
-      "title": "Implement scheduled feed fetching",
-      "description": "Run background tasks to fetch feeds at fixed intervals.",
+      "title": "Refine favorites collection article list create action wording and UX",
+      "description": "Update favorites collection article list create interaction text and behavior so the button no longer uses \"Add custom article\" wording and remains intuitive for users.",
       "acceptanceCriteria": [
-        "Tests cover the scheduling trigger logic.",
-        "Error isolation and logging are clear.",
-        "Manual triggers and scheduled tasks can coexist."
+        "Create button text is updated and does not contain \"Add custom article\".",
+        "Create entry remains visible and reachable in favorites article list.",
+        "Existing article create form flow remains functional."
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "S007",
+      "id": "S042",
       "priority": 7,
-      "title": "Implement basic frontend page flow",
-      "description": "Build the page skeletons for feed management, article list, article summary, and summary configuration, and connect them to the APIs.",
+      "title": "Complete favorites collection article create/delete frontend flow",
+      "description": "Integrate favorites collection article create and delete operations end-to-end in frontend so users can add and remove articles from the list with immediate feedback.",
       "acceptanceCriteria": [
-        "Routing and page structure are stable.",
-        "Key interactions are covered by tests.",
-        "Empty/loading/error states are visible."
+        "Users can create an article and see it appear in favorites list.",
+        "Users can delete an article and see persistent removal after refresh/re-entry.",
+        "UI shows clear success/failure feedback for create and delete."
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "S008",
+      "id": "S043",
       "priority": 8,
-      "title": "Complete feed management interaction details",
-      "description": "Refine feed management frontend behavior according to README user flow, including add/edit/delete/list refresh and user feedback states.",
+      "title": "Implement one-shot URL autofill state and source-priority merge rules",
+      "description": "For URL-based article creation, implement backend rule engine where URL extraction runs only once per create-attempt lifecycle, missing title/content remain empty on extraction failure, creation fails when required fields are still empty, and time field precedence is user input > URL extracted value > default current time.",
       "acceptanceCriteria": [
-        "Happy path: Users can add, edit, delete, and refresh feed list in one session, and UI state stays consistent after each operation.",
-        "Boundary/exception: Invalid URL, duplicate-like URL, and backend failure cases show explicit and actionable error feedback.",
-        "Regression: Existing feed list rendering and navigation entry points remain stable after interaction refinements."
+        "URL extraction runs at most once per create-attempt lifecycle.",
+        "If title/content are user-empty and extraction fails, fields stay empty and creation is rejected.",
+        "Time source precedence is deterministic: user input > URL extracted > default now.",
+        "Non-empty user-provided title/content are never overwritten."
       ],
-      "passes": true
+      "passes": false
     },
     {
-      "id": "S009",
+      "id": "S044",
       "priority": 9,
-      "title": "Add UI automation for feed management flow",
-      "description": "Create Windows-runnable UI automation coverage for feed management frontend flow.",
+      "title": "Add backend/frontend automation for one-shot URL autofill and failure gating",
+      "description": "Add automated tests for one-shot URL extraction behavior, required-field failure gating, and time-source precedence across backend API and frontend create interactions.",
       "acceptanceCriteria": [
-        "Happy path automation: End-to-end case verifies add/edit/delete/refresh feed flow and resulting list state changes.",
-        "Boundary/exception automation: Invalid input and mocked API failure cases assert visible validation/error feedback.",
-        "Regression automation: Existing feed management route load and baseline list rendering are covered to prevent breakage.",
-        "Windows execution: Test command, prerequisites, and target suite scope are documented."
+        "Backend tests verify one-shot extraction and no re-fetch on repeated submit.",
+        "Backend/frontend tests cover create failure when title/content stay empty after extraction.",
+        "Tests verify time-source precedence and regressions for URL/no-URL paths."
       ],
-      "passes": true
-    },
-    {
-      "id": "S010",
-      "priority": 10,
-      "title": "Complete article list browsing interaction details",
-      "description": "Refine article list frontend behavior by feed, including loading, empty state, refresh and failure-recovery interactions.",
-      "acceptanceCriteria": [
-        "Happy path: Users can enter feed article list, view loaded results, and refresh list without losing current context.",
-        "Boundary/exception: Empty list and fetch failure states are clearly visible, and retry behavior is available and stable.",
-        "Regression: Reverse chronological visibility and feed-to-list navigation behavior remain correct."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S011",
-      "priority": 11,
-      "title": "Add UI automation for article list flow",
-      "description": "Create UI automation coverage for article list browsing flow and its key state transitions.",
-      "acceptanceCriteria": [
-        "Happy path automation: Article list loading and refresh behavior is verified from feed entry to visible list rendering.",
-        "Boundary/exception automation: Empty-data and failed-fetch scenarios assert expected UI feedback and recovery actions.",
-        "Regression automation: Existing sort visibility and navigation behavior is covered with stable assertions.",
-        "Windows execution: Automation is runnable in local Windows workflow with documented command and scope."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S012",
-      "priority": 12,
-      "title": "Complete article summary page interaction details",
-      "description": "Refine article summary frontend behavior for summary viewing and triggering operations with robust user feedback.",
-      "acceptanceCriteria": [
-        "Happy path: Users can select summary profile, trigger generation, and view generated summary result successfully.",
-        "Boundary/exception: No-profile-selected, no-data, and generation-failure states provide explicit user-visible feedback.",
-        "Regression: Repeated trigger attempts and page revisit keep summary-related UI behavior stable and predictable."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S013",
-      "priority": 13,
-      "title": "Add UI automation for article summary flow",
-      "description": "Create UI automation coverage for article summary viewing and triggering frontend flow.",
-      "acceptanceCriteria": [
-        "Happy path automation: Profile selection and summary trigger flow validates in-progress and success UI feedback.",
-        "Boundary/exception automation: No-data and failed-generation scenarios assert expected message and interaction handling.",
-        "Regression automation: Existing summary view rendering and re-entry behavior are protected by automated checks.",
-        "Windows execution: Setup assumptions and run command are documented for local automation runs."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S014",
-      "priority": 14,
-      "title": "Complete summary profile management interaction details",
-      "description": "Refine summary profile frontend behavior including create/edit/delete/list and validation/error feedback details.",
-      "acceptanceCriteria": [
-        "Happy path: Users can create, update, delete, and re-list summary profiles with consistent interaction feedback.",
-        "Boundary/exception: Required-field missing, name conflict, and backend failure cases are clearly handled in UI.",
-        "Regression: Existing profile list rendering and navigation behavior stays stable after interaction refinements."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S015",
-      "priority": 15,
-      "title": "Add UI automation for summary profile flow",
-      "description": "Create UI automation coverage for summary profile management frontend flow.",
-      "acceptanceCriteria": [
-        "Happy path automation: Profile create/update/delete/list flow is covered with deterministic assertions.",
-        "Boundary/exception automation: Validation prompts, conflict errors, and API failure feedback are asserted.",
-        "Regression automation: Existing profile management page load and baseline list behavior remain protected.",
-        "Windows execution: Test suite command and prerequisites are documented in frontend test instructions."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S016",
-      "priority": 16,
-      "title": "Establish Tailwind UI foundation",
-      "description": "Set up Tailwind styling foundation for frontend, including design tokens, layout primitives, and reusable style conventions.",
-      "acceptanceCriteria": [
-        "Happy path: Tailwind configuration, shared tokens, and base utility conventions are available and documented.",
-        "Boundary/exception: Legacy styles and Tailwind coexist without breaking current functional pages during transition.",
-        "Regression: Existing frontend behavior remains unchanged while foundational style layer is introduced."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S017",
-      "priority": 17,
-      "title": "Migrate core pages to Tailwind visual design",
-      "description": "Apply Tailwind-based visual improvements to home, feed management, article list, article summary, and summary profile pages.",
-      "acceptanceCriteria": [
-        "Happy path: Core pages share consistent spacing, typography, and interaction styles after Tailwind migration.",
-        "Boundary/exception: Narrow-width layout and long-content scenarios remain readable and usable.",
-        "Regression: Page-level functionality and existing interaction paths stay stable after style migration."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S018",
-      "priority": 18,
-      "title": "Add UI verification for Tailwind visual regression",
-      "description": "Add automated UI verification to guard against major visual regressions after Tailwind migration.",
-      "acceptanceCriteria": [
-        "Happy path verification: Critical pages and key UI states have automated visual/UI checks with stable baselines.",
-        "Boundary/exception verification: Responsive breakpoints and error/empty/loading states are included in verification scope.",
-        "Regression verification: Baseline update process is documented and prevents accidental acceptance of unexpected UI drift.",
-        "Windows execution: Verification command and integration point with frontend quality gate are documented."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S019",
-      "priority": 19,
-      "title": "Background process to add title_trans to articles via title_translation profile",
-      "description": "Add a background process that gradually populates a title_trans field for articles. It uses a user-configured AI profile named \"title_translation\": the text to translate is passed as title; the returned result is split by \" (ASCII double quote) and the last non-empty segment is taken as title_trans. title_trans is then shown instead of title in the article list and in the summary page header.",
-      "acceptanceCriteria": [
-        "Background process runs and processes articles incrementally without blocking the main app.",
-        "Translation is performed via the configured \"title_translation\" profile; input is article title, output is parsed per spec (split by \", last non-empty = title_trans).",
-        "title_trans is persisted (e.g. in article data) and exposed to frontend.",
-        "Article list and summary page header display title_trans when present, otherwise fall back to title."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S020",
-      "priority": 20,
-      "title": "Article favorites with per-article flag and sorted list",
-      "description": "Support favoriting articles: each article has a favorite icon at the start; clicking toggles favorite on/off. Implementation: add a marker file in the article folder to indicate favorite. Article list sort order: most recently favorited first, then earlier favorited, then by publish time (newest first, then older).",
-      "acceptanceCriteria": [
-        "Each article row shows a favorite icon; click toggles favorite state (persisted via marker file in article folder).",
-        "Favorite state is reflected in list and survives refresh.",
-        "List order: recently favorited articles first, then earlier favorited, then by publish date descending."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S021",
-      "priority": 21,
-      "title": "Article list search filter (client-side)",
-      "description": "Add a search control on the article list that filters articles by user input. Purely client-side filtering: no backend search; filter runs as the user types and updates the visible list in real time.",
-      "acceptanceCriteria": [
-        "Search/filter input is visible on the article list page.",
-        "Typing filters the displayed articles in real time (e.g. by title or other visible fields).",
-        "Empty search shows all articles; no server round-trip for filtering."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S022",
-      "priority": 22,
-      "title": "Article list left-side date (year-month) with age-based fading",
-      "description": "Show date (year-month) on the left of each article in the list. Visual treatment: the further in the past, the lighter the color; same-day darkest, articles older than three months lightest.",
-      "acceptanceCriteria": [
-        "Each article row shows a date (year-month) on the left.",
-        "Color intensity reflects recency: same day darkest, gradually lighter for older dates, lightest for three months or older.",
-        "Date display is consistent with sort order and does not break layout."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S023",
-      "priority": 23,
-      "title": "Add virtual feed schema in feed storage",
-      "description": "Extend feed storage schema to represent virtual feeds for article favorites collections with name + empty URL + explicit type marker.",
-      "acceptanceCriteria": [
-        "Feed storage supports virtual feed records with name, empty URL, and a clear type/marker to distinguish from normal RSS feeds.",
-        "Existing feed read/write logic can load both normal and virtual feeds without schema break.",
-        "Schema/documentation updates describe virtual feed fields and compatibility behavior.",
-        "Existing normal RSS feed flow remains backward compatible and unaffected."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S024",
-      "priority": 24,
-      "title": "Implement virtual feed CRUD API endpoints",
-      "description": "Add backend API support to create/list/delete virtual feeds while preserving existing feed API behavior.",
-      "acceptanceCriteria": [
-        "API supports creating virtual feed with required name and empty URL persisted to disk.",
-        "API list/read responses include virtual feed records with distinguishable type marker.",
-        "Deleting virtual feed removes its corresponding feed directory subtree safely.",
-        "Existing normal RSS feed API behavior remains backward compatible."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S025",
-      "priority": 25,
-      "title": "Add \"Article Favorites\" button in feed management UI",
-      "description": "On feed management UI, add an \"Article Favorites\" button beside RSS subscription entry and provide create-virtual-feed interaction.",
-      "acceptanceCriteria": [
-        "Feed management page shows an \"Article Favorites\" button adjacent to RSS subscription entry.",
-        "Clicking the button opens create-virtual-feed interaction requiring only feed name.",
-        "After successful creation, the new virtual feed appears in feed list with clear visual distinction from normal feeds."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S026",
-      "priority": 26,
-      "title": "Support virtual feed article list entry and baseline states",
-      "description": "Allow opening virtual feed article list from feed list and show stable loading/empty/error states before custom article creation is enabled.",
-      "acceptanceCriteria": [
-        "Users can navigate from virtual feed item to its article list page.",
-        "Virtual feed article list handles loading, empty, and error states with visible feedback.",
-        "Navigation and baseline list rendering remain stable for both virtual and normal feeds."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S027",
-      "priority": 27,
-      "title": "Define custom article schema and persistence for virtual feeds",
-      "description": "Define storage contract for custom articles under virtual feeds (including URL/title/content/time/source metadata) and persist consistently with existing article layout.",
-      "acceptanceCriteria": [
-        "Custom article storage schema is defined with required and optional fields.",
-        "Custom article records are written under virtual feed article storage using existing article directory conventions.",
-        "Persisted custom articles can be loaded and rendered by article list APIs."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S028",
-      "priority": 28,
-      "title": "Add custom article create form in virtual feed article list",
-      "description": "In virtual feed article list UI, add \"Add custom article\" entry and editable form fields for URL/title/content/publish time/source metadata.",
-      "acceptanceCriteria": [
-        "Virtual feed article list shows visible \"Add custom article\" interaction entry.",
-        "Create form supports editing URL/title/content/publish time/source metadata with partial empty fields allowed before submit.",
-        "Form submission invokes backend create API and keeps user-entered values unchanged before rule-based fill stage."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S029",
-      "priority": 29,
-      "title": "Implement URL-branch missing-field autofill in backend",
-      "description": "When URL is provided for custom article creation, backend fetches/parses page content to fill only missing fields and never overwrite user-provided values.",
-      "acceptanceCriteria": [
-        "If URL is provided and fields are missing, backend attempts URL fetch/parsing and fills empty fields only.",
-        "User-provided non-empty fields are never overwritten by autofill.",
-        "Autofill failure or incomplete required fields returns explicit actionable error response."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S030",
-      "priority": 30,
-      "title": "Finalize URL-branch create success and UI feedback",
-      "description": "Complete frontend/backend integration for URL branch so creation succeeds in one submit when required fields become non-empty after autofill.",
-      "acceptanceCriteria": [
-        "When URL autofill yields all required non-empty fields, article is created successfully in same submit flow.",
-        "UI shows clear success/failure feedback for URL-based creation attempts.",
-        "Created custom article appears in virtual feed article list after creation."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S031",
-      "priority": 31,
-      "title": "Implement no-URL mandatory validation rules",
-      "description": "For custom article creation without URL, enforce title and content as mandatory fields and block creation when either is missing.",
-      "acceptanceCriteria": [
-        "No-URL create path validates title and content as mandatory fields.",
-        "Missing title or content blocks creation and returns explicit validation messages.",
-        "Validation behavior is consistent across backend API and frontend form feedback."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S032",
-      "priority": 32,
-      "title": "Implement no-URL first-click default fill behavior",
-      "description": "When URL is absent and title/content are present but other fields are empty, first click fills reasonable defaults and enters pending-confirm state without creating article.",
-      "acceptanceCriteria": [
-        "No-URL path with title/content present and other empty fields triggers default fill on first click.",
-        "Reasonable defaults are applied (for example current timestamp and placeholder URL such as https://).",
-        "First click does not create article and UI clearly indicates pending confirmation state."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S033",
-      "priority": 33,
-      "title": "Implement no-URL second-click confirmation create flow",
-      "description": "After default fill in no-URL path, allow users to review/edit values and create on second click when all required fields are non-empty.",
-      "acceptanceCriteria": [
-        "Users can review and edit default-filled values before confirmation.",
-        "Second create click succeeds when required fields are non-empty.",
-        "UI feedback clearly differentiates first-click fill stage and second-click creation stage."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S034",
-      "priority": 34,
-      "title": "Add backend tests for virtual feed and custom article rules",
-      "description": "Add backend automated tests covering virtual feed APIs and custom article create logic for URL branch and no-URL branch.",
-      "acceptanceCriteria": [
-        "Tests cover virtual feed create/list/delete persistence behaviors.",
-        "Tests cover URL-branch autofill success and failure/incomplete-field scenarios.",
-        "Tests cover no-URL mandatory validation and two-step default-fill/confirm behavior."
-      ],
-      "passes": true
-    },
-    {
-      "id": "S035",
-      "priority": 35,
-      "title": "Add frontend/UI automation for custom article create flows",
-      "description": "Add frontend tests and UI automation for creating virtual feeds and custom articles, including URL autofill and no-URL two-step confirmation with regression checks.",
-      "acceptanceCriteria": [
-        "Frontend/UI automation covers create virtual feed and open virtual feed article list.",
-        "Automation covers URL branch custom article creation with visible success/failure feedback assertions.",
-        "Automation covers no-URL two-step flow (first-click fill, second-click confirm) and regression of existing RSS feed interactions.",
-        "Existing normal RSS feed flow remains backward compatible and unaffected."
-      ],
-      "passes": true
+      "passes": false
     }
   ]
 }
