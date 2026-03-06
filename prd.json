@@ -38,7 +38,7 @@
         "Favorites and RSS are rendered in separate, clearly distinguishable lists.",
         "Navigation from both lists to article list remains stable."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S039",

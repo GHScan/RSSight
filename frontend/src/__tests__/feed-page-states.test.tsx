@@ -35,7 +35,8 @@ describe("Feed page states", () => {
   it("shows empty state when no feeds", async () => {
     renderFeedsPage();
     await waitFor(() => {
-      expect(screen.getByText(/暂无|empty|没有订阅/i)).toBeInTheDocument();
+      expect(screen.getByText(/暂无 RSS 订阅/)).toBeInTheDocument();
+      expect(screen.getByText(/暂无收藏夹/)).toBeInTheDocument();
     });
   });
 
@@ -73,5 +74,39 @@ describe("Feed page states", () => {
     });
     expect(screen.getByLabelText(/名称/)).toBeInTheDocument();
     expect(screen.getByPlaceholderText(/收藏夹名称/)).toBeInTheDocument();
+  });
+
+  it("S038: feed management shows RSS and favorites as separate top-level list sections", async () => {
+    vi.mocked(api.getFeeds).mockResolvedValue([
+      { id: "f1", title: "RSS One", url: "https://example.com/one.xml", feed_type: "rss" },
+      { id: "v1", title: "My Favorites", url: null, feed_type: "virtual" },
+    ]);
+    renderFeedsPage();
+    await waitFor(() => {
+      expect(screen.getByRole("link", { name: "RSS One" })).toBeInTheDocument();
+      expect(screen.getAllByRole("link", { name: "My Favorites" }).length).toBeGreaterThanOrEqual(1);
+    });
+    expect(screen.getAllByRole("region", { name: "RSS 订阅" }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("region", { name: "文章收藏" }).length).toBeGreaterThanOrEqual(1);
+    const rssLink = screen.getAllByRole("link", { name: "RSS One" })[0];
+    const favLink = screen.getAllByRole("link", { name: "My Favorites" })[0];
+    expect(rssLink.closest("[aria-labelledby='rss-heading']")).toBeInTheDocument();
+    expect(favLink.closest("[aria-labelledby='favorites-heading']")).toBeInTheDocument();
+  });
+
+  it("S038: navigation to article list works from both RSS and favorites lists", async () => {
+    vi.mocked(api.getFeeds).mockResolvedValue([
+      { id: "f1", title: "RSS Feed", url: "https://example.com/feed.xml", feed_type: "rss" },
+      { id: "v1", title: "Favorites", url: null, feed_type: "virtual" },
+    ]);
+    renderFeedsPage();
+    await waitFor(() => {
+      const rssLinks = screen.getAllByRole("link", { name: "RSS Feed" });
+      const favLinks = screen.getAllByRole("link", { name: "Favorites" });
+      expect(rssLinks.length).toBeGreaterThanOrEqual(1);
+      expect(favLinks.length).toBeGreaterThanOrEqual(1);
+      expect(rssLinks[0]).toHaveAttribute("href", "/feeds/f1/articles");
+      expect(favLinks[0]).toHaveAttribute("href", "/feeds/v1/articles");
+    });
   });
 });

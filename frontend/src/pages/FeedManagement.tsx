@@ -28,6 +28,9 @@ export function FeedManagement() {
       .finally(() => setLoading(false));
   }, []);
 
+  const rssFeeds = feeds.filter((f) => (f.feed_type ?? "rss") === "rss");
+  const favoritesFeeds = feeds.filter((f) => f.feed_type === "virtual");
+
   useEffect(() => {
     loadFeeds();
   }, [loadFeeds]);
@@ -114,33 +117,25 @@ export function FeedManagement() {
         </p>
       )}
       {!loading && !error && (
-        <div className="flex flex-wrap gap-2 mb-6">
-          <button
-            type="button"
-            onClick={() => {
-              setShowAddForm(!showAddForm);
-              setFormError(null);
-            }}
-            aria-label="添加"
-            className={btnPrimary}
-          >
-            添加
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setShowVirtualForm(true);
-              setVirtualFeedName("");
-              setVirtualFormError(null);
-            }}
-            aria-label="文章收藏"
-            className={btnSecondary}
-          >
-            文章收藏
-          </button>
-        </div>
-      )}
-      {showAddForm && !loading && !error && (
+        <>
+          <section role="region" aria-labelledby="rss-heading" className="mb-8">
+            <h2 id="rss-heading" className="text-lg font-medium text-foreground mb-3">
+              RSS 订阅
+            </h2>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAddForm(!showAddForm);
+                  setFormError(null);
+                }}
+                aria-label="添加"
+                className={btnPrimary}
+              >
+                添加
+              </button>
+            </div>
+      {showAddForm && (
         <form
           onSubmit={handleAddSubmit}
           className="space-y-2 mb-6 p-4 border border-border rounded-lg bg-secondary/20"
@@ -183,45 +178,94 @@ export function FeedManagement() {
           </div>
         </form>
       )}
-      {!loading && !error && feeds.length === 0 && !showAddForm && (
-        <p className="text-muted-foreground">暂无订阅，请先添加订阅源。</p>
-      )}
-      {!loading && !error && feeds.length > 0 && (
-        <ul className="space-y-4 list-none p-0">
-          {feeds.map((f) => (
-            <li
-              key={f.id}
-              className={`border rounded-lg p-4 ${f.feed_type === "virtual" ? "border-muted-foreground/30 bg-muted/20" : "border-border"}`}
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="flex items-center gap-2 min-w-0 flex-1">
-                  <Link
-                    to={`/feeds/${f.id}/articles`}
-                    className="font-medium text-primary hover:underline break-words min-w-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
-                  >
-                    {f.title}
-                  </Link>
-                  {f.feed_type === "virtual" && (
-                    <span className="shrink-0 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground" aria-label="收藏夹">
-                      收藏夹
-                    </span>
-                  )}
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={() => confirmDelete(f.id, f.title)}
-                    disabled={deletingId === f.id}
-                    aria-label={`删除 ${f.title}`}
-                    className={`${btnBase} bg-destructive text-destructive-foreground hover:opacity-90 disabled:opacity-50`}
-                  >
-                    {deletingId === f.id ? "删除中…" : "删除"}
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+            {rssFeeds.length === 0 && !showAddForm && (
+              <p className="text-muted-foreground">暂无 RSS 订阅，请先添加订阅源。</p>
+            )}
+            {rssFeeds.length > 0 && (
+              <ul className="space-y-4 list-none p-0">
+                {rssFeeds.map((f) => (
+                  <li key={f.id} className="border border-border rounded-lg p-4">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <Link
+                          to={`/feeds/${f.id}/articles`}
+                          className="font-medium text-primary hover:underline break-words min-w-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
+                        >
+                          {f.title}
+                        </Link>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => confirmDelete(f.id, f.title)}
+                          disabled={deletingId === f.id}
+                          aria-label={`删除 ${f.title}`}
+                          className={`${btnBase} bg-destructive text-destructive-foreground hover:opacity-90 disabled:opacity-50`}
+                        >
+                          {deletingId === f.id ? "删除中…" : "删除"}
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+          <section role="region" aria-labelledby="favorites-heading" className="mb-4">
+            <h2 id="favorites-heading" className="text-lg font-medium text-foreground mb-3">
+              文章收藏
+            </h2>
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowVirtualForm(true);
+                  setVirtualFeedName("");
+                  setVirtualFormError(null);
+                }}
+                aria-label="文章收藏"
+                className={btnSecondary}
+              >
+                文章收藏
+              </button>
+            </div>
+            {favoritesFeeds.length === 0 && (
+              <p className="text-muted-foreground">暂无收藏夹，可点击「新建收藏夹」创建。</p>
+            )}
+            {favoritesFeeds.length > 0 && (
+              <ul className="space-y-4 list-none p-0">
+                {favoritesFeeds.map((f) => (
+                  <li key={f.id} className="border border-muted-foreground/30 rounded-lg p-4 bg-muted/20">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        <Link
+                          to={`/feeds/${f.id}/articles`}
+                          className="font-medium text-primary hover:underline break-words min-w-0 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
+                        >
+                          {f.title}
+                        </Link>
+                        <span className="shrink-0 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground" aria-label="收藏夹">
+                          收藏夹
+                        </span>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => confirmDelete(f.id, f.title)}
+                          disabled={deletingId === f.id}
+                          aria-label={`删除 ${f.title}`}
+                          className={`${btnBase} bg-destructive text-destructive-foreground hover:opacity-90 disabled:opacity-50`}
+                        >
+                          {deletingId === f.id ? "删除中…" : "删除"}
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </>
       )}
       </div>
       {showVirtualForm && (
