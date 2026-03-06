@@ -1,4 +1,4 @@
-# OpenCode iteration prompt template
+# Cursor CLI (agent) iteration prompt template
 
 You are the implementation agent for the current iteration of this project. Follow these rules strictly:
 
@@ -10,7 +10,7 @@ You are the implementation agent for the current iteration of this project. Foll
    - First, review and update all documentation affected by your changes (for example `README.md`, files under `docs/`, ADRs, and `docs/api-contract.md`) so that documentation stays consistent with the implementation.
    - Then update:
      - `progress.txt` (append a record for this iteration).
-     - `prd.json` (set this story’s `passes` field to `true`).
+     - `prd.json` (set this story's `passes` field to `true`).
      - `AGENTS.md` when you have new long‑lived rules.
 
 ## Current story

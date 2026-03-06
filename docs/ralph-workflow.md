@@ -14,6 +14,22 @@ This document focuses only on Ralph execution mechanics.
 - Iteration template/checklist: files under `scripts/ralph/`.
 - Story status and lessons: `prd.json`, `progress.txt`.
 
+## Serial Ralph loop (Cursor CLI)
+
+For a simple serial run without wave scheduling, use the Cursor CLI (command name: `agent`). From the repo root:
+
+```cmd
+scripts\ralph\ralph-serial.cmd
+```
+
+This script loops while `prd.json` has any story with `passes=false`, and each time runs:
+
+```text
+agent -p --force "完成一个 prd.json 的 story 并提交"
+```
+
+Ensure `agent` (Cursor CLI) is on your PATH. The loop stops when every story passes or when an agent run exits non-zero.
+
 ## Parent wave flow
 
 1. Read `scripts/ralph/schedule.md` and build wave graph from `prd.json`.
@@ -34,7 +50,7 @@ This document focuses only on Ralph execution mechanics.
 4. Perform merge flow (`base -> branch`, then checkout `base` in sandbox, then `branch -> base`) with conflict-resolution retries.
 5. On merge success, subagent cleans up completed feature branch/worktree and reports structured result.
 
-## Suggested OpenCode prompt structure
+## Suggested Cursor CLI (agent) prompt structure
 
 The prompt should include:
 
@@ -42,7 +58,7 @@ The prompt should include:
 - The iteration boundary (only this story).
 - A reminder to follow all mandatory rules in `AGENTS.md`.
 
-You can reuse the template in `scripts/ralph/prompt-opencode.md`.
+You can reuse the template in `scripts/ralph/prompt-agent.md`.
 
 ## Handling failures
 
