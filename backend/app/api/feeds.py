@@ -133,6 +133,7 @@ def list_articles(
             title_trans=a.title_trans,
             favorite=favorited_at is not None,
             favorited_at=favorited_at.isoformat() if favorited_at else None,
+            source=a.source,
         )
         for a, favorited_at in pairs
     ]

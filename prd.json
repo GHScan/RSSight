@@ -334,7 +334,7 @@
         "Custom article records are written under virtual feed article storage using existing article directory conventions.",
         "Persisted custom articles can be loaded and rendered by article list APIs."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S028",

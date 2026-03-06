@@ -6,6 +6,8 @@ from pathlib import Path
 from textwrap import dedent
 from unittest.mock import MagicMock
 
+import pytest
+
 from app.models.articles import Article
 from app.models.feeds import FeedCreate
 from app.services.articles import FAVORITE_MARKER, ArticleService
@@ -231,3 +233,78 @@ def test_list_articles_with_favorites_sort_order(tmp_path: Path) -> None:
     assert ids[0] == "a1"
     assert ids[1] == "a3"
     assert ids[2] == "a2"
+
+
+# --- S027: Custom article schema and persistence for virtual feeds ---
+
+
+def test_create_custom_article_persists_and_list_returns_it(tmp_path: Path) -> None:
+    """
+    S027 happy path: Create custom article for virtual feed; article is stored under
+    data/feeds/{feedId}/articles/{articleId}/article.json and list/get return it.
+    """
+    feed_svc = FeedService(tmp_path)
+    feed = feed_svc.create_virtual_feed("My Favorites")
+    art_svc = ArticleService(tmp_path)
+    published = datetime(2026, 3, 5, 10, 0, 0, tzinfo=timezone.utc)
+    created = art_svc.create_custom_article(
+        feed_id=feed.id,
+        title="Custom note",
+        link="",
+        description="Note content here",
+        published_at=published,
+        source=None,
+    )
+    assert created.id
+    assert created.feed_id == feed.id
+    assert created.title == "Custom note"
+    assert created.link == ""
+    assert created.description == "Note content here"
+    assert created.published_at == published
+    article_dir = tmp_path / "feeds" / feed.id / "articles" / created.id
+    assert article_dir.is_dir()
+    article_json = article_dir / "article.json"
+    assert article_json.exists()
+    raw = json.loads(article_json.read_text(encoding="utf-8"))
+    assert raw["title"] == "Custom note"
+    assert raw["description"] == "Note content here"
+    listed = art_svc.list_articles_for_feed(feed.id)
+    assert len(listed) == 1
+    assert listed[0].id == created.id
+    assert listed[0].title == "Custom note"
+    got = art_svc.get_article(feed.id, created.id)
+    assert got.title == "Custom note"
+    assert got.description == "Note content here"
+
+
+def test_create_custom_article_with_optional_source_persists_and_loads(tmp_path: Path) -> None:
+    """S027: Custom article with optional source metadata persists and loads."""
+    feed_svc = FeedService(tmp_path)
+    feed = feed_svc.create_virtual_feed("Collected")
+    art_svc = ArticleService(tmp_path)
+    created = art_svc.create_custom_article(
+        feed_id=feed.id,
+        title="From blog",
+        link="https://example.com/post",
+        description="Content",
+        published_at=datetime(2026, 3, 6, 12, 0, 0, tzinfo=timezone.utc),
+        source="Example Blog",
+    )
+    assert created.source == "Example Blog"
+    got = art_svc.get_article(feed.id, created.id)
+    assert got.source == "Example Blog"
+
+
+def test_create_custom_article_rejects_non_virtual_feed(tmp_path: Path) -> None:
+    """S027 boundary: create_custom_article for RSS feed raises."""
+    feed_svc = FeedService(tmp_path)
+    feed = feed_svc.create_feed(FeedCreate(title="RSS", url="https://example.com/feed.xml"))
+    art_svc = ArticleService(tmp_path)
+    with pytest.raises(ValueError, match="virtual"):
+        art_svc.create_custom_article(
+            feed_id=feed.id,
+            title="Custom",
+            link="",
+            description="",
+            published_at=datetime.now(timezone.utc),
+        )

@@ -33,6 +33,7 @@ flowchart LR
   - `data/feeds.json` — JSON object mapping feed id to feed record. Each record: `id`, `title`, `url` (required for RSS feeds, null for virtual), `feed_type` (optional, one of `"rss"` or `"virtual"`; default `"rss"` when omitted for backward compatibility). Virtual feeds represent collections (e.g. article favorites) and have empty URL and `feed_type: "virtual"`. Normal RSS feeds have a non-empty `url` and `feed_type: "rss"` (or omit `feed_type`). The scheduler and RSS fetch logic skip virtual feeds.
 - Article metadata (recommended):
   - `data/feeds/{feedId}/articles/{articleId}/article.json`
+  - Same path for both RSS-sourced and custom articles (virtual feeds). Custom article storage contract: required fields `id`, `feed_id`, `title`, `link` (may be empty string), `description`, `published_at` (ISO or parseable datetime); optional `guid`, `title_trans`, `source` (source metadata for custom articles). Custom articles are created only for virtual feeds and are persisted via `ArticleService.create_custom_article`; they are loaded and rendered by the same article list/get APIs as RSS articles.
 - AI summary body (required):
   - `data/feeds/{feedId}/articles/{articleId}/summaries/{profileName}.md`
 - AI summary metadata (recommended):

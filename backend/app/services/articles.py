@@ -230,6 +230,45 @@ class ArticleService:
         elif marker.exists():
             marker.unlink()
 
+    def create_custom_article(
+        self,
+        feed_id: str,
+        *,
+        title: str,
+        link: str = "",
+        description: str = "",
+        published_at: datetime,
+        source: str | None = None,
+    ) -> Article:
+        """
+        Create a custom article under a virtual feed. Persists to
+        data/feeds/{feedId}/articles/{articleId}/article.json using the same
+        layout as RSS articles. Raises ValueError if the feed is not virtual.
+        """
+        feed = self._feed_service.get_feed(feed_id)
+        if feed.feed_type != "virtual":
+            raise ValueError("Custom articles can only be created for virtual feeds")
+        article_id = uuid.uuid4().hex
+        article = Article(
+            id=article_id,
+            feed_id=feed_id,
+            title=title,
+            link=link,
+            description=description,
+            guid=None,
+            published_at=published_at,
+            title_trans=None,
+            source=source,
+        )
+        article_dir = self._feeds_dir / feed_id / "articles" / article_id
+        article_dir.mkdir(parents=True, exist_ok=True)
+        payload = article.model_dump(mode="json")
+        (article_dir / "article.json").write_text(
+            json.dumps(payload, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        return article
+
     @staticmethod
     def _default_fetch_rss(url: str) -> str:
         with urlopen(url) as response:

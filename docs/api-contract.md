@@ -19,7 +19,7 @@ At the current stage of the project, the backend implements the **Health**, **Fe
 
 ## Articles
 
-- `GET /api/feeds/{feedId}/articles` — returns list with `id`, `title`, `link`, `published`, optional `title_trans`, `favorite`, and `favorited_at`. Sort order: recently favorited first, then by published desc.
+- `GET /api/feeds/{feedId}/articles` — returns list with `id`, `title`, `link`, `published`, optional `title_trans`, `favorite`, `favorited_at`, and optional `source` (custom-article source metadata). Sort order: recently favorited first, then by published desc. Custom articles under virtual feeds use the same storage path and appear in this list.
 - `PUT /api/feeds/{feedId}/articles/{articleId}/favorite` — body `{ "favorite": true | false }`; sets/clears favorite marker file in article folder.
 - `POST /api/feeds/{feedId}/refresh` (manually trigger a fetch)
 
