@@ -8,6 +8,7 @@ import { BackLink } from "../components/BackLink";
 export function ArticleSummary() {
   const { feedId, articleId } = useParams<{ feedId: string; articleId: string }>();
   const [articleTitle, setArticleTitle] = useState<string | null>(null);
+  const [articleLink, setArticleLink] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<SummaryProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>("");
   const [summary, setSummary] = useState<string | null>(null);
@@ -36,8 +37,12 @@ export function ArticleSummary() {
       .then((list) => {
         const a = list.find((x) => x.id === articleId);
         setArticleTitle(a ? (a.title_trans ?? a.title) : null);
+        setArticleLink(a?.link ?? null);
       })
-      .catch(() => setArticleTitle(null));
+      .catch(() => {
+        setArticleTitle(null);
+        setArticleLink(null);
+      });
   }, [feedId, articleId]);
 
   const loadSummary = useCallback(() => {
@@ -102,8 +107,19 @@ export function ArticleSummary() {
       </header>
       <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
         {articleTitle && (
-        <p className="text-lg font-medium text-foreground mb-4 break-words border-b border-border pb-3">
-          {articleTitle}
+        <p className="text-xl font-serif font-semibold text-foreground tracking-tight mb-4 break-words border-b border-border pb-3">
+          {articleLink ? (
+            <a
+              href={articleLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-primary underline underline-offset-2 hover:opacity-90 decoration-2"
+            >
+              {articleTitle}
+            </a>
+          ) : (
+            articleTitle
+          )}
         </p>
       )}
       {loadingProfiles && <p className="text-muted-foreground">加载中…</p>}
