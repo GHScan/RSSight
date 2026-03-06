@@ -272,7 +272,7 @@
         "Color intensity reflects recency: same day darkest, gradually lighter for older dates, lightest for three months or older.",
         "Date display is consistent with sort order and does not break layout."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

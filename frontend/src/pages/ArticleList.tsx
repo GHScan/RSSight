@@ -4,6 +4,31 @@ import { NavLink } from "../components/NavLink";
 import type { Article } from "../api/types";
 import { api } from "../api/client";
 
+/** Format ISO date as year-month for display (e.g. 2026年3月). */
+function formatYearMonth(published: string): string {
+  const d = new Date(published);
+  if (Number.isNaN(d.getTime())) return published.slice(0, 7);
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth() + 1;
+  return `${y}年${m}月`;
+}
+
+/** Age-based color: same day darkest, gradually lighter for older, lightest for 3+ months. */
+function getDateFadeClass(published: string): string {
+  const pub = new Date(published);
+  const now = new Date();
+  if (Number.isNaN(pub.getTime())) return "text-muted-foreground/50";
+  const sameDay =
+    pub.getUTCDate() === now.getUTCDate() &&
+    pub.getUTCMonth() === now.getUTCMonth() &&
+    pub.getUTCFullYear() === now.getUTCFullYear();
+  const daysAgo = (now.getTime() - pub.getTime()) / (24 * 60 * 60 * 1000);
+  if (sameDay) return "text-foreground";
+  if (daysAgo <= 30) return "text-foreground/90";
+  if (daysAgo <= 90) return "text-muted-foreground";
+  return "text-muted-foreground/50";
+}
+
 export function ArticleList() {
   const { feedId } = useParams<{ feedId: string }>();
   const [articles, setArticles] = useState<Article[]>([]);
@@ -108,6 +133,12 @@ export function ArticleList() {
               key={a.id}
               className="border-b border-border py-2 last:border-b-0 flex items-center gap-2"
             >
+              <span
+                className={`shrink-0 w-20 text-sm tabular-nums ${getDateFadeClass(a.published)}`}
+                aria-hidden
+              >
+                {formatYearMonth(a.published)}
+              </span>
               <button
                 type="button"
                 onClick={async () => {

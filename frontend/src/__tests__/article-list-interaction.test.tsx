@@ -196,4 +196,15 @@ describe("Article list interaction (S010)", () => {
       });
     });
   });
+
+  describe("Left-side date with age-based fading (S022)", () => {
+    it("each article row shows year-month date on the left", async () => {
+      renderArticleList();
+      await waitFor(() => {
+        expect(screen.getByText("Article First")).toBeInTheDocument();
+      });
+      const dateLabels = screen.getAllByText("2025年3月");
+      expect(dateLabels.length).toBe(3);
+    });
+  });
 });
