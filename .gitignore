@@ -20,4 +20,4 @@ playwright-report/
 Thumbs.db
 
 # data/ is runtime-only; may be a symlink to another directory (no repo files inside)
-data/
+data
