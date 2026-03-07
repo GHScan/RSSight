@@ -55,11 +55,39 @@ describe("Routing and page structure", () => {
 
   it("navigates to profiles from home via link", async () => {
     renderWithRouter(["/"]);
-    await userEvent.click(screen.getByRole("link", { name: /摘要配置|Profiles|配置/i }));
+    await userEvent.click(screen.getByRole("link", { name: "摘要设置" }));
     await waitFor(() => {
       expect(
         screen.getByRole("heading", { name: /摘要配置|Summary profile|配置/i }),
       ).toBeInTheDocument();
+    });
+  });
+
+  it("S046: home shows exactly three top-level nav entries in order (RSS订阅, 文章收藏, 摘要设置)", () => {
+    renderWithRouter(["/"]);
+    const links = screen.getAllByRole("link");
+    const navLinks = links.filter((l) => ["/feeds", "/favorites", "/profiles"].includes(l.getAttribute("href") ?? ""));
+    expect(navLinks).toHaveLength(3);
+    expect(navLinks[0]).toHaveTextContent("RSS 订阅");
+    expect(navLinks[0]).toHaveAttribute("href", "/feeds");
+    expect(navLinks[1]).toHaveTextContent("文章收藏");
+    expect(navLinks[1]).toHaveAttribute("href", "/favorites");
+    expect(navLinks[2]).toHaveTextContent("摘要设置");
+    expect(navLinks[2]).toHaveAttribute("href", "/profiles");
+  });
+
+  it("S046: shows article favorites page at /favorites", async () => {
+    renderWithRouter(["/favorites"]);
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { level: 1, name: "文章收藏" })).toBeInTheDocument();
+    });
+  });
+
+  it("S046: navigating to article favorites from home via link", async () => {
+    renderWithRouter(["/"]);
+    await userEvent.click(screen.getByRole("link", { name: "文章收藏" }));
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { level: 1, name: "文章收藏" })).toBeInTheDocument();
     });
   });
 });

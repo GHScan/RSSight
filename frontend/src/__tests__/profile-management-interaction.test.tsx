@@ -213,7 +213,7 @@ describe("Summary profile management interaction (S014)", () => {
       await waitFor(() => {
         expect(screen.getByRole("heading", { name: /RSSight/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("link", { name: /摘要配置/i }));
+      await userEvent.click(screen.getByRole("link", { name: "摘要设置" }));
       await waitFor(() => {
         expect(screen.getByRole("heading", { name: /摘要配置/i })).toBeInTheDocument();
         expect(screen.getByText("p1")).toBeInTheDocument();

@@ -13,6 +13,7 @@ describe("App smoke", () => {
     );
     expect(screen.getByRole("heading", { name: "RSSight" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "RSS 订阅" })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "摘要配置" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "文章收藏" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "摘要设置" })).toBeInTheDocument();
   });
 });

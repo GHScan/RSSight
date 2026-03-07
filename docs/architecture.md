@@ -12,6 +12,19 @@ This document describes the target architecture and boundaries of RSSight, so th
 ## Layers
 
 - `frontend/`: User interaction and page state management. React Router for home, RSS Subscriptions (feed management), Article Favorites (standalone page), article list, article summary, and summary profile pages; a dedicated API client layer (`src/api/`) calls the backend and is kept separate from UI for testability.
+
+### Frontend routes (contract)
+
+| Path | Page | Description |
+|------|------|-------------|
+| `/` | Home | Entry point; top-level nav to RSS订阅, 文章收藏, 摘要设置. |
+| `/feeds` | Feed Management (RSS订阅) | RSS subscriptions list and management. |
+| `/favorites` | Article Favorites (文章收藏) | Standalone page for favorites collections (virtual feeds). |
+| `/feeds/:feedId/articles` | Article List | Articles for a feed (RSS or virtual). |
+| `/feeds/:feedId/articles/:articleId` | Article Summary | Single article and summary UI. |
+| `/profiles` | Summary Settings (摘要设置) | Summary profile management. |
+
+No compatibility route alias or redirect exists for historical paths; RSS Subscriptions and Article Favorites are independent pages only.
 - `backend/`: APIs, domain services, and scheduled tasks.
 - `data/`: File‑based storage for feeds/articles/summaries/profiles.
 - `docs/`: Architecture and process documentation.

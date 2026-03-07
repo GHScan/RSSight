@@ -137,7 +137,7 @@
         "No compatibility route alias or redirect is introduced for historical paths.",
         "Route contract/update is documented in impacted docs."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S047",

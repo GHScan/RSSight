@@ -514,6 +514,7 @@ describe("Article list interaction (S010)", () => {
     });
 
     it("S044: URL submit when API returns MISSING_REQUIRED_FIELDS (empty title/content after extraction) shows error and form stays open", async () => {
+      vi.mocked(api.createCustomArticle).mockClear();
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
         title: "My Favorites",
