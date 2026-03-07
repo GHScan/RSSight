@@ -202,7 +202,7 @@ def test_delete_summary_removes_markdown_file(tmp_path: Path) -> None:
 
 
 def test_translation_profile_get_summary_returns_title_trans(tmp_path: Path) -> None:
-    """For profile 'title_translation', get_summary returns article.title_trans (or None)."""
+    """For profile 'translation', get_summary returns article.title_trans (or None)."""
     feed_id, article_id = _make_feed_and_article(tmp_path)
     profile_svc = SummaryProfileService(tmp_path)
     profile_svc.create_profile(
@@ -234,7 +234,7 @@ def test_translation_profile_get_summary_returns_title_trans(tmp_path: Path) -> 
 
 
 def test_translation_profile_generate_updates_title_trans(tmp_path: Path) -> None:
-    """title_translation profile: generate_summary uses translate_batch, updates title_trans."""
+    """translation profile: generate_summary uses translate_batch, updates title_trans."""
     feed_id, article_id = _make_feed_and_article(tmp_path)
     profile_svc = SummaryProfileService(tmp_path)
     profile_svc.create_profile(
@@ -262,7 +262,7 @@ def test_translation_profile_generate_updates_title_trans(tmp_path: Path) -> Non
 
 
 def test_translation_profile_delete_clears_title_trans(tmp_path: Path) -> None:
-    """For profile 'title_translation', delete_summary clears article.title_trans."""
+    """For profile 'translation', delete_summary clears article.title_trans."""
     feed_id, article_id = _make_feed_and_article(tmp_path)
     profile_svc = SummaryProfileService(tmp_path)
     profile_svc.create_profile(

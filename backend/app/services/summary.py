@@ -125,7 +125,7 @@ class SummaryService:
         """
         Load article and profile, build prompt from template (with title/content
         variables), call the AI, and write the result to a .md file.
-        For profile "title_translation", updates article.title_trans instead and returns it.
+        For profile "translation", updates article.title_trans instead and returns it.
         Returns the generated summary body.
         """
         try:
@@ -170,7 +170,7 @@ class SummaryService:
     ) -> str | None:
         """
         Return the content of an existing summary .md file, or None if it
-        does not exist. For profile "title_translation", returns article.title_trans.
+        does not exist. For profile "translation", returns article.title_trans.
         """
         if profile_name == TRANSLATION_PROFILE_NAME:
             try:
@@ -194,7 +194,7 @@ class SummaryService:
     ) -> None:
         """
         Remove the summary for the given article and profile (.md and .meta.json if present).
-        For profile "title_translation", clears article.title_trans.
+        For profile "translation", clears article.title_trans.
         No-op if the summary does not exist.
         """
         if profile_name == TRANSLATION_PROFILE_NAME:

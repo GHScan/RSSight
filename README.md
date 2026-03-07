@@ -7,7 +7,7 @@
 
 ## Features
 
-- **AI summarization & translation** — Generate article summaries and translate titles on demand; custom prompts and multiple profiles (e.g. “brief”, “Chinese”, “title_translation”).
+- **AI summarization & translation** — Generate article summaries and translate titles on demand; custom prompts and multiple profiles (e.g. “brief”, “Chinese”, “translation”).
 - **Multiple AI providers** — Works with any OpenAI-compatible API: OpenAI, Azure OpenAI, local LLMs (Ollama, LM Studio, etc.). One app, swap providers via config.
 - **Cross-platform** — Backend (Python/FastAPI) and frontend (React/Vite) run on **Windows**, **macOS**, and **Linux**. Develop and self-host wherever you prefer.
 - **RSS + browser UI** — Manage feeds, browse articles, trigger summaries and translations from a simple web interface.

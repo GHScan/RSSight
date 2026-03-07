@@ -104,9 +104,9 @@ def test_translate_batch_only_includes_requested_keys_and_string_values() -> Non
 @pytest.mark.integration
 def test_translation_batch_with_real_profile(tmp_path: Path) -> None:
     """
-    使用 data 目录下真实的 title_translation profile 和真实 API 测批量翻译。
+    使用 data 目录下真实的 translation profile 和真实 API 测批量翻译。
     仅在手选时跑（pytest -m integration），且需 RUN_TRANSLATION_INTEGRATION=1；
-    若 data 中无 title_translation profile 则跳过。
+    若 data 中无 translation profile 则跳过。
     """
     if os.environ.get("RUN_TRANSLATION_INTEGRATION") != "1":
         pytest.skip("需要 RUN_TRANSLATION_INTEGRATION=1 才执行真实 API 翻译测试")
@@ -148,7 +148,7 @@ def test_translation_batch_with_real_profile(tmp_path: Path) -> None:
 
 
 def test_run_translation_pass_skips_when_no_translation_profile(tmp_path: Path) -> None:
-    """When title_translation profile is not configured, pass does nothing and does not raise."""
+    """When translation profile is not configured, pass does nothing and does not raise."""
     feed_svc = FeedService(tmp_path)
     feed = feed_svc.create_feed(FeedCreate(title="F", url="https://example.com/feed.xml"))
     article = Article(

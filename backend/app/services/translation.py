@@ -6,7 +6,7 @@ fixed prompt to fill JSON values in Chinese, parses the response as JSON and
 returns a dict for lookup. The backend collects up to 64 untranslated titles
 per pass and applies the returned translations to articles.
 
-Uses profile "title_translation" only for API config (base_url, key, model);
+Uses profile "translation" only for API config (base_url, key, model);
 the prompt is fixed and does not use the profile's prompt_template.
 """
 
@@ -24,7 +24,7 @@ from app.services.profiles import ProfileNotFoundError, SummaryProfileService
 # Callable: (prompt: str, profile_name: str) -> str
 CallAiCallable = Callable[[str, str], str]
 
-TRANSLATION_PROFILE_NAME = "title_translation"
+TRANSLATION_PROFILE_NAME = "translation"
 
 FIXED_PROMPT = """用中文翻译补全下面json字段中的value，返回json
 
@@ -91,7 +91,7 @@ def run_translation_pass(
     """
     One pass: collect up to 64 unique titles from articles without title_trans
     across all feeds, call translate_batch once, then update every such article
-    whose title appears in the result. If the title_translation profile does not
+    whose title appears in the result. If the translation profile does not
     exist, the pass does nothing (no exception).
     Returns the number of articles updated this pass (0 if none or skipped).
     """
