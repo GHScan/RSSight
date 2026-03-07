@@ -94,10 +94,7 @@ export function ArticleFavorites() {
         )}
         {!loading && !error && (
           <>
-            <section role="region" aria-labelledby="favorites-heading" className="mb-8">
-              <h2 id="favorites-heading" className="text-lg font-medium text-foreground mb-3">
-                收藏夹
-              </h2>
+            <section role="region" aria-label="收藏夹列表" className="mb-8">
               <div className="flex flex-wrap gap-2 mb-4">
                 <button
                   type="button"
@@ -106,14 +103,14 @@ export function ArticleFavorites() {
                     setVirtualFeedName("");
                     setVirtualFormError(null);
                   }}
-                  aria-label="添加"
+                  aria-label="添加收藏夹"
                   className={btnPrimary}
                 >
-                  添加
+                  添加收藏夹
                 </button>
               </div>
               {favoritesFeeds.length === 0 && !showVirtualForm && (
-                <p className="text-muted-foreground">暂无收藏夹，可点击「添加」创建。</p>
+                <p className="text-muted-foreground">暂无收藏夹，可点击「添加收藏夹」创建。</p>
               )}
               {favoritesFeeds.length > 0 && (
                 <ul className="space-y-4 list-none p-0">

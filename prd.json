@@ -80,7 +80,7 @@
         "Create favorites flow behavior remains unchanged, including modal open/close, validation, submit, and error feedback.",
         "Related frontend tests are updated to assert the new copy and pass."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S055",

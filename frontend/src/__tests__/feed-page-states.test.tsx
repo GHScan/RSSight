@@ -88,8 +88,8 @@ describe("Feed page states", () => {
       expect(screen.getByText(/暂无 RSS 订阅/)).toBeInTheDocument();
     });
     expect(screen.queryByRole("heading", { level: 1, name: "RSS 订阅" })).not.toBeInTheDocument();
-    const rssRegion = screen.getByRole("region", { name: "RSS 订阅" });
-    const addButton = within(rssRegion).getByRole("button", { name: "添加 Feed" });
+    const rssRegions = screen.getAllByRole("region", { name: "RSS 订阅" });
+    const addButton = within(rssRegions[0]).getByRole("button", { name: "添加 Feed" });
     expect(addButton).toHaveTextContent("添加 Feed");
   });
 });
@@ -99,24 +99,40 @@ describe("Article favorites page (文章收藏)", () => {
     vi.mocked(api.getFeeds).mockResolvedValue([]);
   });
 
-  it("S051: article favorites page add button displays only 添加 (no 收藏夹 in label)", async () => {
+  it("S051: article favorites page add button is 添加收藏夹 (no redundant 收藏夹 section heading)", async () => {
     renderFavoritesPage();
     await waitFor(() => {
-      expect(screen.getByText(/暂无收藏夹/)).toBeInTheDocument();
+      expect(screen.getAllByText(/暂无收藏夹/).length).toBeGreaterThanOrEqual(1);
     });
-    const region = screen.getByRole("region", { name: "收藏夹" });
-    const addButton = within(region).getByRole("button", { name: "添加" });
-    expect(addButton).toHaveTextContent("添加");
-    expect(addButton.textContent).not.toMatch(/收藏夹/);
+    const regions = screen.getAllByRole("region", { name: "收藏夹列表" });
+    const addButton = within(regions[0]).getByRole("button", { name: "添加收藏夹" });
+    expect(addButton).toHaveTextContent("添加收藏夹");
   });
 
-  it("S051: create-collection button is labeled 添加 not 新建收藏夹", async () => {
+  it("S051: create-collection button is 添加收藏夹 not 新建收藏夹", async () => {
     renderFavoritesPage();
     await waitFor(() => {
-      expect(screen.getByRole("region", { name: "收藏夹" })).toBeInTheDocument();
+      expect(screen.getAllByRole("region", { name: "收藏夹列表" }).length).toBeGreaterThanOrEqual(1);
     });
     expect(screen.queryByRole("button", { name: /新建收藏夹/ })).not.toBeInTheDocument();
-    const region = screen.getByRole("region", { name: "收藏夹" });
-    expect(within(region).getByRole("button", { name: "添加" })).toBeInTheDocument();
+    const regions = screen.getAllByRole("region", { name: "收藏夹列表" });
+    expect(within(regions[0]).getByRole("button", { name: "添加收藏夹" })).toBeInTheDocument();
+  });
+
+  it("S054: article favorites page has no section heading 收藏夹", async () => {
+    renderFavoritesPage();
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: "添加收藏夹" }).length).toBeGreaterThanOrEqual(1);
+    });
+    expect(screen.queryByRole("heading", { name: "收藏夹" })).not.toBeInTheDocument();
+  });
+
+  it("S054: article favorites page primary add button is 添加收藏夹", async () => {
+    renderFavoritesPage();
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: "添加收藏夹" }).length).toBeGreaterThanOrEqual(1);
+    });
+    const addButtons = screen.getAllByRole("button", { name: "添加收藏夹" });
+    expect(addButtons[0]).toHaveTextContent("添加收藏夹");
   });
 });
