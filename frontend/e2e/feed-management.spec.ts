@@ -498,4 +498,21 @@ test.describe("Feed management E2E (S009)", () => {
     await expect(page.getByText("我的收藏")).toBeVisible();
     await expect(page.getByText("收藏夹")).toBeVisible();
   });
+
+  test("S049: RSS订阅 and 文章收藏 are independent pages with stable navigation and main flows", async ({
+    page,
+  }) => {
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "RSSight" })).toBeVisible();
+    await page.getByRole("link", { name: "RSS 订阅" }).click();
+    await expect(page.getByRole("heading", { name: "RSS 订阅", level: 1 })).toBeVisible();
+    await expect(page.getByRole("region", { name: "RSS 订阅" }).first()).toBeVisible();
+    await expect(page.getByRole("link", { name: /首页/ })).toBeVisible();
+    await page.getByRole("link", { name: /首页/ }).click();
+    await expect(page.getByRole("heading", { name: "RSSight" })).toBeVisible();
+    await page.getByRole("link", { name: "文章收藏" }).click();
+    await expect(page.getByRole("heading", { name: "文章收藏", level: 1 })).toBeVisible();
+    await expect(page.getByRole("button", { name: /新建收藏夹/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /首页/ })).toBeVisible();
+  });
 });

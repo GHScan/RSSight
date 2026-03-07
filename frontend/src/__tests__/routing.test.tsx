@@ -5,6 +5,7 @@ import { MemoryRouter } from "react-router-dom";
 
 import { App } from "../App";
 import { api } from "../api/client";
+import * as telemetry from "../telemetry";
 
 vi.mock("../api/client", () => ({
   api: {
@@ -12,6 +13,11 @@ vi.mock("../api/client", () => ({
     getSummaryProfiles: vi.fn(),
     getArticles: vi.fn(),
   },
+}));
+
+vi.mock("../telemetry", () => ({
+  trackEntryClick: vi.fn(),
+  trackPageView: vi.fn(),
 }));
 
 function renderWithRouter(initialEntries: string[] = ["/"]) {
@@ -88,6 +94,41 @@ describe("Routing and page structure", () => {
     await userEvent.click(screen.getByRole("link", { name: "文章收藏" }));
     await waitFor(() => {
       expect(screen.getByRole("heading", { level: 1, name: "文章收藏" })).toBeInTheDocument();
+    });
+  });
+
+  describe("S049: page split regression and telemetry", () => {
+    beforeEach(() => {
+      vi.mocked(telemetry.trackEntryClick).mockClear();
+      vi.mocked(telemetry.trackPageView).mockClear();
+    });
+
+    it("S049: visiting /feeds emits page_view for rss_subscriptions", async () => {
+      renderWithRouter(["/feeds"]);
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { level: 1, name: "RSS 订阅" })).toBeInTheDocument();
+      });
+      expect(telemetry.trackPageView).toHaveBeenCalledWith("rss_subscriptions");
+    });
+
+    it("S049: visiting /favorites emits page_view for article_favorites", async () => {
+      renderWithRouter(["/favorites"]);
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { level: 1, name: "文章收藏" })).toBeInTheDocument();
+      });
+      expect(telemetry.trackPageView).toHaveBeenCalledWith("article_favorites");
+    });
+
+    it("S049: clicking RSS 订阅 on home emits entry_click rss_subscriptions", async () => {
+      renderWithRouter(["/"]);
+      await userEvent.click(screen.getByRole("link", { name: "RSS 订阅" }));
+      expect(telemetry.trackEntryClick).toHaveBeenCalledWith("rss_subscriptions");
+    });
+
+    it("S049: clicking 文章收藏 on home emits entry_click article_favorites", async () => {
+      renderWithRouter(["/"]);
+      await userEvent.click(screen.getByRole("link", { name: "文章收藏" }));
+      expect(telemetry.trackEntryClick).toHaveBeenCalledWith("article_favorites");
     });
   });
 });

@@ -176,7 +176,7 @@
         "Telemetry/analytics distinguishes entry-click/page-view/core-action events between RSS订阅 and 文章收藏.",
         "Impacted docs are updated with new IA, route changes, and explicit no-compatibility decision."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
