@@ -12,6 +12,7 @@ vi.mock("../api/client", () => ({
     getFeeds: vi.fn(),
     getSummaryProfiles: vi.fn(),
     getArticles: vi.fn(),
+    getReadLaterList: vi.fn(),
   },
 }));
 
@@ -33,6 +34,7 @@ describe("Routing and page structure", () => {
     cleanup();
     vi.mocked(api.getFeeds).mockResolvedValue([]);
     vi.mocked(api.getSummaryProfiles).mockResolvedValue([]);
+    vi.mocked(api.getReadLaterList).mockResolvedValue([]);
   });
 
   it("shows feed management page at /feeds", async () => {
@@ -129,6 +131,34 @@ describe("Routing and page structure", () => {
       renderWithRouter(["/"]);
       await userEvent.click(screen.getByRole("link", { name: "文章收藏" }));
       expect(telemetry.trackEntryClick).toHaveBeenCalledWith("article_favorites");
+    });
+  });
+
+  describe("S063: read-later panel on home", () => {
+    it("S063: home shows 待读 panel with empty-state hint when list is empty", async () => {
+      vi.mocked(api.getReadLaterList).mockResolvedValue([]);
+      renderWithRouter(["/"]);
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+      });
+      expect(screen.getByText("暂无待读文章")).toBeInTheDocument();
+    });
+
+    it("S063: home shows read-later article titles in newest-first order", async () => {
+      vi.mocked(api.getReadLaterList).mockResolvedValue([
+        { feed_id: "f1", article_id: "a2", added_at: "2024-01-02T00:00:00Z", title: "Second Article" },
+        { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "First Article" },
+      ]);
+      renderWithRouter(["/"]);
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+      });
+      const links = screen.getAllByRole("link", { name: /Article/ });
+      expect(links).toHaveLength(2);
+      expect(links[0]).toHaveTextContent("Second Article");
+      expect(links[0]).toHaveAttribute("href", "/feeds/f1/articles/a2");
+      expect(links[1]).toHaveTextContent("First Article");
+      expect(links[1]).toHaveAttribute("href", "/feeds/f1/articles/a1");
     });
   });
 });

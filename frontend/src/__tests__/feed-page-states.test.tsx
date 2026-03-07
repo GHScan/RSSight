@@ -9,6 +9,7 @@ vi.mock("../api/client", () => ({
   api: {
     getFeeds: vi.fn(),
     getSummaryProfiles: vi.fn(),
+    getReadLaterList: vi.fn(),
   },
 }));
 
@@ -31,6 +32,7 @@ function renderFavoritesPage() {
 describe("Feed page states", () => {
   beforeEach(() => {
     vi.mocked(api.getFeeds).mockResolvedValue([]);
+    vi.mocked(api.getReadLaterList).mockResolvedValue([]);
   });
 
   it("shows loading state while fetching feeds", () => {

@@ -2,7 +2,15 @@
  * API client for backend REST API. Kept separate from UI for testability.
  */
 
-import type { Feed, Article, SummaryProfile, ApiError, ApiErrorDetail, CustomArticleCreatePayload } from "./types";
+import type {
+  Feed,
+  Article,
+  SummaryProfile,
+  ApiError,
+  ApiErrorDetail,
+  CustomArticleCreatePayload,
+  ReadLaterItemWithTitle,
+} from "./types";
 
 const BASE = "/api";
 
@@ -146,6 +154,10 @@ export const api = {
       `${BASE}/feeds/${feedId}/articles/${articleId}/summaries/${encodeURIComponent(profileName)}`,
       { method: "DELETE" },
     ).then(handleResponse);
+  },
+  /** List read-later items with resolved titles, newest first (S063). */
+  getReadLaterList(): Promise<ReadLaterItemWithTitle[]> {
+    return fetch(`${BASE}/read-later`).then(handleResponse);
   },
   /** Check if article is in read-later (S061). */
   getReadLaterCheck(feedId: string, articleId: string): Promise<{ in_read_later: boolean }> {

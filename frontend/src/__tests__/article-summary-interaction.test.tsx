@@ -30,6 +30,7 @@ vi.mock("../api/client", () => ({
     getReadLaterCheck: vi.fn(),
     addReadLater: vi.fn(),
     removeReadLater: vi.fn(),
+    getReadLaterList: vi.fn(),
   },
 }));
 
@@ -72,6 +73,7 @@ describe("Article summary interaction (S012)", () => {
     vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: false });
     vi.mocked(api.addReadLater).mockResolvedValue(undefined);
     vi.mocked(api.removeReadLater).mockResolvedValue(undefined);
+    vi.mocked(api.getReadLaterList).mockResolvedValue([]);
   });
 
   afterEach(() => {

@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { NavLink } from "../components/NavLink";
+import { api } from "../api/client";
+import type { ReadLaterItemWithTitle } from "../api/types";
 import { trackEntryClick } from "../telemetry";
 
 function SettingsIcon({ className }: { className?: string }) {
@@ -24,6 +27,15 @@ function SettingsIcon({ className }: { className?: string }) {
 }
 
 export function Home() {
+  const [readLaterList, setReadLaterList] = useState<ReadLaterItemWithTitle[]>([]);
+
+  useEffect(() => {
+    api
+      .getReadLaterList()
+      .then(setReadLaterList)
+      .catch(() => setReadLaterList([]));
+  }, []);
+
   return (
     <main className="max-w-4xl mx-auto px-4 py-6 sm:px-6">
       <header className="flex items-center justify-between gap-4 mb-4">
@@ -47,6 +59,25 @@ export function Home() {
             文章收藏
           </NavLink>
         </nav>
+      </div>
+      <div className="mt-4 rounded-xl border border-border bg-background p-4 sm:p-5">
+        <h2 className="text-lg font-medium text-foreground mb-3">待读</h2>
+        {readLaterList.length === 0 ? (
+          <p className="text-sm text-muted-foreground">暂无待读文章</p>
+        ) : (
+          <ul className="list-none p-0 m-0 space-y-2">
+            {readLaterList.map((item) => (
+              <li key={`${item.feed_id}-${item.article_id}`}>
+                <Link
+                  to={`/feeds/${item.feed_id}/articles/${item.article_id}`}
+                  className="text-sm text-foreground no-underline hover:underline block"
+                >
+                  {item.title}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </main>
   );

@@ -25,6 +25,7 @@ vi.mock("../api/client", () => ({
     createFeed: vi.fn(),
     updateFeed: vi.fn(),
     deleteFeed: vi.fn(),
+    getReadLaterList: vi.fn(),
   },
 }));
 
@@ -45,6 +46,7 @@ describe("Summary profile management interaction (S014)", () => {
   beforeEach(() => {
     vi.mocked(api.getFeeds).mockResolvedValue([]);
     vi.mocked(api.getSummaryProfiles).mockResolvedValue([...mockProfiles]);
+    vi.mocked(api.getReadLaterList).mockResolvedValue([]);
   });
 
   afterEach(() => {

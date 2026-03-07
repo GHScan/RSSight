@@ -30,6 +30,7 @@ vi.mock("../api/client", () => ({
     createSummaryProfile: vi.fn(),
     updateSummaryProfile: vi.fn(),
     deleteSummaryProfile: vi.fn(),
+    getReadLaterList: vi.fn(),
   },
 }));
 
@@ -55,6 +56,7 @@ describe("Article list interaction (S010)", () => {
     vi.mocked(api.getSummaryProfiles).mockResolvedValue([]);
     vi.mocked(api.getArticles).mockReset();
     vi.mocked(api.getArticles).mockResolvedValue([...mockArticles]);
+    vi.mocked(api.getReadLaterList).mockResolvedValue([]);
   });
 
   afterEach(() => {

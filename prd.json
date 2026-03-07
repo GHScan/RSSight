@@ -98,7 +98,7 @@
         "When read-later is empty, panel shows a clear empty-state hint.",
         "Panel data is sourced via read-later references and resolved from existing article data (no duplicated article entity)."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S064",

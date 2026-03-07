@@ -48,6 +48,14 @@ export interface SummaryProfile {
   last_used_at?: string | null;
 }
 
+/** One read-later entry with resolved title (S063). */
+export interface ReadLaterItemWithTitle {
+  feed_id: string;
+  article_id: string;
+  added_at: string;
+  title: string;
+}
+
 /** FastAPI HTTPException returns detail as object with code/message/details. */
 export interface ApiErrorDetail {
   code?: string;
