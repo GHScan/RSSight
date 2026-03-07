@@ -823,8 +823,7 @@ describe("Article list interaction (S010)", () => {
       expect(screen.getAllByRole("button", { name: /收藏|取消收藏/ }).length).toBeGreaterThanOrEqual(2);
     });
 
-    it("clicking delete calls deleteArticle, refreshes list and shows success", async () => {
-      const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    it("clicking delete opens standardized dialog; confirm calls deleteArticle, refreshes list and shows success", async () => {
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
         title: "My Favorites",
@@ -849,7 +848,10 @@ describe("Article list interaction (S010)", () => {
       });
       await userEvent.click(screen.getByTestId("delete-article-art1"));
 
-      expect(confirmSpy).toHaveBeenCalledWith("确定要删除这篇文章吗？");
+      const dialog = screen.getByRole("dialog", { name: /确认删除该文章/i });
+      expect(dialog).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "确认" }));
+
       await waitFor(() => {
         expect(api.deleteArticle).toHaveBeenCalledWith("vf1", "art1");
       });
@@ -859,11 +861,9 @@ describe("Article list interaction (S010)", () => {
       await waitFor(() => {
         expect(screen.getByText(/暂无文章/)).toBeInTheDocument();
       });
-      confirmSpy.mockRestore();
     });
 
     it("delete failure shows error message", async () => {
-      vi.spyOn(window, "confirm").mockReturnValue(true);
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
         title: "My Favorites",
@@ -885,6 +885,7 @@ describe("Article list interaction (S010)", () => {
         expect(screen.getByText("To Remove")).toBeInTheDocument();
       });
       await userEvent.click(screen.getByTestId("delete-article-art1"));
+      await userEvent.click(screen.getByRole("button", { name: "确认" }));
 
       await waitFor(() => {
         const alert = screen.getByRole("alert");
@@ -944,7 +945,6 @@ describe("Article list interaction (S010)", () => {
     });
 
     it("delete requires confirmation; cancel does not call deleteArticle", async () => {
-      const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
       vi.mocked(api.deleteArticle).mockClear();
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
@@ -964,10 +964,10 @@ describe("Article list interaction (S010)", () => {
         expect(screen.getByText("To Keep")).toBeInTheDocument();
       });
       await userEvent.click(screen.getByTestId("delete-article-art1"));
-      expect(confirmSpy).toHaveBeenCalledWith("确定要删除这篇文章吗？");
+      expect(screen.getByRole("dialog", { name: /确认删除该文章/i })).toBeInTheDocument();
+      await userEvent.click(screen.getByRole("button", { name: "取消" }));
       expect(api.deleteArticle).not.toHaveBeenCalled();
       expect(screen.getByText("To Keep")).toBeInTheDocument();
-      confirmSpy.mockRestore();
     });
 
     it("back button from virtual feed article list navigates to 文章收藏", async () => {

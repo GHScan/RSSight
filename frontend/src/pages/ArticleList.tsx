@@ -58,6 +58,8 @@ export function ArticleList() {
   const [deleteSuccess, setDeleteSuccess] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  /** S059: standardized delete confirmation dialog (article to delete or null). */
+  const [confirmDeleteArticle, setConfirmDeleteArticle] = useState<{ id: string; title: string } | null>(null);
 
   const loadFeed = useCallback(() => {
     if (!feedId) return;
@@ -105,6 +107,27 @@ export function ArticleList() {
       return title.includes(q);
     });
   }, [articles, searchQuery]);
+
+  /** S059: confirm article delete from standardized dialog. */
+  const handleDeleteArticleConfirm = useCallback(async () => {
+    if (!feedId || !confirmDeleteArticle) return;
+    setDeletingId(confirmDeleteArticle.id);
+    try {
+      await api.deleteArticle(feedId, confirmDeleteArticle.id);
+      setConfirmDeleteArticle(null);
+      setDeleteSuccess("已删除");
+      loadArticles();
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "删除失败");
+    } finally {
+      setDeletingId(null);
+    }
+  }, [feedId, confirmDeleteArticle, loadArticles]);
+
+  const btnBase =
+    "inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg text-base font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
+  const btnPrimary = `${btnBase} bg-primary text-primary-foreground hover:opacity-90`;
+  const btnSecondary = `${btnBase} border border-border bg-background text-foreground hover:bg-accent`;
 
   if (!feedId) return <p className="max-w-4xl mx-auto px-4 py-6 text-muted-foreground">缺少订阅 ID</p>;
   if (loading && articles.length === 0) return <p className="max-w-4xl mx-auto px-4 py-6 text-muted-foreground">加载中…</p>;
@@ -420,21 +443,9 @@ export function ArticleList() {
               {feed?.feed_type === "virtual" && (
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (!feedId) return;
-                    const confirmed = window.confirm("确定要删除这篇文章吗？");
-                    if (!confirmed) return;
+                  onClick={() => {
+                    setConfirmDeleteArticle({ id: a.id, title: a.title_trans ?? a.title });
                     setDeleteError(null);
-                    setDeletingId(a.id);
-                    try {
-                      await api.deleteArticle(feedId, a.id);
-                      setDeleteSuccess("已删除");
-                      loadArticles();
-                    } catch (err) {
-                      setDeleteError(err instanceof Error ? err.message : "删除失败");
-                    } finally {
-                      setDeletingId(null);
-                    }
                   }}
                   disabled={deletingId === a.id}
                   aria-label="删除"
@@ -452,6 +463,17 @@ export function ArticleList() {
         </>
       )}
       </div>
+      {confirmDeleteArticle && (
+        <div role="dialog" aria-modal="true" aria-labelledby="delete-article-title" className="fixed inset-0 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full shadow-lg">
+            <p id="delete-article-title" className="text-foreground mb-4">确认删除该文章？</p>
+            <div className="flex gap-2">
+              <button type="button" onClick={handleDeleteArticleConfirm} className={btnPrimary}>确认</button>
+              <button type="button" onClick={() => setConfirmDeleteArticle(null)} className={btnSecondary}>取消</button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }

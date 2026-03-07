@@ -42,7 +42,7 @@
         "Confirmed deletion still removes the target article correctly; cancel action leaves the article unchanged.",
         "Relevant frontend tests are updated or added, and pass."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
