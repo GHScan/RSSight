@@ -28,12 +28,13 @@ class ReadLaterAddBody(BaseModel):
 
 
 class ReadLaterItemWithTitle(BaseModel):
-    """One read-later entry with resolved article title (S063)."""
+    """One read-later entry with resolved title (S063). S069: published for date/color."""
 
     feed_id: str
     article_id: str
     added_at: str
     title: str
+    published: str  # Article published_at ISO; matches Feed list date/color (S069)
 
 
 def get_read_later_service() -> ReadLaterService:
@@ -62,6 +63,11 @@ def list_read_later(
             article = article_service.get_article(entry.feed_id, entry.article_id)
             # S068: Prefer translated title when available; otherwise use original title.
             title = (article.title_trans or "").strip() or article.title
+            published_str = (
+                article.published_at.isoformat()
+                if hasattr(article.published_at, "isoformat")
+                else str(article.published_at)
+            )
         except ArticleNotFoundError:
             continue
         added_at_str = (
@@ -75,6 +81,7 @@ def list_read_later(
                 article_id=entry.article_id,
                 added_at=added_at_str,
                 title=title,
+                published=published_str,
             )
         )
     return result

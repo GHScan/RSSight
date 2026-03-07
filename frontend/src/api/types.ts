@@ -48,12 +48,13 @@ export interface SummaryProfile {
   last_used_at?: string | null;
 }
 
-/** One read-later entry with resolved title (S063). */
+/** One read-later entry with resolved title (S063). S069: includes published for date/color marker. */
 export interface ReadLaterItemWithTitle {
   feed_id: string;
   article_id: string;
   added_at: string;
   title: string;
+  published: string;
 }
 
 /** FastAPI HTTPException returns detail as object with code/message/details. */

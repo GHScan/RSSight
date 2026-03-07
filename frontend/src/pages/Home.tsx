@@ -4,6 +4,7 @@ import { NavLink } from "../components/NavLink";
 import { api } from "../api/client";
 import type { ReadLaterItemWithTitle } from "../api/types";
 import { trackEntryClick } from "../telemetry";
+import { formatYearMonth, getDateWrapClass } from "../utils/dateDisplay";
 
 function SettingsIcon({ className }: { className?: string }) {
   return (
@@ -67,10 +68,22 @@ export function Home() {
         ) : (
           <ul className="list-none p-0 m-0 space-y-2">
             {readLaterList.map((item) => (
-              <li key={`${item.feed_id}-${item.article_id}`}>
+              <li
+                key={`${item.feed_id}-${item.article_id}`}
+                className="flex items-center gap-2 border-b border-border py-2 last:border-b-0"
+              >
+                <div
+                  className={`shrink-0 flex items-center gap-2 rounded-md border-l-4 py-0.5 pl-2 pr-2 min-w-[6rem] ${getDateWrapClass(item.published)}`}
+                  aria-hidden
+                  title={formatYearMonth(item.published)}
+                >
+                  <span className="text-sm tabular-nums text-muted-foreground">
+                    {formatYearMonth(item.published)}
+                  </span>
+                </div>
                 <Link
                   to={`/feeds/${item.feed_id}/articles/${item.article_id}`}
-                  className="text-sm text-foreground no-underline hover:underline block"
+                  className="text-sm text-foreground no-underline hover:underline flex-1 min-w-0 break-words text-primary focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded"
                 >
                   {item.title}
                 </Link>

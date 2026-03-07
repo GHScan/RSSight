@@ -181,7 +181,7 @@
         "Visual ordering is date + color marker + title from left to right.",
         "Relevant frontend tests are updated or added, and pass."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

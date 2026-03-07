@@ -149,6 +149,11 @@ def test_read_later_list_returns_items_with_titles_newest_first(
     assert data[1]["article_id"] == "a1" and data[1]["title"] == "First Article"
     assert "feed_id" in data[0] and data[0]["feed_id"] == "f1"
     assert "added_at" in data[0]
+    # S069: list includes published for date/color marker (matches Feed article list).
+    assert "published" in data[0]
+    assert "2024-01-02" in data[0]["published"] and "12:00:00" in data[0]["published"]
+    assert "published" in data[1]
+    assert "2024-01-01" in data[1]["published"] and "12:00:00" in data[1]["published"]
 
 
 def test_read_later_list_prefers_title_trans_when_available(tmp_path: Path, monkeypatch) -> None:

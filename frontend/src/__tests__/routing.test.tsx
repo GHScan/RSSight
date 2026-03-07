@@ -152,8 +152,8 @@ describe("Routing and page structure", () => {
 
       it("S063: home shows read-later article titles in newest-first order", async () => {
         vi.mocked(api.getReadLaterList).mockResolvedValue([
-          { feed_id: "f1", article_id: "a2", added_at: "2024-01-02T00:00:00Z", title: "Second Article" },
-          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "First Article" },
+          { feed_id: "f1", article_id: "a2", added_at: "2024-01-02T00:00:00Z", title: "Second Article", published: "2024-01-02T12:00:00Z" },
+          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "First Article", published: "2024-01-01T12:00:00Z" },
         ]);
         renderWithRouter(["/"]);
         await waitFor(() => {
@@ -169,7 +169,7 @@ describe("Routing and page structure", () => {
 
       it("S068: read-later list displays resolved title (e.g. translated when API returns it)", async () => {
         vi.mocked(api.getReadLaterList).mockResolvedValue([
-          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "翻译后的标题" },
+          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "翻译后的标题", published: "2024-01-01T12:00:00Z" },
         ]);
         renderWithRouter(["/"]);
         await waitFor(() => {
@@ -177,12 +177,24 @@ describe("Routing and page structure", () => {
         });
         expect(screen.getByRole("link", { name: "翻译后的标题" })).toBeInTheDocument();
       });
+
+      it("S069: each read-later item shows date and color marker before title", async () => {
+        vi.mocked(api.getReadLaterList).mockResolvedValue([
+          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "Article One", published: "2024-01-01T12:00:00Z" },
+        ]);
+        renderWithRouter(["/"]);
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+        });
+        expect(screen.getByText("2024年1月")).toBeInTheDocument();
+        expect(screen.getByRole("link", { name: "Article One" })).toBeInTheDocument();
+      });
     });
 
     describe("S064: navigation from read-later to summary and read-later state", () => {
       it("S064: clicking read-later title opens summary page with read-later button in red minus-state", async () => {
         vi.mocked(api.getReadLaterList).mockResolvedValue([
-          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "My Read-Later Article" },
+          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "My Read-Later Article", published: "2024-01-01T12:00:00Z" },
         ]);
         vi.mocked(api.getArticles).mockResolvedValue([
           { id: "a1", title: "My Read-Later Article", link: "https://example.com/1", published: "2024-01-01T00:00:00Z" },
@@ -204,7 +216,7 @@ describe("Routing and page structure", () => {
       it("S064: from article-favorites-origin read-later entry opens summary with minus-state", async () => {
         const virtualFeedId = "virtual-favorites";
         vi.mocked(api.getReadLaterList).mockResolvedValue([
-          { feed_id: virtualFeedId, article_id: "fav-a1", added_at: "2024-01-01T00:00:00Z", title: "Favorites Article" },
+          { feed_id: virtualFeedId, article_id: "fav-a1", added_at: "2024-01-01T00:00:00Z", title: "Favorites Article", published: "2024-01-01T12:00:00Z" },
         ]);
         vi.mocked(api.getArticles).mockResolvedValue([
           { id: "fav-a1", title: "Favorites Article", link: "", published: "2024-01-01T00:00:00Z" },
@@ -227,7 +239,7 @@ describe("Routing and page structure", () => {
     describe("S066: back navigation returns to previous page", () => {
       it("from read-later list into summary, back returns to home (read-later) not feeds", async () => {
         vi.mocked(api.getReadLaterList).mockResolvedValue([
-          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "My Article" },
+          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "My Article", published: "2024-01-01T12:00:00Z" },
         ]);
         vi.mocked(api.getArticles).mockResolvedValue([
           { id: "a1", title: "My Article", link: "https://example.com/1", published: "2024-01-01T00:00:00Z" },
