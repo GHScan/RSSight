@@ -16,7 +16,9 @@ At the current stage of the project, the backend implements the **Health**, **Fe
 
 ### Feed list split (feed management)
 
-For feed management UI, the feed list is presented as **two top-level list domains**:
+Product IA (see `architecture.md`) defines **Article Favorites (文章收藏)** as a standalone page; the **RSS Subscriptions (RSS订阅)** page and the Article Favorites page are peer top-level entries and each surfaces one list domain below.
+
+For list data, the feed index is presented as **two top-level list domains**:
 
 1. **RSS subscriptions** — feeds with `feed_type === "rss"` (have a non-empty `url`; scheduler and refresh apply to these).
 2. **Favorites collections** — feeds with `feed_type === "virtual"` (no URL; used for custom/article-favorites collections).

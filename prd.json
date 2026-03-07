@@ -124,7 +124,7 @@
         "No permission-based visibility rule is required for the new entry/page.",
         "Refactor boundary is explicit: no backward-compatibility redirect, alias route, or legacy in-page入口 is preserved."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S046",

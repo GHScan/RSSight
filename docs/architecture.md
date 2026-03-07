@@ -2,9 +2,16 @@
 
 This document describes the target architecture and boundaries of RSSight, so that future feature iterations follow a consistent design.
 
+## Product information architecture (top-level navigation)
+
+- **Top-level entry labels and order** are deterministic in a single row: **RSS订阅**, **文章收藏**, **摘要设置** (exactly three peer entries).
+- **Article Favorites (文章收藏)** is a standalone **page domain**: it has its own top-level entry and dedicated page. It is not a sub-block or in-page section of the RSS Subscriptions (RSS订阅) page.
+- **No permission-based visibility rule** is required for the Article Favorites entry or page; the entry is always visible.
+- **Refactor boundary:** No backward-compatibility redirect, alias route, or legacy in-page entry to Article Favorites is preserved. After the split, RSS Subscriptions and Article Favorites are independent pages only; there is no redirect from old paths and no in-page “favorites” block on the RSS Subscriptions page.
+
 ## Layers
 
-- `frontend/`: User interaction and page state management. React Router for home, feed management, article list, article summary, and summary profile pages; a dedicated API client layer (`src/api/`) calls the backend and is kept separate from UI for testability.
+- `frontend/`: User interaction and page state management. React Router for home, RSS Subscriptions (feed management), Article Favorites (standalone page), article list, article summary, and summary profile pages; a dedicated API client layer (`src/api/`) calls the backend and is kept separate from UI for testability.
 - `backend/`: APIs, domain services, and scheduled tasks.
 - `data/`: File‑based storage for feeds/articles/summaries/profiles.
 - `docs/`: Architecture and process documentation.
