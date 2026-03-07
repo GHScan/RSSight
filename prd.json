@@ -167,7 +167,7 @@
         "No other read-later item fields are unintentionally changed.",
         "Relevant frontend tests are updated or added, and pass."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S069",

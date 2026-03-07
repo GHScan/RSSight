@@ -52,7 +52,7 @@ The API returns a single flat list from `GET /api/feeds`; clients **partition by
 
 ## Read-later (S060, S061, S062, S063)
 
-- `GET /api/read-later` — returns list of read-later items with resolved article titles: `[{ "feed_id", "article_id", "added_at" (ISO), "title" }, ...]` in newest-added-first order. Entries whose article no longer exists are omitted.
+- `GET /api/read-later` — returns list of read-later items with resolved article titles: `[{ "feed_id", "article_id", "added_at" (ISO), "title" }, ...]` in newest-added-first order. The `title` field is the display title: when the article has a non-empty `title_trans`, that is used; otherwise the original `title` is used (S068). Entries whose article no longer exists are omitted.
 - `GET /api/read-later/check?feed_id=&article_id=` — returns `{ "in_read_later": true | false }`.
 - `POST /api/read-later` — body `{ "feed_id", "article_id" }`; adds article to read-later (or move to top if present). Returns 204.
 - `DELETE /api/read-later/{feed_id}/{article_id}` — removes article from read-later. Idempotent; returns 204.

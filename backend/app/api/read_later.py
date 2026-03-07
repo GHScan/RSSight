@@ -60,7 +60,8 @@ def list_read_later(
     for entry in service.list_entries():
         try:
             article = article_service.get_article(entry.feed_id, entry.article_id)
-            title = article.title
+            # S068: Prefer translated title when available; otherwise use original title.
+            title = (article.title_trans or "").strip() or article.title
         except ArticleNotFoundError:
             continue
         added_at_str = (

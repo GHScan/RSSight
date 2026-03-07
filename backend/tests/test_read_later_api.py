@@ -149,3 +149,87 @@ def test_read_later_list_returns_items_with_titles_newest_first(
     assert data[1]["article_id"] == "a1" and data[1]["title"] == "First Article"
     assert "feed_id" in data[0] and data[0]["feed_id"] == "f1"
     assert "added_at" in data[0]
+
+
+def test_read_later_list_prefers_title_trans_when_available(tmp_path: Path, monkeypatch) -> None:
+    """S068: List returns title_trans when article has it; otherwise falls back to title."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    (tmp_path / "feeds" / "f1" / "articles" / "a1").mkdir(parents=True)
+    (tmp_path / "feeds" / "f1" / "articles" / "a1" / "article.json").write_text(
+        json.dumps(
+            {
+                "id": "a1",
+                "feed_id": "f1",
+                "title": "Original Title",
+                "link": "https://example.com/1",
+                "description": "d1",
+                "published_at": "2024-01-01T12:00:00Z",
+                "title_trans": "Translated Title",
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    (tmp_path / "feeds" / "f1" / "articles" / "a2").mkdir(parents=True)
+    (tmp_path / "feeds" / "f1" / "articles" / "a2" / "article.json").write_text(
+        json.dumps(
+            {
+                "id": "a2",
+                "feed_id": "f1",
+                "title": "No Translation",
+                "link": "https://example.com/2",
+                "description": "d2",
+                "published_at": "2024-01-02T12:00:00Z",
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    client = TestClient(app)
+    client.post("/api/read-later", json={"feed_id": "f1", "article_id": "a1"})
+    client.post("/api/read-later", json={"feed_id": "f1", "article_id": "a2"})
+
+    resp = client.get("/api/read-later")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 2
+    # a2 added last, so first in newest-first order
+    assert data[0]["article_id"] == "a2" and data[0]["title"] == "No Translation"
+    assert data[1]["article_id"] == "a1" and data[1]["title"] == "Translated Title"
+
+
+def test_read_later_list_falls_back_to_title_when_title_trans_empty(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """S068: When title_trans is empty or whitespace, list returns original title."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    (tmp_path / "feeds" / "f1" / "articles" / "a1").mkdir(parents=True)
+    (tmp_path / "feeds" / "f1" / "articles" / "a1" / "article.json").write_text(
+        json.dumps(
+            {
+                "id": "a1",
+                "feed_id": "f1",
+                "title": "Original Only",
+                "link": "https://example.com/1",
+                "description": "d1",
+                "published_at": "2024-01-01T12:00:00Z",
+                "title_trans": "",
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    client = TestClient(app)
+    client.post("/api/read-later", json={"feed_id": "f1", "article_id": "a1"})
+
+    resp = client.get("/api/read-later")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert len(data) == 1
+    assert data[0]["title"] == "Original Only"

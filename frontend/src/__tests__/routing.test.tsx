@@ -166,6 +166,17 @@ describe("Routing and page structure", () => {
         expect(links[1]).toHaveTextContent("First Article");
         expect(links[1]).toHaveAttribute("href", "/feeds/f1/articles/a1");
       });
+
+      it("S068: read-later list displays resolved title (e.g. translated when API returns it)", async () => {
+        vi.mocked(api.getReadLaterList).mockResolvedValue([
+          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "翻译后的标题" },
+        ]);
+        renderWithRouter(["/"]);
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+        });
+        expect(screen.getByRole("link", { name: "翻译后的标题" })).toBeInTheDocument();
+      });
     });
 
     describe("S064: navigation from read-later to summary and read-later state", () => {
