@@ -43,6 +43,89 @@
         "Relevant frontend tests are updated or added, and pass."
       ],
       "passes": true
+    },
+    {
+      "id": "S060",
+      "priority": 25,
+      "title": "Add read-later collection data file with reference-only storage",
+      "description": "Create read-later collection data in data directory using reference-only records (no duplicated article/summary entity), ensuring DRY data design.",
+      "acceptanceCriteria": [
+        "A new read-later data file exists under data directory (agreed filename: data/read_later.json).",
+        "Read-later records store only article references/identifiers and metadata needed for ordering, without duplicating article content or summary content.",
+        "Adding an article to read-later inserts a new record; removing it deletes the corresponding record.",
+        "Read-later ordering is newest-added first.",
+        "No changes introduce separate persisted article or summary entities for read-later."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S061",
+      "priority": 26,
+      "title": "Add read-later toggle button on article summary page from RSS subscriptions",
+      "description": "On article summary page entered from RSS subscriptions path, add a read-later toggle button to the right of article title with plus/minus icon and stateful red style when already in read-later.",
+      "acceptanceCriteria": [
+        "On RSS subscriptions -> article summary page, a read-later button is shown to the right of article title.",
+        "If current article is not in read-later, button displays plus icon with text '待读'.",
+        "Clicking plus-state button adds the article into read-later collection and updates button to red minus-state immediately.",
+        "If current article is already in read-later, button displays red minus icon with text '待读'.",
+        "Clicking minus-state button removes the article from read-later collection and updates button back to plus-state."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S062",
+      "priority": 27,
+      "title": "Add read-later toggle button on article summary page from article favorites",
+      "description": "On article summary page entered from article favorites path, add the same read-later toggle behavior and visual states as RSS path.",
+      "acceptanceCriteria": [
+        "On article favorites -> article summary page, a read-later button is shown to the right of article title.",
+        "Button states and behaviors are identical to RSS path: plus add, red minus remove.",
+        "Read-later records for article favorites are treated as independent entries from RSS-origin articles (no cross-source equivalence).",
+        "State rendering is correct after page reload/navigation.",
+        "No existing summary controls are unintentionally changed."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S063",
+      "priority": 28,
+      "title": "Add read-later panel on home page under RSS subscriptions and article favorites",
+      "description": "Add a new home page panel named '待读' below RSS subscriptions and article favorites entry panels, showing all read-later article titles in newest-added-first order.",
+      "acceptanceCriteria": [
+        "Home page contains a new panel titled '待读' placed below RSS subscriptions and article favorites entry panels.",
+        "Panel lists all read-later article titles with no truncation by count.",
+        "Displayed ordering is newest-added first.",
+        "When read-later is empty, panel shows a clear empty-state hint.",
+        "Panel data is sourced via read-later references and resolved from existing article data (no duplicated article entity)."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S064",
+      "priority": 29,
+      "title": "Enable navigation from home read-later list to summary page with correct read-later state",
+      "description": "Clicking any title in home read-later panel opens the corresponding article summary page and shows minus red read-later state by default.",
+      "acceptanceCriteria": [
+        "Clicking any read-later title on home page opens its corresponding article summary page.",
+        "Opened summary page renders read-later button in red minus-state by default for that article.",
+        "Removing from read-later on opened summary page updates home read-later list after returning/refreshing.",
+        "Navigation works for both RSS-origin and article-favorites-origin read-later entries."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S065",
+      "priority": 30,
+      "title": "Add and update frontend tests for read-later end-to-end flows",
+      "description": "Add/update tests to cover read-later data behavior, summary page toggles (both entry paths), home read-later panel rendering, and navigation/state consistency.",
+      "acceptanceCriteria": [
+        "Tests cover add/remove read-later from RSS summary page.",
+        "Tests cover add/remove read-later from article favorites summary page.",
+        "Tests verify home read-later panel shows all items in newest-added-first order.",
+        "Tests verify navigation from read-later list to summary page and correct minus red-state rendering.",
+        "Relevant frontend tests pass."
+      ],
+      "passes": false
     }
   ]
 }
