@@ -113,6 +113,13 @@ export const api = {
       method: "DELETE",
     }).then(handleResponse);
   },
+  /** List profiles that have a summary for this article, with generated_at (file mtime ISO). */
+  getArticleSummaryMeta(
+    feedId: string,
+    articleId: string,
+  ): Promise<Array<{ profile_name: string; generated_at: string }>> {
+    return fetch(`${BASE}/feeds/${feedId}/articles/${articleId}/summaries`).then(handleResponse);
+  },
   getSummary(feedId: string, articleId: string, profileName: string): Promise<string> {
     return fetch(
       `${BASE}/feeds/${feedId}/articles/${articleId}/summaries/${encodeURIComponent(profileName)}`,

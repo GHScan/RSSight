@@ -17,8 +17,10 @@ vi.mock("../api/client", () => ({
     getFeeds: vi.fn(),
     getArticles: vi.fn(),
     getSummaryProfiles: vi.fn(),
+    getArticleSummaryMeta: vi.fn(),
     getSummary: vi.fn(),
     generateSummary: vi.fn(),
+    deleteSummary: vi.fn(),
     createFeed: vi.fn(),
     updateFeed: vi.fn(),
     deleteFeed: vi.fn(),
@@ -60,8 +62,10 @@ describe("Article summary interaction (S012)", () => {
     vi.mocked(api.getFeeds).mockResolvedValue([]);
     vi.mocked(api.getArticles).mockResolvedValue([]);
     vi.mocked(api.getSummaryProfiles).mockResolvedValue([...mockProfiles]);
+    vi.mocked(api.getArticleSummaryMeta).mockResolvedValue([]);
     vi.mocked(api.getSummary).mockRejectedValue(new Error("Not found"));
     vi.mocked(api.generateSummary).mockResolvedValue("# Summary\n\nGenerated content.");
+    vi.mocked(api.deleteSummary).mockResolvedValue(undefined);
   });
 
   afterEach(() => {

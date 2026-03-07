@@ -12,6 +12,7 @@ article content is fetched from the article link so the summary has real body te
 from __future__ import annotations
 
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable
 from urllib.request import Request, urlopen
@@ -185,6 +186,33 @@ class SummaryService:
         if not md_path.exists():
             return None
         return md_path.read_text(encoding="utf-8")
+
+    def list_summaries_meta(
+        self,
+        feed_id: str,
+        article_id: str,
+    ) -> list[dict[str, str]]:
+        """
+        Return list of { "profile_name": str, "generated_at": str } for each
+        profile that has a summary .md for this article. generated_at is the
+        file mtime in ISO format (UTC).
+        """
+        summary_dir = self._feeds_dir / feed_id / "articles" / article_id / "summaries"
+        if not summary_dir.exists():
+            return []
+        result = []
+        for path in summary_dir.iterdir():
+            if path.suffix != ".md":
+                continue
+            profile_name = path.stem
+            try:
+                mtime = path.stat().st_mtime
+                dt = datetime.fromtimestamp(mtime, tz=timezone.utc)
+                generated_at = dt.isoformat().replace("+00:00", "Z")
+            except OSError:
+                continue
+            result.append({"profile_name": profile_name, "generated_at": generated_at})
+        return result
 
     def delete_summary(
         self,

@@ -201,6 +201,23 @@ def test_delete_summary_removes_markdown_file(tmp_path: Path) -> None:
     )
 
 
+def test_list_summaries_meta_returns_profile_and_generated_at(tmp_path: Path) -> None:
+    """list_summaries_meta returns profile_name and generated_at (mtime) for each .md."""
+    feed_id, article_id = _make_feed_and_article(tmp_path)
+    _make_profile_service_and_profile(tmp_path)
+    summary_svc = SummaryService(tmp_path, call_ai=lambda p, n: "body")
+    summary_svc.generate_summary(feed_id=feed_id, article_id=article_id, profile_name="default")
+
+    meta = summary_svc.list_summaries_meta(feed_id=feed_id, article_id=article_id)
+    assert len(meta) == 1
+    assert meta[0]["profile_name"] == "default"
+    assert "generated_at" in meta[0]
+    assert meta[0]["generated_at"]  # ISO string
+
+    meta_empty = summary_svc.list_summaries_meta(feed_id=feed_id, article_id="nonexistent")
+    assert meta_empty == []
+
+
 def test_translation_profile_get_summary_returns_title_trans(tmp_path: Path) -> None:
     """For profile 'translation', get_summary returns article.title_trans (or None)."""
     feed_id, article_id = _make_feed_and_article(tmp_path)

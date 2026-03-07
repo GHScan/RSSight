@@ -30,6 +30,19 @@ def get_summary_service() -> SummaryService:
     return SummaryService(data_root, call_ai=call_ai)
 
 
+@router.get("/{feed_id}/articles/{article_id}/summaries")
+def list_summaries_meta(
+    feed_id: str,
+    article_id: str,
+    service: SummaryService = Depends(get_summary_service),
+) -> list[dict[str, str]]:
+    """
+    Return list of { profile_name, generated_at } for each profile that has
+    a summary for this article. generated_at is the summary file mtime (ISO UTC).
+    """
+    return service.list_summaries_meta(feed_id=feed_id, article_id=article_id)
+
+
 @router.get(
     "/{feed_id}/articles/{article_id}/summaries/{profile_name}",
     response_class=PlainTextResponse,

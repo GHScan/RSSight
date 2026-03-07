@@ -1,15 +1,38 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams } from "react-router-dom";
 import type { SummaryProfile } from "../api/types";
 import { api } from "../api/client";
 import { MarkdownContent } from "../components/MarkdownContent";
 import { BackLink } from "../components/BackLink";
 
+/** 有当前文章摘要的配置按 generated_at 降序，无摘要的按 last_used_at 降序。 */
+function sortProfilesForArticle(
+  profiles: SummaryProfile[],
+  meta: Array<{ profile_name: string; generated_at: string }>,
+): SummaryProfile[] {
+  const metaByProfile = Object.fromEntries(meta.map((m) => [m.profile_name, m]));
+  const ts = (p: SummaryProfile): number => {
+    const m = metaByProfile[p.name];
+    if (m) return new Date(m.generated_at).getTime();
+    const u = p.last_used_at;
+    return u ? new Date(u).getTime() : 0;
+  };
+  const hasSummary = (p: SummaryProfile): boolean => p.name in metaByProfile;
+  return [...profiles].sort((a, b) => {
+    const hasA = hasSummary(a);
+    const hasB = hasSummary(b);
+    if (hasA && !hasB) return -1;
+    if (!hasA && hasB) return 1;
+    return ts(b) - ts(a);
+  });
+}
+
 export function ArticleSummary() {
   const { feedId, articleId } = useParams<{ feedId: string; articleId: string }>();
   const [articleTitle, setArticleTitle] = useState<string | null>(null);
   const [articleLink, setArticleLink] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<SummaryProfile[]>([]);
+  const [summaryMeta, setSummaryMeta] = useState<Array<{ profile_name: string; generated_at: string }>>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>("");
   const [summary, setSummary] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
@@ -29,6 +52,14 @@ export function ArticleSummary() {
   useEffect(() => {
     loadProfiles();
   }, [loadProfiles]);
+
+  useEffect(() => {
+    if (!feedId || !articleId) return;
+    api
+      .getArticleSummaryMeta(feedId, articleId)
+      .then(setSummaryMeta)
+      .catch(() => setSummaryMeta([]));
+  }, [feedId, articleId]);
 
   useEffect(() => {
     if (!feedId || !articleId) return;
@@ -57,6 +88,11 @@ export function ArticleSummary() {
       .finally(() => setLoadingSummary(false));
   }, [feedId, articleId, selectedProfile]);
 
+  const sortedProfiles = useMemo(
+    () => sortProfilesForArticle(profiles, summaryMeta),
+    [profiles, summaryMeta],
+  );
+
   useEffect(() => {
     if (selectedProfile) loadSummary();
     else {
@@ -65,6 +101,11 @@ export function ArticleSummary() {
     }
   }, [selectedProfile, loadSummary]);
 
+  const refreshSummaryMeta = useCallback(() => {
+    if (!feedId || !articleId) return;
+    api.getArticleSummaryMeta(feedId, articleId).then(setSummaryMeta).catch(() => setSummaryMeta([]));
+  }, [feedId, articleId]);
+
   const handleGenerate = async () => {
     if (!feedId || !articleId || !selectedProfile) return;
     setGenerating(true);
@@ -72,6 +113,7 @@ export function ArticleSummary() {
     try {
       const text = await api.generateSummary(feedId, articleId, selectedProfile);
       setSummary(text);
+      refreshSummaryMeta();
     } catch (e) {
       setError(e instanceof Error ? e.message : "生成失败");
     } finally {
@@ -87,6 +129,7 @@ export function ArticleSummary() {
     try {
       await api.deleteSummary(feedId, articleId, selectedProfile);
       setSummary(null);
+      refreshSummaryMeta();
     } catch (e) {
       setError(e instanceof Error ? e.message : "删除失败");
     } finally {
@@ -136,7 +179,7 @@ export function ArticleSummary() {
             className="w-full max-w-md px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
             <option value="">请选择摘要配置</option>
-            {profiles.map((p) => (
+            {sortedProfiles.map((p) => (
               <option key={p.name} value={p.name}>
                 {p.name}
               </option>

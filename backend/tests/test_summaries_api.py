@@ -140,6 +140,32 @@ def test_delete_summary_returns_204(tmp_path: Path) -> None:
         app.dependency_overrides.pop(get_summary_service, None)
 
 
+def test_list_summaries_meta_returns_200_and_list(tmp_path: Path) -> None:
+    """GET .../summaries (no profile) returns list of { profile_name, generated_at }."""
+    from app.api.summaries import get_summary_service
+
+    summary_svc = SummaryService(tmp_path, call_ai=lambda p, n: "# Summary\n\nDone.")
+    app.dependency_overrides[get_summary_service] = lambda: summary_svc
+    try:
+        feed_id, article_id, profile_name = _setup_feed_article_profile(tmp_path)
+        client = TestClient(app)
+        list_resp = client.get(f"/api/feeds/{feed_id}/articles/{article_id}/summaries")
+        assert list_resp.status_code == 200
+        assert list_resp.json() == []
+
+        client.post(
+            f"/api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}/generate"
+        )
+        list_resp2 = client.get(f"/api/feeds/{feed_id}/articles/{article_id}/summaries")
+        assert list_resp2.status_code == 200
+        data = list_resp2.json()
+        assert len(data) == 1
+        assert data[0]["profile_name"] == profile_name
+        assert "generated_at" in data[0]
+    finally:
+        app.dependency_overrides.pop(get_summary_service, None)
+
+
 def test_post_generate_ai_not_configured_returns_503(tmp_path: Path) -> None:
     """POST generate when no AI callable is injected returns 503 with clear message."""
     from app.api.summaries import get_summary_service
