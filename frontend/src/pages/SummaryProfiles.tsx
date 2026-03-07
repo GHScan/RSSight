@@ -165,9 +165,6 @@ export function SummaryProfiles() {
             >
               添加
             </button>
-            <button type="button" onClick={loadProfiles} aria-label="刷新" className={btnSecondary}>
-              刷新
-            </button>
           </div>
           {showAddForm && (
             <form data-testid="add-profile-form" onSubmit={handleAddSubmit} className="space-y-2 mb-6 p-4 border border-border rounded-lg bg-secondary/20">

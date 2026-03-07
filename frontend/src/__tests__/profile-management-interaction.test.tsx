@@ -127,20 +127,6 @@ describe("Summary profile management interaction (S014)", () => {
       });
     });
 
-    it("refresh reloads list", async () => {
-      const refreshed = [...mockProfiles, { ...mockProfiles[0], name: "p3", key: "k3" }];
-      vi.mocked(api.getSummaryProfiles).mockResolvedValueOnce([...mockProfiles]).mockResolvedValueOnce(refreshed as SummaryProfile[]);
-
-      renderProfilesPage();
-      await waitFor(() => {
-        expect(screen.getByText("p1")).toBeInTheDocument();
-      });
-      expect(screen.queryByText("p3")).not.toBeInTheDocument();
-      await userEvent.click(screen.getByRole("button", { name: /刷新|refresh/i }));
-      await waitFor(() => {
-        expect(screen.getByText("p3")).toBeInTheDocument();
-      });
-    });
   });
 
   describe("Boundary/exception", () => {
