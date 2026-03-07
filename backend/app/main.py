@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse
 
 from app.api.feeds import router as feeds_router
 from app.api.profiles import router as profiles_router
+from app.api.read_later import router as read_later_router
 from app.api.summaries import router as summaries_router
 from app.services.articles import ArticleService
 from app.services.profiles import SummaryProfileService
@@ -108,6 +109,7 @@ async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONR
 
 app.include_router(feeds_router)
 app.include_router(profiles_router)
+app.include_router(read_later_router)
 app.include_router(summaries_router, prefix="/api/feeds")
 
 

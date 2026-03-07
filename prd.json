@@ -70,7 +70,7 @@
         "If current article is already in read-later, button displays red minus icon with text '待读'.",
         "Clicking minus-state button removes the article from read-later collection and updates button back to plus-state."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S062",

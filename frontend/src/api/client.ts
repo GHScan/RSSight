@@ -147,4 +147,23 @@ export const api = {
       { method: "DELETE" },
     ).then(handleResponse);
   },
+  /** Check if article is in read-later (S061). */
+  getReadLaterCheck(feedId: string, articleId: string): Promise<{ in_read_later: boolean }> {
+    return fetch(
+      `${BASE}/read-later/check?feed_id=${encodeURIComponent(feedId)}&article_id=${encodeURIComponent(articleId)}`,
+    ).then(handleResponse);
+  },
+  addReadLater(feedId: string, articleId: string): Promise<void> {
+    return fetch(`${BASE}/read-later`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ feed_id: feedId, article_id: articleId }),
+    }).then(handleResponse);
+  },
+  removeReadLater(feedId: string, articleId: string): Promise<void> {
+    return fetch(
+      `${BASE}/read-later/${encodeURIComponent(feedId)}/${encodeURIComponent(articleId)}`,
+      { method: "DELETE" },
+    ).then(handleResponse);
+  },
 };

@@ -153,9 +153,7 @@ def test_list_summaries_meta_returns_200_and_list(tmp_path: Path) -> None:
         assert list_resp.status_code == 200
         assert list_resp.json() == []
 
-        client.post(
-            f"/api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}/generate"
-        )
+        client.post(f"/api/feeds/{feed_id}/articles/{article_id}/summaries/{profile_name}/generate")
         list_resp2 = client.get(f"/api/feeds/{feed_id}/articles/{article_id}/summaries")
         assert list_resp2.status_code == 200
         data = list_resp2.json()

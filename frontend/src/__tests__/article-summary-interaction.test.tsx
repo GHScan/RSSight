@@ -27,6 +27,9 @@ vi.mock("../api/client", () => ({
     createSummaryProfile: vi.fn(),
     updateSummaryProfile: vi.fn(),
     deleteSummaryProfile: vi.fn(),
+    getReadLaterCheck: vi.fn(),
+    addReadLater: vi.fn(),
+    removeReadLater: vi.fn(),
   },
 }));
 
@@ -66,6 +69,9 @@ describe("Article summary interaction (S012)", () => {
     vi.mocked(api.getSummary).mockRejectedValue(new Error("Not found"));
     vi.mocked(api.generateSummary).mockResolvedValue("# Summary\n\nGenerated content.");
     vi.mocked(api.deleteSummary).mockResolvedValue(undefined);
+    vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: false });
+    vi.mocked(api.addReadLater).mockResolvedValue(undefined);
+    vi.mocked(api.removeReadLater).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -155,6 +161,39 @@ describe("Article summary interaction (S012)", () => {
 
       await waitFor(() => {
         expect(screen.getByRole("alert")).toHaveTextContent(/失败|错误|error|API/i);
+      });
+    });
+  });
+
+  describe("Read-later toggle (S061)", () => {
+    it("shows read-later button and add adds to read-later", async () => {
+      vi.mocked(api.getArticles).mockResolvedValue([{ id: "a1", title: "Article 1", link: "", published: "", favorite: false } as never]);
+      vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: false });
+      renderArticleSummary("f1", "a1");
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /加入待读/ })).toBeInTheDocument();
+      });
+      expect(screen.getByText("待读")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: /加入待读/ }));
+      await waitFor(() => {
+        expect(api.addReadLater).toHaveBeenCalledWith("f1", "a1");
+      });
+    });
+
+    it("when in read-later shows red minus state and remove clears it", async () => {
+      vi.mocked(api.getArticles).mockResolvedValue([{ id: "a1", title: "Article 1", link: "", published: "", favorite: false } as never]);
+      vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: true });
+      renderArticleSummary("f1", "a1");
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /从待读移除/ })).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByRole("button", { name: /从待读移除/ }));
+      await waitFor(() => {
+        expect(api.removeReadLater).toHaveBeenCalledWith("f1", "a1");
       });
     });
   });

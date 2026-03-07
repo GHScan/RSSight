@@ -5,6 +5,22 @@ import { api } from "../api/client";
 import { MarkdownContent } from "../components/MarkdownContent";
 import { BackLink } from "../components/BackLink";
 
+function PlusIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M12 5v14M5 12h14" />
+    </svg>
+  );
+}
+
+function MinusIcon() {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="M5 12h14" />
+    </svg>
+  );
+}
+
 /** 有当前文章摘要的配置按 generated_at 降序，无摘要的按 last_used_at 降序。 */
 function sortProfilesForArticle(
   profiles: SummaryProfile[],
@@ -40,6 +56,9 @@ export function ArticleSummary() {
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [inReadLater, setInReadLater] = useState(false);
+  const [loadingReadLater, setLoadingReadLater] = useState(true);
+  const [togglingReadLater, setTogglingReadLater] = useState(false);
 
   const loadProfiles = useCallback(() => {
     api
@@ -74,6 +93,16 @@ export function ArticleSummary() {
         setArticleTitle(null);
         setArticleLink(null);
       });
+  }, [feedId, articleId]);
+
+  useEffect(() => {
+    if (!feedId || !articleId) return;
+    setLoadingReadLater(true);
+    api
+      .getReadLaterCheck(feedId, articleId)
+      .then((res) => setInReadLater(res.in_read_later))
+      .catch(() => setInReadLater(false))
+      .finally(() => setLoadingReadLater(false));
   }, [feedId, articleId]);
 
   const loadSummary = useCallback(() => {
@@ -121,6 +150,22 @@ export function ArticleSummary() {
     }
   };
 
+  const handleReadLaterToggle = async () => {
+    if (!feedId || !articleId) return;
+    setTogglingReadLater(true);
+    try {
+      if (inReadLater) {
+        await api.removeReadLater(feedId, articleId);
+        setInReadLater(false);
+      } else {
+        await api.addReadLater(feedId, articleId);
+        setInReadLater(true);
+      }
+    } finally {
+      setTogglingReadLater(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!feedId || !articleId || !selectedProfile) return;
     if (!window.confirm("确认删除该摘要？")) return;
@@ -150,20 +195,47 @@ export function ArticleSummary() {
       </header>
       <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
         {articleTitle && (
-        <p className="text-xl font-serif font-semibold text-foreground tracking-tight mb-4 break-words border-b border-border pb-3">
-          {articleLink ? (
-            <a
-              href={articleLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-primary underline underline-offset-2 hover:opacity-90 decoration-2"
+        <div className="flex flex-wrap items-center gap-3 mb-4 border-b border-border pb-3">
+          <p className="text-xl font-serif font-semibold text-foreground tracking-tight break-words flex-1 min-w-0">
+            {articleLink ? (
+              <a
+                href={articleLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline underline-offset-2 hover:opacity-90 decoration-2"
+              >
+                {articleTitle}
+              </a>
+            ) : (
+              articleTitle
+            )}
+          </p>
+          {!loadingReadLater && (
+            <button
+              type="button"
+              onClick={handleReadLaterToggle}
+              disabled={togglingReadLater}
+              aria-label={inReadLater ? "从待读移除" : "加入待读"}
+              className={`inline-flex items-center gap-1.5 shrink-0 min-h-[44px] px-4 py-2 rounded-lg border text-base font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 ${
+                inReadLater
+                  ? "border-red-500/60 bg-red-500/10 text-red-600 dark:text-red-400"
+                  : "border-border bg-background text-foreground hover:bg-secondary/50"
+              }`}
             >
-              {articleTitle}
-            </a>
-          ) : (
-            articleTitle
+              {inReadLater ? (
+                <>
+                  <MinusIcon />
+                  <span>待读</span>
+                </>
+              ) : (
+                <>
+                  <PlusIcon />
+                  <span>待读</span>
+                </>
+              )}
+            </button>
           )}
-        </p>
+        </div>
       )}
       {loadingProfiles && <p className="text-muted-foreground">加载中…</p>}
       {!loadingProfiles && profiles.length === 0 && (

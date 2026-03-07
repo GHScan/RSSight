@@ -50,6 +50,12 @@ The API returns a single flat list from `GET /api/feeds`; clients **partition by
 - `GET /api/feeds/{feedId}/articles/{articleId}/summaries/{profileName}` — returns existing summary markdown or 404.
 - `POST /api/feeds/{feedId}/articles/{articleId}/summaries/{profileName}/generate` — triggers AI summary generation; returns the summary body (201). Prompt template supports variables such as `{title}`, `{content}`, `{link}`.
 
+## Read-later (S060, S061)
+
+- `GET /api/read-later/check?feed_id=&article_id=` — returns `{ "in_read_later": true | false }`.
+- `POST /api/read-later` — body `{ "feed_id", "article_id" }`; adds article to read-later (or move to top if present). Returns 204.
+- `DELETE /api/read-later/{feed_id}/{article_id}` — removes article from read-later. Idempotent; returns 204.
+
 ## Constraints
 
 - Summary bodies are both returned and stored primarily as Markdown.
