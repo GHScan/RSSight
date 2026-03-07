@@ -54,7 +54,7 @@
         "The back button from this page navigates to 文章收藏 instead of RSS 订阅.",
         "Frontend tests are updated and pass for toolbar order, row layout order, delete confirmation flow, and back navigation target."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

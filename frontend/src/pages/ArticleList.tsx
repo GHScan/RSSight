@@ -108,11 +108,14 @@ export function ArticleList() {
 
   if (!feedId) return <p className="max-w-4xl mx-auto px-4 py-6 text-muted-foreground">缺少订阅 ID</p>;
   if (loading && articles.length === 0) return <p className="max-w-4xl mx-auto px-4 py-6 text-muted-foreground">加载中…</p>;
+  const backTo = feed?.feed_type === "virtual" ? "/favorites" : "/feeds";
+  const backAriaLabel = feed?.feed_type === "virtual" ? "返回文章收藏" : "返回RSS 订阅";
+
   if (error && articles.length === 0) {
     return (
       <main className="max-w-4xl mx-auto px-4 py-6">
         <header className="flex items-center gap-3 mb-4">
-          <BackLink to="/feeds" aria-label="返回RSS 订阅" />
+          <BackLink to={backTo} aria-label={backAriaLabel} />
           <h1 className="text-2xl font-semibold text-foreground">文章列表</h1>
         </header>
         <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
@@ -134,20 +137,11 @@ export function ArticleList() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-6">
       <header className="flex items-center gap-3 mb-4">
-        <BackLink to="/feeds" aria-label="返回RSS 订阅" />
+        <BackLink to={backTo} aria-label={backAriaLabel} />
         <h1 className="text-2xl font-semibold text-foreground">文章列表</h1>
       </header>
       <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
         <div className="flex flex-wrap items-center gap-2 mb-4">
-          <button
-            type="button"
-            onClick={loadArticles}
-            disabled={loading}
-            aria-label="刷新"
-            className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-accent disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          >
-            刷新
-          </button>
           {feed?.feed_type === "virtual" && (
             <button
               type="button"
@@ -161,13 +155,22 @@ export function ArticleList() {
                   setAddPublished(toDatetimeLocal(new Date()));
                 }
               }}
-              aria-label="添加文章"
+              aria-label="添加"
               data-testid="add-custom-article-toggle"
               className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
             >
-              添加文章
+              添加
             </button>
           )}
+          <button
+            type="button"
+            onClick={loadArticles}
+            disabled={loading}
+            aria-label="刷新"
+            className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-accent disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          >
+            刷新
+          </button>
           {!loading && !error && articles.length > 0 && (
             <>
               <label htmlFor="article-search" className="sr-only">
@@ -384,30 +387,9 @@ export function ArticleList() {
               className="border-b border-border py-2 last:border-b-0 flex items-center gap-2"
             >
               {feed?.feed_type === "virtual" ? (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!feedId) return;
-                    setDeleteError(null);
-                    setDeletingId(a.id);
-                    try {
-                      await api.deleteArticle(feedId, a.id);
-                      setDeleteSuccess("已删除");
-                      loadArticles();
-                    } catch (err) {
-                      setDeleteError(err instanceof Error ? err.message : "删除失败");
-                    } finally {
-                      setDeletingId(null);
-                    }
-                  }}
-                  disabled={deletingId === a.id}
-                  aria-label="删除"
-                  title="删除"
-                  data-testid={`delete-article-${a.id}`}
-                  className="shrink-0 text-lg leading-none p-1 rounded text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                >
-                  删除
-                </button>
+                <span className="shrink-0 text-lg leading-none p-1 min-w-[1.5rem] text-center" aria-hidden>
+                  ☆
+                </span>
               ) : (
                 <button
                   type="button"
@@ -439,6 +421,34 @@ export function ArticleList() {
               >
                 {a.title_trans ?? a.title}
               </Link>
+              {feed?.feed_type === "virtual" && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!feedId) return;
+                    const confirmed = window.confirm("确定要删除这篇文章吗？");
+                    if (!confirmed) return;
+                    setDeleteError(null);
+                    setDeletingId(a.id);
+                    try {
+                      await api.deleteArticle(feedId, a.id);
+                      setDeleteSuccess("已删除");
+                      loadArticles();
+                    } catch (err) {
+                      setDeleteError(err instanceof Error ? err.message : "删除失败");
+                    } finally {
+                      setDeletingId(null);
+                    }
+                  }}
+                  disabled={deletingId === a.id}
+                  aria-label="删除"
+                  title="删除"
+                  data-testid={`delete-article-${a.id}`}
+                  className="shrink-0 ml-auto text-lg leading-none p-1 rounded text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                >
+                  删除
+                </button>
+              )}
             </li>
           ))}
         </ul>

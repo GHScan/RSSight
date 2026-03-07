@@ -176,7 +176,7 @@ describe("Article list interaction (S010)", () => {
       ]);
       vi.mocked(api.getArticles).mockResolvedValue([]);
       render(
-        <MemoryRouter initialEntries={["/feeds"]}>
+        <MemoryRouter initialEntries={["/favorites"]}>
           <App />
         </MemoryRouter>,
       );
@@ -221,11 +221,16 @@ describe("Article list interaction (S010)", () => {
         { id: "v1", title: "Virtual", url: null, feed_type: "virtual" },
         { id: "f1", title: "RSS One", url: "https://example.com/feed.xml", feed_type: "rss" },
       ]);
+      vi.mocked(api.getFeed).mockImplementation((id: string) => {
+        if (id === "v1") return Promise.resolve({ id: "v1", title: "Virtual", url: null, feed_type: "virtual" });
+        if (id === "f1") return Promise.resolve({ id: "f1", title: "RSS One", url: "https://example.com/feed.xml", feed_type: "rss" });
+        return Promise.resolve({ id, title: "Feed", url: "https://example.com", feed_type: "rss" });
+      });
       vi.mocked(api.getArticles)
         .mockResolvedValueOnce([])
         .mockResolvedValueOnce([...mockArticles]);
       render(
-        <MemoryRouter initialEntries={["/feeds"]}>
+        <MemoryRouter initialEntries={["/favorites"]}>
           <App />
         </MemoryRouter>,
       );
@@ -236,7 +241,15 @@ describe("Article list interaction (S010)", () => {
       await waitFor(() => {
         expect(screen.getByText(/暂无文章|没有文章/)).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("link", { name: /返回RSS 订阅/ }));
+      await userEvent.click(screen.getByRole("link", { name: /返回文章收藏/i }));
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { level: 1, name: "文章收藏" })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("link", { name: /首页/i }));
+      await waitFor(() => {
+        expect(screen.getByRole("link", { name: "RSS 订阅" })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("link", { name: "RSS 订阅" }));
       await waitFor(() => {
         expect(screen.getByRole("link", { name: "RSS One" })).toBeInTheDocument();
       });
@@ -331,7 +344,7 @@ describe("Article list interaction (S010)", () => {
       await waitFor(() => {
         expect(screen.getByRole("heading", { name: /文章列表/i })).toBeInTheDocument();
       });
-      const addButton = screen.getByRole("button", { name: /添加文章/i });
+      const addButton = screen.getByRole("button", { name: /^添加$/i });
       expect(addButton).toBeInTheDocument();
       expect(addButton.textContent).not.toMatch(/添加自定义文章|Add custom article/i);
     });
@@ -355,7 +368,7 @@ describe("Article list interaction (S010)", () => {
         expect(screen.getByRole("heading", { name: /文章列表/i })).toBeInTheDocument();
       });
 
-      const addButton = screen.getByRole("button", { name: /添加文章/i });
+      const addButton = screen.getByRole("button", { name: /^添加$/i });
       expect(addButton).toBeInTheDocument();
       expect(addButton).toHaveAttribute("data-testid", "add-custom-article-toggle");
 
@@ -405,9 +418,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^添加$/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /^添加$/i }));
 
       await waitFor(() => {
         expect(screen.getByLabelText(/标题/i)).toBeInTheDocument();
@@ -458,9 +471,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^添加$/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /^添加$/i }));
       await waitFor(() => {
         expect(screen.getByLabelText(/链接 \(URL\)/i)).toBeInTheDocument();
       });
@@ -499,9 +512,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^添加$/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /^添加$/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -533,9 +546,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^添加$/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /^添加$/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -566,9 +579,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^添加$/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /^添加$/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -599,9 +612,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^添加$/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /^添加$/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -632,9 +645,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^添加$/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /^添加$/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -682,9 +695,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^添加$/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /^添加$/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -741,9 +754,9 @@ describe("Article list interaction (S010)", () => {
       );
 
       await waitFor(() => {
-        expect(screen.getByRole("button", { name: /添加文章/i })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: /^添加$/i })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("button", { name: /添加文章/i }));
+      await userEvent.click(screen.getByRole("button", { name: /^添加$/i }));
       await waitFor(() => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
@@ -810,6 +823,7 @@ describe("Article list interaction (S010)", () => {
     });
 
     it("clicking delete calls deleteArticle, refreshes list and shows success", async () => {
+      const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
         title: "My Favorites",
@@ -834,6 +848,7 @@ describe("Article list interaction (S010)", () => {
       });
       await userEvent.click(screen.getByTestId("delete-article-art1"));
 
+      expect(confirmSpy).toHaveBeenCalledWith("确定要删除这篇文章吗？");
       await waitFor(() => {
         expect(api.deleteArticle).toHaveBeenCalledWith("vf1", "art1");
       });
@@ -843,9 +858,11 @@ describe("Article list interaction (S010)", () => {
       await waitFor(() => {
         expect(screen.getByText(/暂无文章/)).toBeInTheDocument();
       });
+      confirmSpy.mockRestore();
     });
 
     it("delete failure shows error message", async () => {
+      vi.spyOn(window, "confirm").mockReturnValue(true);
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
         title: "My Favorites",
@@ -873,6 +890,110 @@ describe("Article list interaction (S010)", () => {
         expect(alert.textContent).toMatch(/Network error|删除失败/);
       });
       expect(screen.getByText("To Remove")).toBeInTheDocument();
+    });
+  });
+
+  describe("S052: favorites article list controls, layout, and back navigation", () => {
+    it("on virtual feed toolbar add button is left of refresh and labeled 添加", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([]);
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /文章列表/i })).toBeInTheDocument();
+      });
+      const addBtn = screen.getByRole("button", { name: /^添加$/i });
+      const refreshBtn = screen.getByRole("button", { name: /刷新/i });
+      expect(addBtn).toBeInTheDocument();
+      expect(refreshBtn).toBeInTheDocument();
+      const toolbar = addBtn.closest(".flex.flex-wrap");
+      const buttons = toolbar?.querySelectorAll("button") ?? [];
+      const addIndex = Array.from(buttons).findIndex((b) => b === addBtn);
+      const refreshIndex = Array.from(buttons).findIndex((b) => b === refreshBtn);
+      expect(addIndex).toBeGreaterThanOrEqual(0);
+      expect(refreshIndex).toBeGreaterThanOrEqual(0);
+      expect(addIndex).toBeLessThan(refreshIndex);
+    });
+
+    it("virtual feed article row order is star placeholder, date, title, delete", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([
+        { id: "art1", title: "Custom One", link: "https://example.com/1", published: "2025-03-01T12:00:00Z" },
+      ]);
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText("Custom One")).toBeInTheDocument();
+      });
+      const list = screen.getByRole("list");
+      const item = within(list).getByRole("listitem");
+      const link = within(item).getByRole("link", { name: "Custom One" });
+      expect(link).toBeInTheDocument();
+      expect(within(item).getByTestId("delete-article-art1")).toBeInTheDocument();
+      expect(item.textContent).toMatch(/2025年3月/);
+    });
+
+    it("delete requires confirmation; cancel does not call deleteArticle", async () => {
+      const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+      vi.mocked(api.deleteArticle).mockClear();
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([
+        { id: "art1", title: "To Keep", link: "https://example.com/1", published: "2025-03-01T12:00:00Z" },
+      ]);
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText("To Keep")).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByTestId("delete-article-art1"));
+      expect(confirmSpy).toHaveBeenCalledWith("确定要删除这篇文章吗？");
+      expect(api.deleteArticle).not.toHaveBeenCalled();
+      expect(screen.getByText("To Keep")).toBeInTheDocument();
+      confirmSpy.mockRestore();
+    });
+
+    it("back button from virtual feed article list navigates to 文章收藏", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([]);
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /文章列表/i })).toBeInTheDocument();
+      });
+      const backLink = screen.getByRole("link", { name: /返回文章收藏/i });
+      expect(backLink).toHaveAttribute("href", "/favorites");
     });
   });
 });
