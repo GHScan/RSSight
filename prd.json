@@ -16,6 +16,45 @@
         "Impacted docs are updated with new IA, route changes, and explicit no-compatibility decision."
       ],
       "passes": true
+    },
+    {
+      "id": "S050",
+      "priority": 15,
+      "title": "Simplify add button label on RSS subscriptions page",
+      "description": "Remove the redundant 'RSS 订阅' wording from the add button on the RSS subscriptions page so the primary action label is concise and consistent.",
+      "acceptanceCriteria": [
+        "On the RSS 订阅 page, the add button label no longer includes 'RSS 订阅' and displays only '添加'.",
+        "Existing behavior for this button remains unchanged, including click action, disabled state, validation, and submit flow.",
+        "Related frontend tests are updated and pass without introducing text regressions on other pages."
+      ],
+      "passes": true
+    },
+    {
+      "id": "S051",
+      "priority": 16,
+      "title": "Normalize add and create labels on article favorites page",
+      "description": "Unify action labels on the article favorites page by removing redundant wording and renaming the create action to match the simplified add pattern.",
+      "acceptanceCriteria": [
+        "On the 文章收藏 page, the add button label no longer includes '收藏夹' and displays only '添加'.",
+        "The '新建收藏夹' button is renamed to '添加'.",
+        "Only text labels are changed; all existing button behaviors remain unchanged.",
+        "No conflicting or ambiguous action labels remain on the page after the update."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S052",
+      "priority": 17,
+      "title": "Align favorites article list controls, item layout, and back navigation",
+      "description": "Update the article list under 文章收藏 to match the RSS subscriptions article list behavior for toolbar order, item column order, delete confirmation, and back navigation target.",
+      "acceptanceCriteria": [
+        "In the 文章收藏 article list toolbar, the current '添加文章' button is moved to the left of '刷新' and renamed to '添加'.",
+        "Article list row order is aligned with RSS 订阅: star (favorite), date, title, and delete action.",
+        "The delete button is right-aligned and requires a confirmation step before deletion proceeds.",
+        "The back button from this page navigates to 文章收藏 instead of RSS 订阅.",
+        "Frontend tests are updated and pass for toolbar order, row layout order, delete confirmation flow, and back navigation target."
+      ],
+      "passes": false
     }
   ]
 }

@@ -73,4 +73,15 @@ describe("Feed page states", () => {
       expect(rssLinks[0]).toHaveAttribute("href", "/feeds/f1/articles");
     });
   });
+
+  it("S050: RSS subscriptions page add button displays only 添加 (no RSS 订阅 in label)", async () => {
+    renderFeedsPage();
+    await waitFor(() => {
+      expect(screen.getByText(/暂无 RSS 订阅/)).toBeInTheDocument();
+    });
+    const addButton = screen.getByRole("button", { name: "添加" });
+    expect(addButton).toBeInTheDocument();
+    expect(addButton).toHaveTextContent("添加");
+    expect(addButton.textContent).not.toMatch(/RSS\s*订阅/);
+  });
 });
