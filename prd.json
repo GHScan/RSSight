@@ -163,7 +163,7 @@
         "No permission gating is introduced on the new page.",
         "Favorites-domain data behavior remains correct and isolated from RSS-domain state."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S049",

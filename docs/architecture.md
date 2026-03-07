@@ -11,7 +11,7 @@ This document describes the target architecture and boundaries of RSSight, so th
 
 ## Layers
 
-- `frontend/`: User interaction and page state management. React Router for home, RSS Subscriptions (feed management), Article Favorites (standalone page), article list, article summary, and summary profile pages; a dedicated API client layer (`src/api/`) calls the backend and is kept separate from UI for testability.
+- `frontend/`: User interaction and page state management. React Router for home, RSS Subscriptions (feed management), Article Favorites (standalone page), article list, article summary, and summary profile pages; a dedicated API client layer (`src/api/`) calls the backend and is kept separate from UI for testability. The standalone Article Favorites page follows the same page-level layout and interaction skeleton as the RSS Subscriptions page (main shell, back link, title, single card with section heading, primary action button, and list).
 
 ### Frontend routes (contract)
 

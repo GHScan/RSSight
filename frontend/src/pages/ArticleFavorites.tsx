@@ -89,27 +89,31 @@ export function ArticleFavorites() {
         )}
         {!loading && !error && (
           <>
-            <div className="flex flex-wrap gap-2 mb-4">
-              <button
-                type="button"
-                onClick={() => {
-                  setShowVirtualForm(true);
-                  setVirtualFeedName("");
-                  setVirtualFormError(null);
-                }}
-                aria-label="新建收藏夹"
-                className={btnSecondary}
-              >
-                新建收藏夹
-              </button>
-            </div>
-            {favoritesFeeds.length === 0 && !showVirtualForm && (
-              <p className="text-muted-foreground">暂无收藏夹，可点击「新建收藏夹」创建。</p>
-            )}
-            {favoritesFeeds.length > 0 && (
-              <ul className="space-y-4 list-none p-0" role="list">
-                {favoritesFeeds.map((f) => (
-                  <li key={f.id} className="border border-muted-foreground/30 rounded-lg p-4 bg-muted/20">
+            <section role="region" aria-labelledby="favorites-heading" className="mb-8">
+              <h2 id="favorites-heading" className="text-lg font-medium text-foreground mb-3">
+                收藏夹
+              </h2>
+              <div className="flex flex-wrap gap-2 mb-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowVirtualForm(true);
+                    setVirtualFeedName("");
+                    setVirtualFormError(null);
+                  }}
+                  aria-label="新建收藏夹"
+                  className={btnPrimary}
+                >
+                  新建收藏夹
+                </button>
+              </div>
+              {favoritesFeeds.length === 0 && !showVirtualForm && (
+                <p className="text-muted-foreground">暂无收藏夹，可点击「新建收藏夹」创建。</p>
+              )}
+              {favoritesFeeds.length > 0 && (
+                <ul className="space-y-4 list-none p-0">
+                  {favoritesFeeds.map((f) => (
+                    <li key={f.id} className="border border-border rounded-lg p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
                         <Link
@@ -118,9 +122,6 @@ export function ArticleFavorites() {
                         >
                           {f.title}
                         </Link>
-                        <span className="shrink-0 text-xs px-2 py-0.5 rounded bg-muted text-muted-foreground" aria-label="收藏夹">
-                          收藏夹
-                        </span>
                       </div>
                       <div className="flex gap-2 shrink-0">
                         <button
@@ -137,7 +138,8 @@ export function ArticleFavorites() {
                   </li>
                 ))}
               </ul>
-            )}
+              )}
+            </section>
           </>
         )}
       </div>
