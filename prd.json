@@ -111,7 +111,7 @@
         "Removing from read-later on opened summary page updates home read-later list after returning/refreshing.",
         "Navigation works for both RSS-origin and article-favorites-origin read-later entries."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S065",
