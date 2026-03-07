@@ -55,7 +55,7 @@ test.describe("Article summary E2E (S013)", () => {
     await page.getByRole("combobox", { name: /摘要配置/ }).selectOption("default");
     await expect(page.getByText(/暂无摘要/)).toBeVisible();
     await page.getByRole("button", { name: /生成/ }).click();
-    await expect(page.getByText(/Generated content|Summary/)).toBeVisible();
+    await expect(page.getByText("Generated content.")).toBeVisible();
   });
 
   test("Boundary: no profile selected shows hint", async ({ page }) => {

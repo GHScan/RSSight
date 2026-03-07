@@ -128,9 +128,6 @@ export function ArticleSummary() {
       )}
       {!loadingProfiles && profiles.length > 0 && (
         <div className="space-y-4">
-          <label htmlFor="summary-profile" className="block text-sm font-medium text-foreground">
-            摘要配置
-          </label>
           <select
             id="summary-profile"
             value={selectedProfile}

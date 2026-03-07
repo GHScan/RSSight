@@ -156,6 +156,15 @@ describe("Article summary interaction (S012)", () => {
   });
 
   describe("Regression", () => {
+    it("S057: no '摘要配置' label above summary profile selector", async () => {
+      renderArticleSummary();
+      await waitFor(() => {
+        expect(screen.getByRole("heading", { name: /文章摘要/ })).toBeInTheDocument();
+      });
+      expect(screen.getByRole("combobox", { name: /摘要配置/ })).toBeInTheDocument();
+      expect(document.querySelector('label[for="summary-profile"]')).toBeNull();
+    });
+
     it("repeated trigger and page revisit keep UI stable", async () => {
       vi.mocked(api.generateSummary).mockResolvedValue("# Summary\n\nContent.");
       renderArticleSummary();

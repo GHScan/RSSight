@@ -122,7 +122,7 @@
         "No other summary page labels or controls are unintentionally changed.",
         "Related frontend tests are updated and pass for both entry paths."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }
