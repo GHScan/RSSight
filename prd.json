@@ -154,6 +154,34 @@
         "Relevant frontend style/state tests are updated or added, and pass."
       ],
       "passes": true
+    },
+    {
+      "id": "S068",
+      "priority": 33,
+      "title": "Prefer translated title in read-later article list when available",
+      "description": "In the read-later article list, display `title_trans` as the article title when it exists; otherwise fall back to the original `title`.",
+      "acceptanceCriteria": [
+        "If an article has non-empty `title_trans`, read-later list displays `title_trans`.",
+        "If `title_trans` is missing or empty, read-later list displays original `title`.",
+        "Title selection behavior is consistent for entries from RSS subscriptions and article favorites.",
+        "No other read-later item fields are unintentionally changed.",
+        "Relevant frontend tests are updated or added, and pass."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S069",
+      "priority": 34,
+      "title": "Add date and color marker before read-later article titles",
+      "description": "In the read-later article list, render a date label and color marker box to the left of each article title using the same logic as the Feed article list.",
+      "acceptanceCriteria": [
+        "Each read-later item shows date and color marker box before the title.",
+        "Date rendering logic matches Feed article list behavior.",
+        "Color marker logic matches Feed article list behavior.",
+        "Visual ordering is date + color marker + title from left to right.",
+        "Relevant frontend tests are updated or added, and pass."
+      ],
+      "passes": false
     }
   ]
 }
