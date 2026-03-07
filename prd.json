@@ -153,7 +153,7 @@
         "Visual style is consistent for summary pages reached from RSS subscriptions, article favorites, and read-later entry paths.",
         "Relevant frontend style/state tests are updated or added, and pass."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

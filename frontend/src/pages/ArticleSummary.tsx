@@ -216,10 +216,10 @@ export function ArticleSummary() {
               onClick={handleReadLaterToggle}
               disabled={togglingReadLater}
               aria-label={inReadLater ? "从待读移除" : "加入待读"}
-              className={`inline-flex items-center gap-1.5 shrink-0 min-h-[44px] px-4 py-2 rounded-lg border text-base font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 ${
+              className={`inline-flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-md border text-sm font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50 ${
                 inReadLater
                   ? "border-red-500/60 bg-red-500/10 text-red-600 dark:text-red-400"
-                  : "border-border bg-background text-foreground hover:bg-secondary/50"
+                  : "border-green-500/60 bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20"
               }`}
             >
               {inReadLater ? (

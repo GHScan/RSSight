@@ -242,6 +242,42 @@ describe("Article summary interaction (S012)", () => {
     });
   });
 
+  describe("S067: compact green/red read-later buttons", () => {
+    it("add-to-read-later button uses green style", async () => {
+      vi.mocked(api.getArticles).mockResolvedValue([{ id: "a1", title: "Article 1", link: "", published: "", favorite: false } as never]);
+      vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: false });
+      renderArticleSummary("f1", "a1");
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /加入待读/ })).toBeInTheDocument();
+      });
+      const addBtn = screen.getByRole("button", { name: /加入待读/ });
+      expect(addBtn.className).toMatch(/green/);
+    });
+
+    it("remove-from-read-later button uses red style", async () => {
+      vi.mocked(api.getArticles).mockResolvedValue([{ id: "a1", title: "Article 1", link: "", published: "", favorite: false } as never]);
+      vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: true });
+      renderArticleSummary("f1", "a1");
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /从待读移除/ })).toBeInTheDocument();
+      });
+      const removeBtn = screen.getByRole("button", { name: /从待读移除/ });
+      expect(removeBtn.className).toMatch(/red/);
+    });
+
+    it("read-later buttons use compact sizing with tight wrap", async () => {
+      vi.mocked(api.getArticles).mockResolvedValue([{ id: "a1", title: "Article 1", link: "", published: "", favorite: false } as never]);
+      vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: false });
+      renderArticleSummary("f1", "a1");
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /加入待读/ })).toBeInTheDocument();
+      });
+      const btn = screen.getByRole("button", { name: /加入待读/ });
+      expect(btn.className).not.toMatch(/min-h-\[44px\]/);
+      expect(btn.className).toMatch(/px-2\.5|px-2|py-1\.5|py-1/);
+    });
+  });
+
   describe("Regression", () => {
     it("S057: no '摘要配置' label above summary profile selector", async () => {
       renderArticleSummary();
