@@ -190,7 +190,7 @@ export function ArticleSummary() {
   return (
     <main className="max-w-4xl mx-auto px-4 py-6">
       <header className="flex items-center gap-3 mb-4">
-        <BackLink to={`/feeds/${feedId}/articles`} aria-label="返回文章列表" />
+        <BackLink useHistory aria-label="返回上一页" />
         <h1 className="text-2xl font-semibold text-foreground">文章摘要</h1>
       </header>
       <div className="rounded-xl border border-border bg-background p-4 sm:p-5">

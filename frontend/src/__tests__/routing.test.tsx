@@ -10,6 +10,7 @@ import * as telemetry from "../telemetry";
 vi.mock("../api/client", () => ({
   api: {
     getFeeds: vi.fn(),
+    getFeed: vi.fn(),
     getSummaryProfiles: vi.fn(),
     getArticles: vi.fn(),
     getReadLaterList: vi.fn(),
@@ -209,6 +210,59 @@ describe("Routing and page structure", () => {
           expect(screen.getByRole("heading", { name: "文章摘要" })).toBeInTheDocument();
         });
         expect(screen.getByRole("button", { name: "从待读移除" })).toBeInTheDocument();
+      });
+    });
+
+    describe("S066: back navigation returns to previous page", () => {
+      it("from read-later list into summary, back returns to home (read-later) not feeds", async () => {
+        vi.mocked(api.getReadLaterList).mockResolvedValue([
+          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "My Article" },
+        ]);
+        vi.mocked(api.getArticles).mockResolvedValue([
+          { id: "a1", title: "My Article", link: "https://example.com/1", published: "2024-01-01T00:00:00Z" },
+        ]);
+        vi.mocked(api.getArticleSummaryMeta).mockResolvedValue([]);
+        vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: true });
+        vi.mocked(api.getSummary).mockRejectedValue(new Error("No summary"));
+        // Simulate: user was on home (read-later), then navigated to summary
+        renderWithRouter(["/", "/feeds/f1/articles/a1"]);
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { name: "文章摘要" })).toBeInTheDocument();
+        });
+        const backControl = screen.getByRole("button", { name: /返回上一页|返回/ });
+        await userEvent.click(backControl);
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+        });
+        expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+      });
+
+      it("from feeds article list into summary, back returns to article list", async () => {
+        vi.mocked(api.getFeeds).mockResolvedValue([
+          { id: "f1", title: "Feed 1", url: "https://example.com/feed", feed_type: "rss" },
+        ]);
+        vi.mocked(api.getFeed).mockResolvedValue({
+          id: "f1",
+          title: "Feed 1",
+          url: "https://example.com/feed",
+          feed_type: "rss",
+        });
+        vi.mocked(api.getArticles).mockResolvedValue([
+          { id: "a1", title: "Article One", link: "https://example.com/1", published: "2024-01-01T00:00:00Z" },
+        ]);
+        vi.mocked(api.getArticleSummaryMeta).mockResolvedValue([]);
+        vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: false });
+        vi.mocked(api.getSummary).mockRejectedValue(new Error("No summary"));
+        // Simulate: user was on feeds -> article list -> summary
+        renderWithRouter(["/feeds", "/feeds/f1/articles", "/feeds/f1/articles/a1"]);
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { name: "文章摘要" })).toBeInTheDocument();
+        });
+        const backControl = screen.getByRole("button", { name: /返回上一页|返回/ });
+        await userEvent.click(backControl);
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { name: "文章列表" })).toBeInTheDocument();
+        });
       });
     });
   });

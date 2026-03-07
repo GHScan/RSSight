@@ -24,7 +24,7 @@ This document describes the target architecture and boundaries of RSSight, so th
 | `/feeds/:feedId/articles/:articleId` | Article Summary | Single article and summary UI. |
 | `/profiles` | Summary Settings (摘要设置) | Summary profile management. |
 
-No compatibility route alias or redirect exists for historical paths; RSS Subscriptions and Article Favorites are independent pages only.
+Back navigation on the article summary page uses browser history (`navigate(-1)`) so that returning from read-later list goes back to home, and returning from feed article list goes back to the list (S066). No compatibility route alias or redirect exists for historical paths; RSS Subscriptions and Article Favorites are independent pages only.
 - `backend/`: APIs, domain services, and scheduled tasks.
 - `data/`: File‑based storage for feeds/articles/summaries/profiles. May be a **symbolic link** to another directory; it must contain only runtime data (no source code). See “File storage conventions” below for layout.
 - `docs/`: Architecture and process documentation.

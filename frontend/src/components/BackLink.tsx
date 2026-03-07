@@ -1,4 +1,4 @@
-import { Link, type LinkProps } from "react-router-dom";
+import { Link, useNavigate, type LinkProps } from "react-router-dom";
 
 /** Left arrow (return/back) icon for accessibility. */
 function BackIcon() {
@@ -23,14 +23,32 @@ function BackIcon() {
 const backLinkClass =
   "inline-flex items-center justify-center rounded-full p-2 text-foreground no-underline hover:bg-muted focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
 
-type BackLinkProps = LinkProps & { "aria-label": string };
+type BackLinkBase = { "aria-label": string; className?: string };
+type BackLinkProps =
+  | (LinkProps & BackLinkBase)
+  | (BackLinkBase & { useHistory: true; to?: never });
 
 export function BackLink({ "aria-label": ariaLabel, className = "", ...props }: BackLinkProps) {
+  const navigate = useNavigate();
+  if ("useHistory" in props && props.useHistory) {
+    return (
+      <button
+        type="button"
+        className={`${backLinkClass} ${className}`.trim()}
+        aria-label={ariaLabel}
+        onClick={() => navigate(-1)}
+      >
+        <BackIcon />
+      </button>
+    );
+  }
+  const { useHistory: _omit, ...linkProps } = props as BackLinkBase & { useHistory?: boolean; to?: string };
+  void _omit;
   return (
     <Link
       className={`${backLinkClass} ${className}`.trim()}
       aria-label={ariaLabel}
-      {...props}
+      {...(linkProps as LinkProps)}
     >
       <BackIcon />
     </Link>

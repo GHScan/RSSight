@@ -139,7 +139,7 @@
         "Back behavior remains correct for summary pages entered from RSS subscriptions and article favorites paths.",
         "Related frontend navigation tests are updated or added, and pass."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S067",
