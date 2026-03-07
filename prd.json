@@ -17,6 +17,32 @@
         "Related frontend tests are updated and pass for both entry paths."
       ],
       "passes": true
+    },
+    {
+      "id": "S058",
+      "priority": 23,
+      "title": "Fix RSS subscriptions page title placement",
+      "description": "Correct RSS subscriptions page title rendering by using the standard page title area (matching article favorites page) and removing duplicated text above add-feed controls.",
+      "acceptanceCriteria": [
+        "On RSS subscriptions page, the page title displays as 'RSS 订阅' in the standard page title location consistent with article favorites page.",
+        "The extra 'RSS 订阅' text currently shown above the '添加 Feed' control is removed.",
+        "No other controls or layout on RSS subscriptions page are unintentionally changed.",
+        "Relevant frontend tests are updated or added, and pass."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S059",
+      "priority": 24,
+      "title": "Unify article delete confirmation dialog in favorites article list",
+      "description": "In article favorites -> article list, replace the article deletion confirmation UI with the same standardized delete confirmation dialog used on other pages.",
+      "acceptanceCriteria": [
+        "In article favorites -> article list, clicking delete on an article opens the standardized delete confirmation dialog used on other pages.",
+        "Deletion confirmation dialog in article list matches existing app-wide delete confirmation UI behavior and visual style.",
+        "Confirmed deletion still removes the target article correctly; cancel action leaves the article unchanged.",
+        "Relevant frontend tests are updated or added, and pass."
+      ],
+      "passes": false
     }
   ]
 }
