@@ -198,6 +198,46 @@ describe("Article summary interaction (S012)", () => {
     });
   });
 
+  describe("Read-later on article favorites path (S062)", () => {
+    const virtualFeedId = "v1";
+    const favoritesArticleId = "fav-a1";
+
+    it("article favorites summary page shows read-later button and add uses virtual feed/article ids", async () => {
+      vi.mocked(api.getArticles).mockResolvedValue([
+        { id: favoritesArticleId, title: "Favorites Article", link: "", published: "", favorite: false } as never,
+      ]);
+      vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: false });
+      renderArticleSummary(virtualFeedId, favoritesArticleId);
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /加入待读/ })).toBeInTheDocument();
+      });
+      expect(screen.getByText("待读")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: /加入待读/ }));
+      await waitFor(() => {
+        expect(api.addReadLater).toHaveBeenCalledWith(virtualFeedId, favoritesArticleId);
+      });
+    });
+
+    it("article favorites summary page when in read-later shows red minus and remove clears it", async () => {
+      vi.mocked(api.getArticles).mockResolvedValue([
+        { id: favoritesArticleId, title: "Favorites Article", link: "", published: "", favorite: false } as never,
+      ]);
+      vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: true });
+      renderArticleSummary(virtualFeedId, favoritesArticleId);
+
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: /从待读移除/ })).toBeInTheDocument();
+      });
+
+      await userEvent.click(screen.getByRole("button", { name: /从待读移除/ }));
+      await waitFor(() => {
+        expect(api.removeReadLater).toHaveBeenCalledWith(virtualFeedId, favoritesArticleId);
+      });
+    });
+  });
+
   describe("Regression", () => {
     it("S057: no '摘要配置' label above summary profile selector", async () => {
       renderArticleSummary();

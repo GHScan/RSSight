@@ -84,7 +84,7 @@
         "State rendering is correct after page reload/navigation.",
         "No existing summary controls are unintentionally changed."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S063",
