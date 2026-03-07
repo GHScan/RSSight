@@ -126,6 +126,34 @@
         "Relevant frontend tests pass."
       ],
       "passes": true
+    },
+    {
+      "id": "S066",
+      "priority": 31,
+      "title": "Unify back navigation to always return to previous page across all pages",
+      "description": "Ensure all page back actions consistently return to the immediate previous page in navigation history. Fix current inconsistency where entering summary from read-later may return to RSS subscriptions or article favorites instead of read-later/home.",
+      "acceptanceCriteria": [
+        "All page-level back actions return to the immediate previous page in navigation history.",
+        "From read-later list (home) into article summary, triggering back returns to read-later/home, not RSS subscriptions page.",
+        "From read-later list (home) into article summary, triggering back returns to read-later/home, not article favorites page.",
+        "Back behavior remains correct for summary pages entered from RSS subscriptions and article favorites paths.",
+        "Related frontend navigation tests are updated or added, and pass."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S067",
+      "priority": 32,
+      "title": "Use compact green/red read-later action buttons on article summary page",
+      "description": "Adjust article summary page read-later action button styles so add action is green, remove action is red, and both use compact sizing with tight text-wrapping button boundaries.",
+      "acceptanceCriteria": [
+        "On article summary page, add-to-read-later button is rendered in green style.",
+        "On article summary page, remove-from-read-later button is rendered in red style.",
+        "Both add/remove buttons use compact sizing where button edges tightly wrap the text content.",
+        "Visual style is consistent for summary pages reached from RSS subscriptions, article favorites, and read-later entry paths.",
+        "Relevant frontend style/state tests are updated or added, and pass."
+      ],
+      "passes": false
     }
   ]
 }
