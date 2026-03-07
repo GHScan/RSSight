@@ -26,10 +26,10 @@ CallAiCallable = Callable[[str, str], str]
 
 TRANSLATION_PROFILE_NAME = "translation"
 
-FIXED_PROMPT = """用中文翻译补全下面json字段中的value，返回json
+FIXED_PROMPT = """将下面 json 中任意语种的 key 翻译成简体中文的 value，返回json
 
-例子：
-输入: {{"america":""}}  
+例子：(所有 value 都是简体中文)
+输入: {{"america":""}}
 输出: {{"america":"美洲"}}
 
 {payload}"""
