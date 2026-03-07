@@ -78,8 +78,8 @@ test.describe("Custom article create flow E2E (S035)", () => {
     });
 
     await page.goto("/favorites");
-    await expect(page.getByRole("button", { name: /新建收藏夹/ })).toBeVisible();
-    await page.getByRole("button", { name: /新建收藏夹/ }).click();
+    await expect(page.getByRole("button", { name: /添加/ })).toBeVisible();
+    await page.getByRole("button", { name: /添加/ }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByPlaceholder(/收藏夹名称/).fill("My Favorites");
     await page.getByRole("button", { name: "确定" }).click();

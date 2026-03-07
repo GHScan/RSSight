@@ -106,14 +106,14 @@ export function ArticleFavorites() {
                     setVirtualFeedName("");
                     setVirtualFormError(null);
                   }}
-                  aria-label="新建收藏夹"
+                  aria-label="添加"
                   className={btnPrimary}
                 >
-                  新建收藏夹
+                  添加
                 </button>
               </div>
               {favoritesFeeds.length === 0 && !showVirtualForm && (
-                <p className="text-muted-foreground">暂无收藏夹，可点击「新建收藏夹」创建。</p>
+                <p className="text-muted-foreground">暂无收藏夹，可点击「添加」创建。</p>
               )}
               {favoritesFeeds.length > 0 && (
                 <ul className="space-y-4 list-none p-0">

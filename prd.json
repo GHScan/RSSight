@@ -40,7 +40,7 @@
         "Only text labels are changed; all existing button behaviors remain unchanged.",
         "No conflicting or ambiguous action labels remain on the page after the update."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S052",

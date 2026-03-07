@@ -373,8 +373,8 @@ test.describe("Feed management E2E (S009)", () => {
     });
     await page.goto("/favorites");
     await expect(page.getByRole("heading", { name: "文章收藏", level: 1 })).toBeVisible();
-    await expect(page.getByRole("button", { name: /新建收藏夹/ })).toBeVisible();
-    await page.getByRole("button", { name: /新建收藏夹/ }).click();
+    await expect(page.getByRole("button", { name: /添加/ })).toBeVisible();
+    await page.getByRole("button", { name: /添加/ }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.getByLabel(/名称/)).toBeVisible();
     await page.getByPlaceholder(/收藏夹名称/).fill("测试收藏夹");
@@ -487,8 +487,8 @@ test.describe("Feed management E2E (S009)", () => {
     });
 
     await page.goto("/favorites");
-    await expect(page.getByRole("button", { name: /新建收藏夹/ })).toBeVisible();
-    await page.getByRole("button", { name: /新建收藏夹/ }).click();
+    await expect(page.getByRole("button", { name: /添加/ })).toBeVisible();
+    await page.getByRole("button", { name: /添加/ }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.getByLabel(/名称/)).toBeVisible();
     await page.getByPlaceholder(/收藏夹名称/).fill("我的收藏");
@@ -512,7 +512,7 @@ test.describe("Feed management E2E (S009)", () => {
     await expect(page.getByRole("heading", { name: "RSSight" })).toBeVisible();
     await page.getByRole("link", { name: "文章收藏" }).click();
     await expect(page.getByRole("heading", { name: "文章收藏", level: 1 })).toBeVisible();
-    await expect(page.getByRole("button", { name: /新建收藏夹/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /添加/ })).toBeVisible();
     await expect(page.getByRole("link", { name: /首页/ })).toBeVisible();
   });
 });

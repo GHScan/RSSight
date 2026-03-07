@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 
@@ -15,6 +15,14 @@ vi.mock("../api/client", () => ({
 function renderFeedsPage() {
   return render(
     <MemoryRouter initialEntries={["/feeds"]}>
+      <App />
+    </MemoryRouter>,
+  );
+}
+
+function renderFavoritesPage() {
+  return render(
+    <MemoryRouter initialEntries={["/favorites"]}>
       <App />
     </MemoryRouter>,
   );
@@ -79,9 +87,36 @@ describe("Feed page states", () => {
     await waitFor(() => {
       expect(screen.getByText(/暂无 RSS 订阅/)).toBeInTheDocument();
     });
-    const addButton = screen.getByRole("button", { name: "添加" });
-    expect(addButton).toBeInTheDocument();
+    const rssRegion = screen.getByRole("region", { name: "RSS 订阅" });
+    const addButton = within(rssRegion).getByRole("button", { name: "添加" });
     expect(addButton).toHaveTextContent("添加");
     expect(addButton.textContent).not.toMatch(/RSS\s*订阅/);
+  });
+});
+
+describe("Article favorites page (文章收藏)", () => {
+  beforeEach(() => {
+    vi.mocked(api.getFeeds).mockResolvedValue([]);
+  });
+
+  it("S051: article favorites page add button displays only 添加 (no 收藏夹 in label)", async () => {
+    renderFavoritesPage();
+    await waitFor(() => {
+      expect(screen.getByText(/暂无收藏夹/)).toBeInTheDocument();
+    });
+    const region = screen.getByRole("region", { name: "收藏夹" });
+    const addButton = within(region).getByRole("button", { name: "添加" });
+    expect(addButton).toHaveTextContent("添加");
+    expect(addButton.textContent).not.toMatch(/收藏夹/);
+  });
+
+  it("S051: create-collection button is labeled 添加 not 新建收藏夹", async () => {
+    renderFavoritesPage();
+    await waitFor(() => {
+      expect(screen.getByRole("region", { name: "收藏夹" })).toBeInTheDocument();
+    });
+    expect(screen.queryByRole("button", { name: /新建收藏夹/ })).not.toBeInTheDocument();
+    const region = screen.getByRole("region", { name: "收藏夹" });
+    expect(within(region).getByRole("button", { name: "添加" })).toBeInTheDocument();
   });
 });
