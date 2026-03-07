@@ -55,6 +55,74 @@
         "Frontend tests are updated and pass for toolbar order, row layout order, delete confirmation flow, and back navigation target."
       ],
       "passes": true
+    },
+    {
+      "id": "S053",
+      "priority": 18,
+      "title": "Update RSS subscriptions page heading and add button copy",
+      "description": "On the RSS subscriptions page, remove the top-level 'RSS 订阅' heading text and rename the primary add button from '添加' to '添加 Feed' without changing behavior.",
+      "acceptanceCriteria": [
+        "On the RSS 订阅 page, the top heading text 'RSS 订阅' is removed from the page header area.",
+        "The primary action button text is renamed from '添加' to '添加 Feed'.",
+        "The add flow behavior remains unchanged, including form toggle, validation, submit, and error handling.",
+        "Related frontend tests are updated to assert the new copy and pass."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S054",
+      "priority": 19,
+      "title": "Update article favorites page heading and add button copy",
+      "description": "On the article favorites page, remove the top-level '收藏夹' text block and rename the primary add button from '添加' to '添加收藏夹' while preserving existing interactions.",
+      "acceptanceCriteria": [
+        "On the 文章收藏 page, the section heading text '收藏夹' is removed.",
+        "The primary action button text is renamed from '添加' to '添加收藏夹'.",
+        "Create favorites flow behavior remains unchanged, including modal open/close, validation, submit, and error feedback.",
+        "Related frontend tests are updated to assert the new copy and pass."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S055",
+      "priority": 20,
+      "title": "Align favorites article list star logic with RSS article list",
+      "description": "In the article list entered from 文章收藏, replace the static left-side star placeholder with the same interactive favorite-toggle logic used in RSS article lists.",
+      "acceptanceCriteria": [
+        "For virtual/favorites feed article rows, the left star is an interactive favorite-toggle control rather than a static placeholder.",
+        "Star icon state is driven by article favorite state, using the same filled/empty rule as RSS article list.",
+        "Clicking the control triggers the same favorite API interaction pattern as RSS flow and refreshes list state after success.",
+        "Accessibility semantics (aria-label/title) follow the same 收藏/取消收藏 pattern as RSS article list.",
+        "Related frontend tests are updated and pass for star rendering and toggle interaction in favorites article list."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S056",
+      "priority": 21,
+      "title": "Align favorites article list date and age-color block logic with RSS",
+      "description": "In the article list entered from 文章收藏, align the left-side date text and age-based color block behavior with the exact implementation used by RSS article list.",
+      "acceptanceCriteria": [
+        "For favorites article rows, date text uses the same year-month display format as RSS article list.",
+        "Date wrapper uses the same bordered color-block style pattern as RSS article list.",
+        "Age-based color intensity follows the same recency buckets as RSS logic (same-day, <=30 days, <=90 days, >90 days).",
+        "Implementation reuses the same date formatting and style decision logic as RSS path rather than introducing divergent rules.",
+        "Related frontend tests are updated and pass for date text rendering and age-based class behavior."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S057",
+      "priority": 22,
+      "title": "Remove '摘要配置' label above summary profile selector in both summary entry paths",
+      "description": "In article summary pages reached from both RSS subscriptions and article favorites entry paths, remove the '摘要配置' text shown above the summary-profile dropdown.",
+      "acceptanceCriteria": [
+        "When entering article summary from RSS subscriptions path, the text '摘要配置' above the dropdown is removed.",
+        "When entering article summary from article favorites path, the text '摘要配置' above the dropdown is removed.",
+        "Summary profile selector remains visible and fully functional in both paths.",
+        "No other summary page labels or controls are unintentionally changed.",
+        "Related frontend tests are updated and pass for both entry paths."
+      ],
+      "passes": false
     }
   ]
 }
