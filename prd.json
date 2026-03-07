@@ -150,7 +150,7 @@
         "RSS-domain behaviors on RSS Subscriptions page remain unchanged after removal.",
         "UI structure on RSS Subscriptions page no longer mixes RSS and favorites domains."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S048",

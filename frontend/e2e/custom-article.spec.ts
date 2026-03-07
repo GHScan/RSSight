@@ -77,9 +77,9 @@ test.describe("Custom article create flow E2E (S035)", () => {
       await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
     });
 
-    await page.goto("/feeds");
-    await expect(page.getByRole("button", { name: /文章收藏/ })).toBeVisible();
-    await page.getByRole("button", { name: /文章收藏/ }).click();
+    await page.goto("/favorites");
+    await expect(page.getByRole("button", { name: /新建收藏夹/ })).toBeVisible();
+    await page.getByRole("button", { name: /新建收藏夹/ }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByPlaceholder(/收藏夹名称/).fill("My Favorites");
     await page.getByRole("button", { name: "确定" }).click();
@@ -436,7 +436,6 @@ test.describe("Custom article create flow E2E (S035)", () => {
     await page.goto("/feeds");
     await expect(page.getByRole("heading", { name: /RSS 订阅/ })).toBeVisible();
     await expect(page.getByText("Feed One")).toBeVisible();
-    await expect(page.getByText("Favorites")).toBeVisible();
     await page.getByRole("link", { name: "Feed One" }).click();
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
     await expect(page.getByText("RSS One")).toBeVisible();
@@ -509,7 +508,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
     await expect(page.getByText("To Delete")).not.toBeVisible();
     await expect(page.getByText(/暂无文章/)).toBeVisible();
 
-    await page.goto("/feeds");
+    await page.goto("/favorites");
     await page.getByRole("link", { name: "Favorites" }).click();
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
     await expect(page.getByText("To Delete")).not.toBeVisible();

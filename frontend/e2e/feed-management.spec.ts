@@ -307,7 +307,7 @@ test.describe("Feed management E2E (S009)", () => {
     await expect(page.getByText("Feed One")).toBeVisible();
   });
 
-  test("S039: RSS and favorites are rendered in separate lists", async ({
+  test("S047: RSS subscriptions page shows only RSS list (no favorites block)", async ({
     page,
   }) => {
     const mixedFeeds = [
@@ -334,18 +334,13 @@ test.describe("Feed management E2E (S009)", () => {
     });
     await page.goto("/feeds");
     await expect(page.getByRole("heading", { name: "RSS 订阅", level: 2 }).first()).toBeVisible();
-    await expect(page.getByRole("heading", { name: "文章收藏" })).toBeVisible();
-    const rssSection = page.getByRole("region", { name: "RSS 订阅" }).first();
-    const favSection = page.getByRole("region", { name: "文章收藏" });
-    await expect(rssSection).toContainText("RSS One");
-    await expect(rssSection).toContainText("RSS Two");
-    await expect(rssSection).not.toContainText("My Favorites");
-    await expect(favSection).toContainText("My Favorites");
-    await expect(favSection).not.toContainText("RSS One");
-    await expect(favSection).not.toContainText("RSS Two");
+    await expect(page.getByRole("region", { name: "RSS 订阅" }).first()).toContainText("RSS One");
+    await expect(page.getByRole("region", { name: "RSS 订阅" }).first()).toContainText("RSS Two");
+    await expect(page.getByRole("region", { name: "RSS 订阅" }).first()).not.toContainText("My Favorites");
+    await expect(page.getByRole("heading", { name: "文章收藏" })).not.toBeVisible();
   });
 
-  test("S039: favorites top-level entry is visible and usable", async ({
+  test("S039: favorites top-level entry (Article Favorites page) is visible and usable", async ({
     page,
   }) => {
     const feeds = [...initialFeeds];
@@ -376,10 +371,10 @@ test.describe("Feed management E2E (S009)", () => {
       }
       return route.continue();
     });
-    await page.goto("/feeds");
-    await expect(page.getByRole("heading", { name: "文章收藏" })).toBeVisible();
-    await expect(page.getByRole("button", { name: /文章收藏/ })).toBeVisible();
-    await page.getByRole("button", { name: /文章收藏/ }).first().click();
+    await page.goto("/favorites");
+    await expect(page.getByRole("heading", { name: "文章收藏", level: 1 })).toBeVisible();
+    await expect(page.getByRole("button", { name: /新建收藏夹/ })).toBeVisible();
+    await page.getByRole("button", { name: /新建收藏夹/ }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.getByLabel(/名称/)).toBeVisible();
     await page.getByPlaceholder(/收藏夹名称/).fill("测试收藏夹");
@@ -389,12 +384,11 @@ test.describe("Feed management E2E (S009)", () => {
     await expect(page.getByText("收藏夹", { exact: true }).first()).toBeVisible();
   });
 
-  test("S039 regression: existing RSS management still works with split UI", async ({
+  test("S047 regression: RSS management on RSS subscriptions page still works", async ({
     page,
   }) => {
     const feeds = [
       { id: "f1", title: "RSS Feed", url: "https://example.com/feed.xml", feed_type: "rss" as const },
-      { id: "v1", title: "Favorites", url: null, feed_type: "virtual" as const },
     ];
     await page.route("**/api/feeds**", async (route) => {
       const method = route.request().method();
@@ -438,7 +432,6 @@ test.describe("Feed management E2E (S009)", () => {
     });
     await page.goto("/feeds");
     await expect(page.getByText("RSS Feed")).toBeVisible();
-    await expect(page.getByText("Favorites")).toBeVisible();
     await page.getByRole("button", { name: /添加/ }).click();
     await page.getByLabel(/标题/).first().fill("New RSS");
     await page.locator("#add-url").fill("https://example.com/new.xml");
@@ -451,11 +444,10 @@ test.describe("Feed management E2E (S009)", () => {
     await expect(page.getByRole("dialog")).toBeVisible();
     await page.getByRole("button", { name: "确认" }).click();
     await expect(page.getByText("RSS Feed")).not.toBeVisible();
-    await expect(page.getByText("Favorites")).toBeVisible();
     await expect(page.getByText("New RSS")).toBeVisible();
   });
 
-  test("S025 Happy path: create virtual feed (Article Favorites) then list shows it with visual distinction", async ({
+  test("S025 Happy path: create virtual feed on Article Favorites page then list shows it", async ({
     page,
   }) => {
     const feeds = [...initialFeeds];
@@ -494,9 +486,9 @@ test.describe("Feed management E2E (S009)", () => {
       });
     });
 
-    await page.goto("/feeds");
-    await expect(page.getByRole("button", { name: /文章收藏/ })).toBeVisible();
-    await page.getByRole("button", { name: /文章收藏/ }).click();
+    await page.goto("/favorites");
+    await expect(page.getByRole("button", { name: /新建收藏夹/ })).toBeVisible();
+    await page.getByRole("button", { name: /新建收藏夹/ }).click();
     await expect(page.getByRole("dialog")).toBeVisible();
     await expect(page.getByLabel(/名称/)).toBeVisible();
     await page.getByPlaceholder(/收藏夹名称/).fill("我的收藏");
