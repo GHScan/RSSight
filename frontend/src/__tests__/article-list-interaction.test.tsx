@@ -819,7 +819,8 @@ describe("Article list interaction (S010)", () => {
       });
       expect(screen.getByTestId("delete-article-art1")).toBeInTheDocument();
       expect(screen.getByTestId("delete-article-art2")).toBeInTheDocument();
-      expect(screen.queryByRole("button", { name: /收藏/i })).not.toBeInTheDocument();
+      // S055: virtual feed has same interactive favorite toggle as RSS (收藏/取消收藏)
+      expect(screen.getAllByRole("button", { name: /收藏|取消收藏/ }).length).toBeGreaterThanOrEqual(2);
     });
 
     it("clicking delete calls deleteArticle, refreshes list and shows success", async () => {
@@ -915,7 +916,7 @@ describe("Article list interaction (S010)", () => {
       expect(screen.queryByRole("button", { name: /刷新/i })).not.toBeInTheDocument();
     });
 
-    it("virtual feed article row order is star placeholder, date, title, delete", async () => {
+    it("virtual feed article row order is star (favorite toggle), date, title, delete", async () => {
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
         title: "My Favorites",
@@ -937,6 +938,7 @@ describe("Article list interaction (S010)", () => {
       const item = within(list).getByRole("listitem");
       const link = within(item).getByRole("link", { name: "Custom One" });
       expect(link).toBeInTheDocument();
+      expect(within(item).getByRole("button", { name: /收藏|取消收藏/ })).toBeInTheDocument();
       expect(within(item).getByTestId("delete-article-art1")).toBeInTheDocument();
       expect(item.textContent).toMatch(/2025年3月/);
     });
@@ -986,6 +988,66 @@ describe("Article list interaction (S010)", () => {
       });
       const backLink = screen.getByRole("link", { name: /返回文章收藏/i });
       expect(backLink).toHaveAttribute("href", "/favorites");
+    });
+  });
+
+  describe("S055: favorites article list star logic aligned with RSS", () => {
+    it("virtual feed article row shows interactive favorite toggle with 收藏/取消收藏 aria", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([
+        { id: "art1", title: "Not Fav", link: "https://example.com/1", published: "2025-03-01T12:00:00Z", favorite: false },
+        { id: "art2", title: "Is Fav", link: "https://example.com/2", published: "2025-03-02T12:00:00Z", favorite: true },
+      ]);
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText("Not Fav")).toBeInTheDocument();
+        expect(screen.getByText("Is Fav")).toBeInTheDocument();
+      });
+      expect(screen.getByRole("button", { name: "收藏" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "取消收藏" })).toBeInTheDocument();
+    });
+
+    it("clicking favorite toggle on virtual feed calls setArticleFavorite and refreshes list", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles)
+        .mockResolvedValueOnce([
+          { id: "art1", title: "One", link: "https://example.com/1", published: "2025-03-01T12:00:00Z", favorite: false },
+        ])
+        .mockResolvedValueOnce([
+          { id: "art1", title: "One", link: "https://example.com/1", published: "2025-03-01T12:00:00Z", favorite: true },
+        ]);
+      vi.mocked(api.setArticleFavorite).mockResolvedValue(undefined);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByRole("button", { name: "收藏" })).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByRole("button", { name: "收藏" }));
+
+      await waitFor(() => {
+        expect(api.setArticleFavorite).toHaveBeenCalledWith("vf1", "art1", true);
+      });
+      await waitFor(() => {
+        expect(api.getArticles).toHaveBeenCalledTimes(2);
+      });
     });
   });
 });

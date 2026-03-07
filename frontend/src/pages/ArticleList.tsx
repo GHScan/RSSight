@@ -388,26 +388,20 @@ export function ArticleList() {
               key={a.id}
               className="border-b border-border py-2 last:border-b-0 flex items-center gap-2"
             >
-              {feed?.feed_type === "virtual" ? (
-                <span className="shrink-0 text-lg leading-none p-1 min-w-[1.5rem] text-center" aria-hidden>
-                  ☆
-                </span>
-              ) : (
-                <button
-                  type="button"
-                  onClick={async () => {
-                    if (!feedId) return;
-                    const next = !a.favorite;
-                    await api.setArticleFavorite(feedId, a.id, next);
-                    loadArticles();
-                  }}
-                  aria-label={a.favorite ? "取消收藏" : "收藏"}
-                  title={a.favorite ? "取消收藏" : "收藏"}
-                  className="shrink-0 text-lg leading-none p-1 rounded focus:outline-none focus:ring-2 focus:ring-ring"
-                >
-                  {a.favorite ? "★" : "☆"}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={async () => {
+                  if (!feedId) return;
+                  const next = !a.favorite;
+                  await api.setArticleFavorite(feedId, a.id, next);
+                  loadArticles();
+                }}
+                aria-label={a.favorite ? "取消收藏" : "收藏"}
+                title={a.favorite ? "取消收藏" : "收藏"}
+                className="shrink-0 text-lg leading-none p-1 rounded focus:outline-none focus:ring-2 focus:ring-ring"
+              >
+                {a.favorite ? "★" : "☆"}
+              </button>
               <div
                 className={`shrink-0 flex items-center gap-2 rounded-md border-l-4 py-0.5 pl-2 pr-2 min-w-[6rem] ${getDateWrapClass(a.published)}`}
                 aria-hidden

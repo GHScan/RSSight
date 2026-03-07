@@ -94,7 +94,7 @@
         "Accessibility semantics (aria-label/title) follow the same 收藏/取消收藏 pattern as RSS article list.",
         "Related frontend tests are updated and pass for star rendering and toggle interaction in favorites article list."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S056",
