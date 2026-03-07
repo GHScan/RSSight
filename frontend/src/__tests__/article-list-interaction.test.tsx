@@ -1050,4 +1050,65 @@ describe("Article list interaction (S010)", () => {
       });
     });
   });
+
+  describe("S056: favorites article list date and age-color aligned with RSS", () => {
+    it("virtual feed article row shows year-month date on the left (same format as RSS)", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([
+        { id: "a1", title: "Fav One", link: "https://example.com/1", published: "2025-03-01T10:00:00Z" },
+        { id: "a2", title: "Fav Two", link: "https://example.com/2", published: "2026-04-15T12:00:00Z" },
+      ]);
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText("Fav One")).toBeInTheDocument();
+        expect(screen.getByText("Fav Two")).toBeInTheDocument();
+      });
+      const dateLabels = screen.getAllByText("2025年3月");
+      expect(dateLabels.length).toBe(1);
+      expect(screen.getByText("2026年4月")).toBeInTheDocument();
+    });
+
+    it("virtual feed article row has age-based date wrap (bordered color block by recency)", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "My Favorites",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([
+        { id: "a1", title: "Fav One", link: "https://example.com/1", published: "2025-03-01T10:00:00Z" },
+      ]);
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+      await waitFor(() => {
+        expect(screen.getByText("Fav One")).toBeInTheDocument();
+      });
+      const list = screen.getByRole("list");
+      const rows = within(list).getAllByRole("listitem");
+      expect(rows.length).toBe(1);
+      rows.forEach((row) => {
+        const wrap = row.querySelector('[aria-hidden][title*="年"]');
+        expect(wrap).toBeTruthy();
+        const className = wrap?.getAttribute("class") ?? "";
+        const hasGradient =
+          /border-foreground(\/\d+)?/.test(className) || /bg-foreground(\/\d+)?/.test(className);
+        expect(
+          hasGradient,
+          `Date wrap should have border-foreground or bg-foreground (gradient), got: ${className}`,
+        ).toBe(true);
+      });
+    });
+  });
 });
