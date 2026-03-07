@@ -19,6 +19,5 @@ playwright-report/
 .DS_Store
 Thumbs.db
 
-data/**/*
-!data/.gitkeep
-!data/README.md
+# data/ is runtime-only; may be a symlink to another directory (no repo files inside)
+data/

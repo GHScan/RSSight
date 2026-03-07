@@ -26,7 +26,7 @@ This document describes the target architecture and boundaries of RSSight, so th
 
 No compatibility route alias or redirect exists for historical paths; RSS Subscriptions and Article Favorites are independent pages only.
 - `backend/`: APIs, domain services, and scheduled tasks.
-- `data/`: File‑based storage for feeds/articles/summaries/profiles.
+- `data/`: File‑based storage for feeds/articles/summaries/profiles. May be a **symbolic link** to another directory; it must contain only runtime data (no source code). See “File storage conventions” below for layout.
 - `docs/`: Architecture and process documentation.
 
 ## Target runtime flow
