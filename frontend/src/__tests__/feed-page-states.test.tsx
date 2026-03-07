@@ -82,15 +82,15 @@ describe("Feed page states", () => {
     });
   });
 
-  it("S050: RSS subscriptions page add button displays only 添加 (no RSS 订阅 in label)", async () => {
+  it("S053: RSS subscriptions page add button is 添加 Feed (no top heading)", async () => {
     renderFeedsPage();
     await waitFor(() => {
       expect(screen.getByText(/暂无 RSS 订阅/)).toBeInTheDocument();
     });
+    expect(screen.queryByRole("heading", { level: 1, name: "RSS 订阅" })).not.toBeInTheDocument();
     const rssRegion = screen.getByRole("region", { name: "RSS 订阅" });
-    const addButton = within(rssRegion).getByRole("button", { name: "添加" });
-    expect(addButton).toHaveTextContent("添加");
-    expect(addButton.textContent).not.toMatch(/RSS\s*订阅/);
+    const addButton = within(rssRegion).getByRole("button", { name: "添加 Feed" });
+    expect(addButton).toHaveTextContent("添加 Feed");
   });
 });
 

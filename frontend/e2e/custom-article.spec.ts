@@ -434,14 +434,14 @@ test.describe("Custom article create flow E2E (S035)", () => {
     });
 
     await page.goto("/feeds");
-    await expect(page.getByRole("heading", { name: /RSS 订阅/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: "添加 Feed" })).toBeVisible();
     await expect(page.getByText("Feed One")).toBeVisible();
     await page.getByRole("link", { name: "Feed One" }).click();
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
     await expect(page.getByText("RSS One")).toBeVisible();
     await expect(page.getByRole("button", { name: /添加文章/ })).not.toBeVisible();
     await page.getByRole("link", { name: /返回RSS 订阅/ }).click();
-    await expect(page.getByRole("heading", { name: /RSS 订阅/, level: 1 })).toBeVisible();
+    await expect(page.getByRole("button", { name: "添加 Feed" })).toBeVisible();
   });
 
   test("S042: delete article from favorites list and see persistent removal after re-entry", async ({

@@ -79,7 +79,7 @@ test.describe("Feed management E2E (S009)", () => {
     page,
   }) => {
     await page.goto("/feeds");
-    await expect(page.getByRole("heading", { level: 1, name: "RSS 订阅" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "添加 Feed" })).toBeVisible();
     await expect(page.getByText("Feed One")).toBeVisible();
     await expect(page.getByText("Feed Two")).toBeVisible();
     await expect(page.getByRole("link", { name: /首页/ })).toBeVisible();
@@ -125,7 +125,7 @@ test.describe("Feed management E2E (S009)", () => {
     await page.goto("/feeds");
     await expect(page.getByText("Feed One")).toBeVisible();
 
-    await page.getByRole("button", { name: /添加/ }).click();
+    await page.getByRole("button", { name: "添加 Feed" }).click();
     await page.getByLabel(/标题/).first().fill("New Feed");
     await page.locator("#add-url").fill("https://example.com/new.xml");
     await page.getByRole("button", { name: "确定" }).first().click();
@@ -260,7 +260,7 @@ test.describe("Feed management E2E (S009)", () => {
     page,
   }) => {
     await page.goto("/feeds");
-    await page.getByRole("button", { name: /添加/ }).click();
+    await page.getByRole("button", { name: "添加 Feed" }).click();
     await page.getByLabel(/标题/).first().fill("Bad");
     await page.locator("#add-url").fill("not-a-url");
     await page.getByRole("button", { name: "确定" }).first().click();
@@ -287,7 +287,7 @@ test.describe("Feed management E2E (S009)", () => {
     });
 
     await page.goto("/feeds");
-    await page.getByRole("button", { name: /添加/ }).click();
+    await page.getByRole("button", { name: "添加 Feed" }).click();
     await page.getByLabel(/标题/).fill("New");
     await page.getByPlaceholder(/https:\/\/example\.com\/feed\.xml/).fill("https://example.com/rss.xml");
     await page.getByRole("button", { name: "确定" }).first().click();
@@ -299,11 +299,11 @@ test.describe("Feed management E2E (S009)", () => {
     page,
   }) => {
     await page.goto("/feeds");
-    await expect(page.getByRole("heading", { name: /RSS 订阅/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: "添加 Feed" })).toBeVisible();
     await page.getByRole("link", { name: /首页/ }).click();
     await expect(page.getByRole("heading", { name: /RSSight/ })).toBeVisible();
     await page.getByRole("link", { name: /RSS 订阅/ }).click();
-    await expect(page.getByRole("heading", { level: 1, name: "RSS 订阅" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "添加 Feed" })).toBeVisible();
     await expect(page.getByText("Feed One")).toBeVisible();
   });
 
@@ -432,7 +432,7 @@ test.describe("Feed management E2E (S009)", () => {
     });
     await page.goto("/feeds");
     await expect(page.getByText("RSS Feed")).toBeVisible();
-    await page.getByRole("button", { name: /添加/ }).click();
+    await page.getByRole("button", { name: "添加 Feed" }).click();
     await page.getByLabel(/标题/).first().fill("New RSS");
     await page.locator("#add-url").fill("https://example.com/new.xml");
     await page.getByRole("button", { name: "确定" }).first().click();
@@ -505,7 +505,7 @@ test.describe("Feed management E2E (S009)", () => {
     await page.goto("/");
     await expect(page.getByRole("heading", { name: "RSSight" })).toBeVisible();
     await page.getByRole("link", { name: "RSS 订阅" }).click();
-    await expect(page.getByRole("heading", { name: "RSS 订阅", level: 1 })).toBeVisible();
+    await expect(page.getByRole("button", { name: "添加 Feed" })).toBeVisible();
     await expect(page.getByRole("region", { name: "RSS 订阅" }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /首页/ })).toBeVisible();
     await page.getByRole("link", { name: /首页/ }).click();

@@ -38,7 +38,7 @@ describe("Routing and page structure", () => {
   it("shows feed management page at /feeds", async () => {
     renderWithRouter(["/feeds"]);
     await waitFor(() => {
-      expect(screen.getByRole("heading", { level: 1, name: "RSS 订阅" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "添加 Feed" })).toBeInTheDocument();
     });
   });
 
@@ -55,7 +55,7 @@ describe("Routing and page structure", () => {
     renderWithRouter(["/"]);
     await userEvent.click(screen.getByRole("link", { name: /订阅|Feeds/i }));
     await waitFor(() => {
-      expect(screen.getByRole("heading", { level: 1, name: "RSS 订阅" })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: "添加 Feed" })).toBeInTheDocument();
     });
   });
 
@@ -106,7 +106,7 @@ describe("Routing and page structure", () => {
     it("S049: visiting /feeds emits page_view for rss_subscriptions", async () => {
       renderWithRouter(["/feeds"]);
       await waitFor(() => {
-        expect(screen.getByRole("heading", { level: 1, name: "RSS 订阅" })).toBeInTheDocument();
+        expect(screen.getByRole("button", { name: "添加 Feed" })).toBeInTheDocument();
       });
       expect(telemetry.trackPageView).toHaveBeenCalledWith("rss_subscriptions");
     });
