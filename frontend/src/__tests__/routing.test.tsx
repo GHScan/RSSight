@@ -69,17 +69,17 @@ describe("Routing and page structure", () => {
     });
   });
 
-  it("S046: home shows exactly three top-level nav entries in order (RSS订阅, 文章收藏, 摘要设置)", () => {
+  it("S046: home shows two top-level nav entries (RSS订阅, 文章收藏) and 摘要设置 in header", () => {
     renderWithRouter(["/"]);
     const links = screen.getAllByRole("link");
-    const navLinks = links.filter((l) => ["/feeds", "/favorites", "/profiles"].includes(l.getAttribute("href") ?? ""));
-    expect(navLinks).toHaveLength(3);
+    const navLinks = links.filter((l) => ["/feeds", "/favorites"].includes(l.getAttribute("href") ?? ""));
+    expect(navLinks).toHaveLength(2);
     expect(navLinks[0]).toHaveTextContent("RSS 订阅");
     expect(navLinks[0]).toHaveAttribute("href", "/feeds");
     expect(navLinks[1]).toHaveTextContent("文章收藏");
     expect(navLinks[1]).toHaveAttribute("href", "/favorites");
-    expect(navLinks[2]).toHaveTextContent("摘要设置");
-    expect(navLinks[2]).toHaveAttribute("href", "/profiles");
+    const summarySettingsLink = screen.getByRole("link", { name: "摘要设置" });
+    expect(summarySettingsLink).toHaveAttribute("href", "/profiles");
   });
 
   it("S046: shows article favorites page at /favorites", async () => {

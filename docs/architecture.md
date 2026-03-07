@@ -4,7 +4,7 @@ This document describes the target architecture and boundaries of RSSight, so th
 
 ## Product information architecture (top-level navigation)
 
-- **Top-level entry labels and order** are deterministic in a single row: **RSS订阅**, **文章收藏**, **摘要设置** (exactly three peer entries).
+- **Top-level entry labels and order** are deterministic in a single row: **RSS订阅**, **文章收藏**. **摘要设置** is a separate entry in the page header (top right), not a peer of the two main nav entries.
 - **Article Favorites (文章收藏)** is a standalone **page domain**: it has its own top-level entry and dedicated page. It is not a sub-block or in-page section of the RSS Subscriptions (RSS订阅) page.
 - **No permission-based visibility rule** is required for the Article Favorites entry or page; the entry is always visible.
 - **Refactor boundary:** No backward-compatibility redirect, alias route, or legacy in-page entry to Article Favorites is preserved. After the split, RSS Subscriptions and Article Favorites are independent pages only; there is no redirect from old paths and no in-page “favorites” block on the RSS Subscriptions page.
@@ -17,7 +17,7 @@ This document describes the target architecture and boundaries of RSSight, so th
 
 | Path | Page | Description |
 |------|------|-------------|
-| `/` | Home | Entry point; top-level nav to RSS订阅, 文章收藏, 摘要设置. |
+| `/` | Home | Entry point; top-level nav to RSS订阅, 文章收藏; 摘要设置 in header (top right). |
 | `/feeds` | Feed Management (RSS订阅) | RSS subscriptions list and management. |
 | `/favorites` | Article Favorites (文章收藏) | Standalone page for favorites collections (virtual feeds). |
 | `/feeds/:feedId/articles` | Article List | Articles for a feed (RSS or virtual). |
