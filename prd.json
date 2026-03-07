@@ -125,7 +125,7 @@
         "Tests verify navigation from read-later list to summary page and correct minus red-state rendering.",
         "Relevant frontend tests pass."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

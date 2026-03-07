@@ -138,76 +138,78 @@ describe("Routing and page structure", () => {
     });
   });
 
-  describe("S063: read-later panel on home", () => {
-    it("S063: home shows 待读 panel with empty-state hint when list is empty", async () => {
-      vi.mocked(api.getReadLaterList).mockResolvedValue([]);
-      renderWithRouter(["/"]);
-      await waitFor(() => {
-        expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+  describe("S065: read-later end-to-end flows", () => {
+    describe("S063: read-later panel on home", () => {
+        it("S063: home shows 待读 panel with empty-state hint when list is empty", async () => {
+        vi.mocked(api.getReadLaterList).mockResolvedValue([]);
+        renderWithRouter(["/"]);
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+        });
+        expect(screen.getByText("暂无待读文章")).toBeInTheDocument();
       });
-      expect(screen.getByText("暂无待读文章")).toBeInTheDocument();
+
+      it("S063: home shows read-later article titles in newest-first order", async () => {
+        vi.mocked(api.getReadLaterList).mockResolvedValue([
+          { feed_id: "f1", article_id: "a2", added_at: "2024-01-02T00:00:00Z", title: "Second Article" },
+          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "First Article" },
+        ]);
+        renderWithRouter(["/"]);
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+        });
+        const links = screen.getAllByRole("link", { name: /Article/ });
+        expect(links).toHaveLength(2);
+        expect(links[0]).toHaveTextContent("Second Article");
+        expect(links[0]).toHaveAttribute("href", "/feeds/f1/articles/a2");
+        expect(links[1]).toHaveTextContent("First Article");
+        expect(links[1]).toHaveAttribute("href", "/feeds/f1/articles/a1");
+      });
     });
 
-    it("S063: home shows read-later article titles in newest-first order", async () => {
-      vi.mocked(api.getReadLaterList).mockResolvedValue([
-        { feed_id: "f1", article_id: "a2", added_at: "2024-01-02T00:00:00Z", title: "Second Article" },
-        { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "First Article" },
-      ]);
-      renderWithRouter(["/"]);
-      await waitFor(() => {
-        expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+    describe("S064: navigation from read-later to summary and read-later state", () => {
+      it("S064: clicking read-later title opens summary page with read-later button in red minus-state", async () => {
+        vi.mocked(api.getReadLaterList).mockResolvedValue([
+          { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "My Read-Later Article" },
+        ]);
+        vi.mocked(api.getArticles).mockResolvedValue([
+          { id: "a1", title: "My Read-Later Article", link: "https://example.com/1", published: "2024-01-01T00:00:00Z" },
+        ]);
+        vi.mocked(api.getArticleSummaryMeta).mockResolvedValue([]);
+        vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: true });
+        vi.mocked(api.getSummary).mockRejectedValue(new Error("No summary"));
+        renderWithRouter(["/"]);
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+        });
+        await userEvent.click(screen.getByRole("link", { name: "My Read-Later Article" }));
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { name: "文章摘要" })).toBeInTheDocument();
+        });
+        expect(screen.getByRole("button", { name: "从待读移除" })).toBeInTheDocument();
       });
-      const links = screen.getAllByRole("link", { name: /Article/ });
-      expect(links).toHaveLength(2);
-      expect(links[0]).toHaveTextContent("Second Article");
-      expect(links[0]).toHaveAttribute("href", "/feeds/f1/articles/a2");
-      expect(links[1]).toHaveTextContent("First Article");
-      expect(links[1]).toHaveAttribute("href", "/feeds/f1/articles/a1");
-    });
-  });
 
-  describe("S064: navigation from read-later to summary and read-later state", () => {
-    it("S064: clicking read-later title opens summary page with read-later button in red minus-state", async () => {
-      vi.mocked(api.getReadLaterList).mockResolvedValue([
-        { feed_id: "f1", article_id: "a1", added_at: "2024-01-01T00:00:00Z", title: "My Read-Later Article" },
-      ]);
-      vi.mocked(api.getArticles).mockResolvedValue([
-        { id: "a1", title: "My Read-Later Article", link: "https://example.com/1", published: "2024-01-01T00:00:00Z" },
-      ]);
-      vi.mocked(api.getArticleSummaryMeta).mockResolvedValue([]);
-      vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: true });
-      vi.mocked(api.getSummary).mockRejectedValue(new Error("No summary"));
-      renderWithRouter(["/"]);
-      await waitFor(() => {
-        expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
+      it("S064: from article-favorites-origin read-later entry opens summary with minus-state", async () => {
+        const virtualFeedId = "virtual-favorites";
+        vi.mocked(api.getReadLaterList).mockResolvedValue([
+          { feed_id: virtualFeedId, article_id: "fav-a1", added_at: "2024-01-01T00:00:00Z", title: "Favorites Article" },
+        ]);
+        vi.mocked(api.getArticles).mockResolvedValue([
+          { id: "fav-a1", title: "Favorites Article", link: "", published: "2024-01-01T00:00:00Z" },
+        ]);
+        vi.mocked(api.getArticleSummaryMeta).mockResolvedValue([]);
+        vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: true });
+        vi.mocked(api.getSummary).mockRejectedValue(new Error("No summary"));
+        renderWithRouter(["/"]);
+        await waitFor(() => {
+          expect(screen.getByRole("link", { name: "Favorites Article" })).toBeInTheDocument();
+        });
+        await userEvent.click(screen.getByRole("link", { name: "Favorites Article" }));
+        await waitFor(() => {
+          expect(screen.getByRole("heading", { name: "文章摘要" })).toBeInTheDocument();
+        });
+        expect(screen.getByRole("button", { name: "从待读移除" })).toBeInTheDocument();
       });
-      await userEvent.click(screen.getByRole("link", { name: "My Read-Later Article" }));
-      await waitFor(() => {
-        expect(screen.getByRole("heading", { name: "文章摘要" })).toBeInTheDocument();
-      });
-      expect(screen.getByRole("button", { name: "从待读移除" })).toBeInTheDocument();
-    });
-
-    it("S064: from article-favorites-origin read-later entry opens summary with minus-state", async () => {
-      const virtualFeedId = "virtual-favorites";
-      vi.mocked(api.getReadLaterList).mockResolvedValue([
-        { feed_id: virtualFeedId, article_id: "fav-a1", added_at: "2024-01-01T00:00:00Z", title: "Favorites Article" },
-      ]);
-      vi.mocked(api.getArticles).mockResolvedValue([
-        { id: "fav-a1", title: "Favorites Article", link: "", published: "2024-01-01T00:00:00Z" },
-      ]);
-      vi.mocked(api.getArticleSummaryMeta).mockResolvedValue([]);
-      vi.mocked(api.getReadLaterCheck).mockResolvedValue({ in_read_later: true });
-      vi.mocked(api.getSummary).mockRejectedValue(new Error("No summary"));
-      renderWithRouter(["/"]);
-      await waitFor(() => {
-        expect(screen.getByRole("link", { name: "Favorites Article" })).toBeInTheDocument();
-      });
-      await userEvent.click(screen.getByRole("link", { name: "Favorites Article" }));
-      await waitFor(() => {
-        expect(screen.getByRole("heading", { name: "文章摘要" })).toBeInTheDocument();
-      });
-      expect(screen.getByRole("button", { name: "从待读移除" })).toBeInTheDocument();
     });
   });
 });
