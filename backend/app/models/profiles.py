@@ -42,7 +42,11 @@ class SummaryProfileUpdate(BaseModel):
     Payload for updating an existing summary profile.
 
     Fields are optional to allow partial updates.
-    Optional name allows renaming; when changed, summaries for the old name are cleaned up.
+    Optional name allows renaming; when changed, summary files are renamed to the new
+    name so existing summaries remain valid. When any AI-affecting field (base_url,
+    model, prompt_template, reasoning_effort) changes, existing summaries for that
+    profile are removed and must be regenerated. Key is auth-only and does not
+    trigger invalidation.
     """
 
     name: Optional[str] = None

@@ -1,10 +1,14 @@
 """
-Tests for global cascading cleanup when a profile is deleted or renamed (S005).
+Tests for global cascading cleanup/rename when a profile is deleted or updated (S005).
 
 - Deleting a profile removes all summary .md and .meta.json for that profile.
-- Renaming a profile (update with new name) removes all summary files for the old name.
+- Renaming a profile (update with new name) renames summary files to the new name
+  so existing summaries remain valid.
+- Updating any AI-affecting field (base_url, model, prompt_template, reasoning_effort)
+  removes all existing summaries for that profile so they are regenerated with new params.
+  (key is auth-only and does not trigger invalidation.)
 - Summaries for other profiles are not deleted.
-- Cleanup tolerates missing files.
+- Cleanup/rename tolerates missing files.
 """
 
 from __future__ import annotations
@@ -132,10 +136,10 @@ def test_cleanup_tolerates_missing_summary_files(tmp_path: Path) -> None:
     assert [p.name for p in profile_svc.list_profiles()] == []
 
 
-def test_rename_profile_removes_old_profile_summaries(tmp_path: Path) -> None:
+def test_rename_profile_renames_summary_files(tmp_path: Path) -> None:
     """
-    When a profile is renamed (update with new name), all summary files
-    for the old profile name are removed.
+    When a profile is renamed (update with new name), summary files are renamed
+    from old name to new name so existing summaries remain valid.
     """
     profile_svc = SummaryProfileService(tmp_path)
     profile_svc.create_profile(
@@ -157,5 +161,37 @@ def test_rename_profile_removes_old_profile_summaries(tmp_path: Path) -> None:
     summaries_dir = tmp_path / "feeds" / feed_id / "articles" / "art-1" / "summaries"
     assert not (summaries_dir / "old-name.md").exists()
     assert not (summaries_dir / "old-name.meta.json").exists()
+    assert (summaries_dir / "new-name.md").exists()
+    assert (summaries_dir / "new-name.md").read_text(encoding="utf-8") == "legacy summary"
+    assert (summaries_dir / "new-name.meta.json").exists()
     profile = profile_svc.get_profile("new-name")
     assert profile.name == "new-name"
+
+
+def test_update_profile_ai_params_removes_summaries(tmp_path: Path) -> None:
+    """
+    When any AI-affecting field (base_url, model, prompt_template, reasoning_effort)
+    is updated, all existing summaries for that profile are removed.
+    """
+    profile_svc = SummaryProfileService(tmp_path)
+    profile_svc.create_profile(
+        SummaryProfileCreate(
+            name="p",
+            base_url="https://api.example.com/v1",
+            key="k",
+            model="gpt-4",
+            fields=[],
+            prompt_template="Summarize: {{title}}",
+        )
+    )
+    feed_id = _make_feed(tmp_path)
+    _make_article_dir(tmp_path, feed_id, "art-1")
+    _write_summary_files(tmp_path, feed_id, "art-1", "p", "old summary")
+
+    profile_svc.update_profile("p", SummaryProfileUpdate(prompt_template="New: {{title}}"))
+
+    summaries_dir = tmp_path / "feeds" / feed_id / "articles" / "art-1" / "summaries"
+    assert not (summaries_dir / "p.md").exists()
+    assert not (summaries_dir / "p.meta.json").exists()
+    profile = profile_svc.get_profile("p")
+    assert profile.prompt_template == "New: {{title}}"

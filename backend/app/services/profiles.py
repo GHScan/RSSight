@@ -116,11 +116,13 @@ class SummaryProfileService:
             }
         )
         if new_name != name:
+            self._rename_summaries_for_profile(name, new_name)
             profiles.pop(name)
             profiles[new_name] = updated
             self._save_profiles(profiles)
-            self._cleanup_summaries_for_profile(name)
             return updated
+        if self._ai_params_changed(existing, updated):
+            self._cleanup_summaries_for_profile(name)
         profiles[name] = updated
         self._save_profiles(profiles)
         return updated
@@ -132,6 +134,49 @@ class SummaryProfileService:
         profiles.pop(name)
         self._save_profiles(profiles)
         self._cleanup_summaries_for_profile(name)
+
+    def _ai_params_changed(self, existing: SummaryProfile, updated: SummaryProfile) -> bool:
+        """
+        True if any profile field that affects the AI call (and thus the summary
+        result) has changed. Used to decide whether to invalidate existing summaries.
+        name and key are intentionally excluded (display/identity and auth only).
+        """
+        return (
+            existing.base_url != updated.base_url
+            or existing.model != updated.model
+            or existing.prompt_template != updated.prompt_template
+            or existing.reasoning_effort != updated.reasoning_effort
+        )
+
+    def _rename_summaries_for_profile(self, old_name: str, new_name: str) -> None:
+        """
+        Rename all summary .md and .meta.json from old_name to new_name under
+        data/feeds/{feedId}/articles/{articleId}/summaries/. Tolerates missing
+        files; failures for one path do not affect others.
+        """
+        feeds_dir = self._data_root / "feeds"
+        if not feeds_dir.exists():
+            return
+        for feed_path in feeds_dir.iterdir():
+            if not feed_path.is_dir():
+                continue
+            articles_dir = feed_path / "articles"
+            if not articles_dir.exists():
+                continue
+            for article_path in articles_dir.iterdir():
+                if not article_path.is_dir():
+                    continue
+                summaries_dir = article_path / "summaries"
+                if not summaries_dir.exists():
+                    continue
+                for suffix in (".md", ".meta.json"):
+                    old_path = summaries_dir / f"{old_name}{suffix}"
+                    new_path = summaries_dir / f"{new_name}{suffix}"
+                    if old_path.exists():
+                        try:
+                            old_path.rename(new_path)
+                        except OSError:
+                            pass
 
     def _cleanup_summaries_for_profile(self, profile_name: str) -> None:
         """
