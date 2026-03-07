@@ -56,7 +56,7 @@
         "Read-later ordering is newest-added first.",
         "No changes introduce separate persisted article or summary entities for read-later."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S061",

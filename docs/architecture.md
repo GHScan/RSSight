@@ -61,6 +61,8 @@ flowchart LR
   - `data/feeds/{feedId}/articles/{articleId}/summaries/{profileName}.meta.json`
 - Summary profiles (recommended):
   - `data/summary_profiles.json` — single JSON object; keys are profile names (unique). Each value is an object: `name`, `base_url`, `key`, `model`, `fields` (array of strings), `prompt_template`. Name uniqueness is enforced on create.
+- Read-later collection (S060):
+  - `data/read_later.json` — reference-only records. Format: `{ "items": [ { "feed_id", "article_id", "added_at" (ISO datetime) }, ... ] }`. Ordering: newest-added first. No duplicated article or summary content; entries reference existing feed/article data.
 
 ## Key behavioral constraints
 
