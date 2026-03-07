@@ -112,6 +112,71 @@
         "Tests verify time-source precedence and regressions for URL/no-URL paths."
       ],
       "passes": true
+    },
+    {
+      "id": "S045",
+      "priority": 10,
+      "title": "Finalize feed-management IA for standalone article favorites page",
+      "description": "Finalize product-level IA and constraints for moving Article Favorites from a sub-block inside RSS Subscriptions into a standalone top-level page entry.",
+      "acceptanceCriteria": [
+        "Top-level entry labels and order are deterministic in one row: RSS订阅, 文章收藏, 摘要设置.",
+        "Article Favorites is formally defined as an independent page domain, not a sub-block of RSS Subscriptions page.",
+        "No permission-based visibility rule is required for the new entry/page.",
+        "Refactor boundary is explicit: no backward-compatibility redirect, alias route, or legacy in-page入口 is preserved."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S046",
+      "priority": 11,
+      "title": "Implement navigation and route split for standalone article favorites page",
+      "description": "Implement navigation and frontend routing so Article Favorites is reachable as a peer page of RSS Subscriptions and Summary Settings.",
+      "acceptanceCriteria": [
+        "Article Favorites is accessible through a dedicated top-level entry and dedicated frontend route.",
+        "Top navigation row displays exactly three peer entries in required order and stable visual alignment.",
+        "No compatibility route alias or redirect is introduced for historical paths.",
+        "Route contract/update is documented in impacted docs."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S047",
+      "priority": 12,
+      "title": "Remove embedded favorites block from RSS subscriptions page",
+      "description": "Remove all Article Favorites UI blocks and entry points from RSS Subscriptions page so page responsibility is single-domain and layout is corrected.",
+      "acceptanceCriteria": [
+        "RSS Subscriptions page contains no favorites list/card/section block.",
+        "RSS Subscriptions page contains no in-page button/link/jump entrance to favorites domain.",
+        "RSS-domain behaviors on RSS Subscriptions page remain unchanged after removal.",
+        "UI structure on RSS Subscriptions page no longer mixes RSS and favorites domains."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S048",
+      "priority": 13,
+      "title": "Build standalone article favorites page with RSS-page-level UI parity",
+      "description": "Build the standalone Article Favorites page using the same page-level layout and interaction skeleton as RSS Subscriptions page while keeping favorites data semantics intact.",
+      "acceptanceCriteria": [
+        "Standalone Article Favorites page follows the same page-level layout pattern as RSS Subscriptions page.",
+        "Core interaction affordances on page shell are parity-aligned with RSS Subscriptions page.",
+        "No permission gating is introduced on the new page.",
+        "Favorites-domain data behavior remains correct and isolated from RSS-domain state."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S049",
+      "priority": 14,
+      "title": "Add full regression coverage, telemetry updates, and docs for page split refactor",
+      "description": "Deliver complete quality, observability, and documentation updates for the RSS Subscriptions and standalone Article Favorites page split.",
+      "acceptanceCriteria": [
+        "Frontend/component tests cover entry order, route split, and RSS page removal of embedded favorites block.",
+        "E2E scenarios verify navigation and main user flows on RSS订阅 and 文章收藏 as independent pages.",
+        "Telemetry/analytics distinguishes entry-click/page-view/core-action events between RSS订阅 and 文章收藏.",
+        "Impacted docs are updated with new IA, route changes, and explicit no-compatibility decision."
+      ],
+      "passes": false
     }
   ]
 }
