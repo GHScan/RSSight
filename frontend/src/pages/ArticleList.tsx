@@ -162,15 +162,17 @@ export function ArticleList() {
               添加
             </button>
           )}
-          <button
-            type="button"
-            onClick={loadArticles}
-            disabled={loading}
-            aria-label="刷新"
-            className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-accent disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-          >
-            刷新
-          </button>
+          {feed?.feed_type !== "virtual" && (
+            <button
+              type="button"
+              onClick={loadArticles}
+              disabled={loading}
+              aria-label="刷新"
+              className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-accent disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+            >
+              刷新
+            </button>
+          )}
           {!loading && !error && articles.length > 0 && (
             <>
               <label htmlFor="article-search" className="sr-only">

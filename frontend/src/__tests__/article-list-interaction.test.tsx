@@ -894,7 +894,7 @@ describe("Article list interaction (S010)", () => {
   });
 
   describe("S052: favorites article list controls, layout, and back navigation", () => {
-    it("on virtual feed toolbar add button is left of refresh and labeled 添加", async () => {
+    it("virtual feed toolbar shows add button (添加) and no refresh button", async () => {
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
         title: "My Favorites",
@@ -911,16 +911,8 @@ describe("Article list interaction (S010)", () => {
         expect(screen.getByRole("heading", { name: /文章列表/i })).toBeInTheDocument();
       });
       const addBtn = screen.getByRole("button", { name: /^添加$/i });
-      const refreshBtn = screen.getByRole("button", { name: /刷新/i });
       expect(addBtn).toBeInTheDocument();
-      expect(refreshBtn).toBeInTheDocument();
-      const toolbar = addBtn.closest(".flex.flex-wrap");
-      const buttons = toolbar?.querySelectorAll("button") ?? [];
-      const addIndex = Array.from(buttons).findIndex((b) => b === addBtn);
-      const refreshIndex = Array.from(buttons).findIndex((b) => b === refreshBtn);
-      expect(addIndex).toBeGreaterThanOrEqual(0);
-      expect(refreshIndex).toBeGreaterThanOrEqual(0);
-      expect(addIndex).toBeLessThan(refreshIndex);
+      expect(screen.queryByRole("button", { name: /刷新/i })).not.toBeInTheDocument();
     });
 
     it("virtual feed article row order is star placeholder, date, title, delete", async () => {
