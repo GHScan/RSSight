@@ -333,10 +333,10 @@ test.describe("Feed management E2E (S009)", () => {
       });
     });
     await page.goto("/feeds");
-    await expect(page.getByRole("heading", { name: "RSS 订阅", level: 2 }).first()).toBeVisible();
-    await expect(page.getByRole("region", { name: "RSS 订阅" }).first()).toContainText("RSS One");
-    await expect(page.getByRole("region", { name: "RSS 订阅" }).first()).toContainText("RSS Two");
-    await expect(page.getByRole("region", { name: "RSS 订阅" }).first()).not.toContainText("My Favorites");
+    await expect(page.getByRole("heading", { name: "RSS 订阅", level: 1 })).toBeVisible();
+    await expect(page.getByRole("region", { name: "RSS 订阅列表" }).first()).toContainText("RSS One");
+    await expect(page.getByRole("region", { name: "RSS 订阅列表" }).first()).toContainText("RSS Two");
+    await expect(page.getByRole("region", { name: "RSS 订阅列表" }).first()).not.toContainText("My Favorites");
     await expect(page.getByRole("heading", { name: "文章收藏" })).not.toBeVisible();
   });
 
@@ -437,7 +437,7 @@ test.describe("Feed management E2E (S009)", () => {
     await page.locator("#add-url").fill("https://example.com/new.xml");
     await page.getByRole("button", { name: "确定" }).first().click();
     await expect(page.getByText("New RSS")).toBeVisible();
-    const rssRegion = page.getByRole("region", { name: "RSS 订阅" }).first();
+    const rssRegion = page.getByRole("region", { name: "RSS 订阅列表" }).first();
     await expect(rssRegion).toContainText("New RSS");
     await expect(rssRegion).toContainText("RSS Feed");
     await page.getByRole("button", { name: /删除.*RSS Feed/ }).click();
@@ -506,7 +506,7 @@ test.describe("Feed management E2E (S009)", () => {
     await expect(page.getByRole("heading", { name: "RSSight" })).toBeVisible();
     await page.getByRole("link", { name: "RSS 订阅" }).click();
     await expect(page.getByRole("button", { name: "添加 Feed" })).toBeVisible();
-    await expect(page.getByRole("region", { name: "RSS 订阅" }).first()).toBeVisible();
+    await expect(page.getByRole("region", { name: "RSS 订阅列表" }).first()).toBeVisible();
     await expect(page.getByRole("link", { name: /首页/ })).toBeVisible();
     await page.getByRole("link", { name: /首页/ }).click();
     await expect(page.getByRole("heading", { name: "RSSight" })).toBeVisible();

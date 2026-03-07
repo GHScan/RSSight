@@ -85,6 +85,7 @@ export function FeedManagement() {
     <main className="max-w-4xl mx-auto px-4 py-6 sm:px-6">
       <header className="flex items-center gap-3 mb-4">
         <BackLink to="/" aria-label="首页" />
+        <h1 className="text-2xl font-semibold text-foreground">RSS 订阅</h1>
       </header>
       <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
         {loading && <p className="text-muted-foreground">加载中…</p>}
@@ -100,10 +101,7 @@ export function FeedManagement() {
       )}
       {!loading && !error && (
         <>
-          <section role="region" aria-labelledby="rss-heading" className="mb-8">
-            <h2 id="rss-heading" className="text-lg font-medium text-foreground mb-3">
-              RSS 订阅
-            </h2>
+          <section role="region" aria-label="RSS 订阅列表" className="mb-8">
             <div className="flex flex-wrap gap-2 mb-4">
               <button
                 type="button"

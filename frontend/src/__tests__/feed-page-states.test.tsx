@@ -65,7 +65,7 @@ describe("Feed page states", () => {
       expect(screen.getByRole("link", { name: "RSS One" })).toBeInTheDocument();
       expect(screen.getByRole("link", { name: "RSS Two" })).toBeInTheDocument();
     });
-    expect(screen.getAllByRole("region", { name: "RSS 订阅" }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByRole("region", { name: "RSS 订阅列表" }).length).toBeGreaterThanOrEqual(1);
     expect(screen.queryByRole("region", { name: "文章收藏" })).not.toBeInTheDocument();
     expect(screen.queryByText("My Favorites")).not.toBeInTheDocument();
   });
@@ -82,15 +82,28 @@ describe("Feed page states", () => {
     });
   });
 
-  it("S053: RSS subscriptions page add button is 添加 Feed (no top heading)", async () => {
+  it("S053: RSS subscriptions page add button is 添加 Feed in list section", async () => {
     renderFeedsPage();
     await waitFor(() => {
-      expect(screen.getByText(/暂无 RSS 订阅/)).toBeInTheDocument();
+      expect(screen.getAllByRole("button", { name: "添加 Feed" }).length).toBeGreaterThanOrEqual(1);
     });
-    expect(screen.queryByRole("heading", { level: 1, name: "RSS 订阅" })).not.toBeInTheDocument();
-    const rssRegions = screen.getAllByRole("region", { name: "RSS 订阅" });
-    const addButton = within(rssRegions[0]).getByRole("button", { name: "添加 Feed" });
+    expect(screen.getAllByRole("heading", { level: 1, name: "RSS 订阅" }).length).toBeGreaterThanOrEqual(1);
+    const rssListRegions = screen.getAllByRole("region", { name: "RSS 订阅列表" });
+    const addButton = within(rssListRegions[0]).getByRole("button", { name: "添加 Feed" });
     expect(addButton).toHaveTextContent("添加 Feed");
+  });
+
+  it("S058: RSS subscriptions page title in standard location, no duplicate above add control", async () => {
+    renderFeedsPage();
+    await waitFor(() => {
+      expect(screen.getAllByRole("button", { name: "添加 Feed" }).length).toBeGreaterThanOrEqual(1);
+    });
+    expect(screen.getAllByRole("heading", { level: 1, name: "RSS 订阅" }).length).toBeGreaterThanOrEqual(1);
+    expect(screen.queryByRole("heading", { level: 2, name: "RSS 订阅" })).not.toBeInTheDocument();
+    const rssListRegions = screen.getAllByRole("region", { name: "RSS 订阅列表" });
+    expect(rssListRegions.length).toBeGreaterThanOrEqual(1);
+    const addButton = within(rssListRegions[0]).getByRole("button", { name: "添加 Feed" });
+    expect(addButton).toBeInTheDocument();
   });
 });
 

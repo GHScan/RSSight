@@ -29,7 +29,7 @@
         "No other controls or layout on RSS subscriptions page are unintentionally changed.",
         "Relevant frontend tests are updated or added, and pass."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S059",
