@@ -27,7 +27,8 @@ export function ArticleList() {
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
-  /** S032: true after first submit in no-URL path when we filled defaults; second click creates. */
+  const [extracting, setExtracting] = useState(false);
+  /** S032: true after first submit in no-URL path when we filled defaults; second click creates. Also true after URL-extract fill (first click only fills, second creates). */
   const [pendingConfirm, setPendingConfirm] = useState(false);
   const [createPendingMessage, setCreatePendingMessage] = useState<string | null>(null);
   /** S042: delete feedback for favorites collection articles. */
@@ -150,6 +151,7 @@ export function ArticleList() {
                 setCreateSuccess(null);
                 setCreatePendingMessage(null);
                 setPendingConfirm(false);
+                setExtracting(false);
                 if (!showAddForm) {
                   setAddPublished(toDatetimeLocal(new Date()));
                 }
@@ -227,6 +229,32 @@ export function ArticleList() {
                     return;
                   }
                 } else {
+                  // URL path: if any of title/content are empty and not yet pending confirm, first click only extracts and fills (no create).
+                  const titleEmpty = addTitle.trim().length === 0;
+                  const contentEmpty = addContent.trim().length === 0;
+                  if ((titleEmpty || contentEmpty) && !pendingConfirm) {
+                    setExtracting(true);
+                    try {
+                      const meta = await api.extractUrlMetadata(addUrl);
+                      if (meta && meta.title != null && meta.title !== "") setAddTitle(meta.title);
+                      if (meta && meta.description != null && meta.description !== "") setAddContent(meta.description);
+                      if (meta && meta.published_at) {
+                        try {
+                          setAddPublished(toDatetimeLocal(new Date(meta.published_at)));
+                        } catch {
+                          // keep current published
+                        }
+                      }
+                      setCreateError(null);
+                      setPendingConfirm(true);
+                      setCreatePendingMessage("已从链接填充，请确认后再次点击「提交」创建文章。");
+                    } catch (err) {
+                      setCreateError(err instanceof Error ? err.message : "无法从链接提取信息");
+                    } finally {
+                      setExtracting(false);
+                    }
+                    return;
+                  }
                   setPendingConfirm(false);
                 }
                 setCreating(true);
@@ -331,11 +359,11 @@ export function ArticleList() {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  disabled={creating}
+                  disabled={creating || extracting}
                   data-testid="custom-article-submit"
                   className="inline-flex items-center justify-center min-h-[44px] px-5 py-2.5 rounded-lg bg-primary text-primary-foreground text-base font-medium hover:opacity-90 disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                 >
-                  {creating ? "提交中…" : pendingConfirm ? "确认创建" : "提交"}
+                  {extracting ? "提取中…" : creating ? "提交中…" : pendingConfirm ? "确认创建" : "提交"}
                 </button>
                 <button
                   type="button"

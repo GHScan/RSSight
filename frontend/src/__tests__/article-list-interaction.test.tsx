@@ -23,6 +23,7 @@ vi.mock("../api/client", () => ({
     deleteFeed: vi.fn(),
     createVirtualFeed: vi.fn(),
     setArticleFavorite: vi.fn(),
+    extractUrlMetadata: vi.fn(),
     createCustomArticle: vi.fn(),
     deleteArticle: vi.fn(),
     getSummary: vi.fn(),
@@ -429,12 +430,14 @@ describe("Article list interaction (S010)", () => {
       });
       await userEvent.type(screen.getByLabelText(/标题/i), "My Custom");
       await userEvent.type(screen.getByLabelText(/链接 \(URL\)/i), "https://example.com/c");
+      await userEvent.type(screen.getByLabelText(/内容/i), "Some content");
       await userEvent.click(screen.getByTestId("custom-article-submit"));
 
       await waitFor(() => {
         expect(api.createCustomArticle).toHaveBeenCalledWith("vf1", expect.objectContaining({
           title: "My Custom",
           link: "https://example.com/c",
+          description: "Some content",
         }));
       });
       await waitFor(() => {
@@ -442,7 +445,9 @@ describe("Article list interaction (S010)", () => {
       });
     });
 
-    it("S030: URL-only one submit shows success and created article in list", async () => {
+    it("S030: URL-only first click extracts and fills form, second click creates article", async () => {
+      vi.mocked(api.createCustomArticle).mockClear();
+      vi.mocked(api.extractUrlMetadata).mockClear();
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
         title: "My Favorites",
@@ -459,6 +464,11 @@ describe("Article list interaction (S010)", () => {
             published: "2025-03-05T14:00:00Z",
           },
         ]);
+      vi.mocked(api.extractUrlMetadata).mockResolvedValue({
+        title: "Fetched Title",
+        description: "Fetched description",
+        published_at: "2025-03-05T14:00:00Z",
+      });
       vi.mocked(api.createCustomArticle).mockResolvedValue({
         id: "art1",
         title: "Fetched Title",
@@ -483,8 +493,22 @@ describe("Article list interaction (S010)", () => {
       await userEvent.click(screen.getByTestId("custom-article-submit"));
 
       await waitFor(() => {
+        expect(api.extractUrlMetadata).toHaveBeenCalledWith("https://example.com/page");
+      });
+      await waitFor(() => {
+        expect(screen.getByText(/已从链接填充|请确认.*再次点击.*提交/i)).toBeInTheDocument();
+      });
+      expect(api.createCustomArticle).not.toHaveBeenCalled();
+      expect(screen.getByLabelText(/标题/i)).toHaveValue("Fetched Title");
+      expect(screen.getByLabelText(/内容/i)).toHaveValue("Fetched description");
+
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
         expect(api.createCustomArticle).toHaveBeenCalledWith("vf1", expect.objectContaining({
           link: "https://example.com/page",
+          title: "Fetched Title",
+          description: "Fetched description",
         }));
       });
       await waitFor(() => {
@@ -495,7 +519,9 @@ describe("Article list interaction (S010)", () => {
       });
     });
 
-    it("S030: create failure shows API error message in form", async () => {
+    it("S030: URL extract failure shows error in form and does not create", async () => {
+      vi.mocked(api.createCustomArticle).mockClear();
+      vi.mocked(api.extractUrlMetadata).mockClear();
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
         title: "My Favorites",
@@ -503,7 +529,7 @@ describe("Article list interaction (S010)", () => {
         feed_type: "virtual",
       });
       vi.mocked(api.getArticles).mockResolvedValue([]);
-      vi.mocked(api.createCustomArticle).mockRejectedValue(
+      vi.mocked(api.extractUrlMetadata).mockRejectedValue(
         new Error("400 Bad Request: Could not fetch or parse URL for autofill."),
       );
 
@@ -524,11 +550,12 @@ describe("Article list interaction (S010)", () => {
       await userEvent.click(screen.getByTestId("custom-article-submit"));
 
       await waitFor(() => {
-        expect(screen.getByRole("alert")).toHaveTextContent(/autofill|创建失败/i);
+        expect(screen.getByRole("alert")).toHaveTextContent(/autofill|无法从链接提取|创建失败/i);
       });
+      expect(api.createCustomArticle).not.toHaveBeenCalled();
     });
 
-    it("S044: URL submit when API returns MISSING_REQUIRED_FIELDS (empty title/content after extraction) shows error and form stays open", async () => {
+    it("S044: URL extract returns no title/content; second click create returns MISSING_REQUIRED_FIELDS and form stays open", async () => {
       vi.mocked(api.createCustomArticle).mockClear();
       vi.mocked(api.getFeed).mockResolvedValue({
         id: "vf1",
@@ -537,6 +564,7 @@ describe("Article list interaction (S010)", () => {
         feed_type: "virtual",
       });
       vi.mocked(api.getArticles).mockResolvedValue([]);
+      vi.mocked(api.extractUrlMetadata).mockResolvedValue({ title: null, description: null, published_at: null });
       vi.mocked(api.createCustomArticle).mockRejectedValue(
         new Error("400 Bad Request: Title and content are required; URL extraction did not provide them."),
       );
@@ -555,6 +583,13 @@ describe("Article list interaction (S010)", () => {
         expect(screen.getByTestId("custom-article-submit")).toBeInTheDocument();
       });
       await userEvent.type(screen.getByLabelText(/链接 \(URL\)/i), "https://example.com/no-meta");
+      await userEvent.click(screen.getByTestId("custom-article-submit"));
+
+      await waitFor(() => {
+        expect(screen.getByText(/已从链接填充|请确认.*再次点击/i)).toBeInTheDocument();
+      });
+      expect(api.createCustomArticle).not.toHaveBeenCalled();
+
       await userEvent.click(screen.getByTestId("custom-article-submit"));
 
       await waitFor(() => {

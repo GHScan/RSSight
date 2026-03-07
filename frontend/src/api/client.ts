@@ -81,6 +81,14 @@ export const api = {
       body: JSON.stringify({ favorite }),
     }).then(handleResponse);
   },
+  /** Extract title, description, published_at from URL for form prefill (no article created). */
+  extractUrlMetadata(url: string): Promise<{ title?: string | null; description?: string | null; published_at?: string | null }> {
+    return fetch(`${BASE}/feeds/extract-url`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url: url.trim() }),
+    }).then(handleResponse);
+  },
   createCustomArticle(feedId: string, payload: CustomArticleCreatePayload): Promise<Article> {
     return fetch(`${BASE}/feeds/${feedId}/articles`, {
       method: "POST",

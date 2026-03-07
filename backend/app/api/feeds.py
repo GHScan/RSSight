@@ -20,6 +20,16 @@ class FavoriteUpdate(BaseModel):
     favorite: bool
 
 
+class ExtractUrlRequest(BaseModel):
+    url: str
+
+
+class ExtractUrlResponse(BaseModel):
+    title: str | None = None
+    description: str | None = None
+    published_at: str | None = None  # ISO datetime string for frontend
+
+
 router = APIRouter(prefix="/api/feeds", tags=["feeds"])
 
 
@@ -75,6 +85,36 @@ def create_virtual_feed(
     """Create a virtual feed (e.g. article favorites collection) with name only; no URL."""
     created = service.create_virtual_feed(payload.name)
     return FeedRead.model_validate(created.model_dump())
+
+
+@router.post("/extract-url", response_model=ExtractUrlResponse)
+def extract_url_metadata(payload: ExtractUrlRequest) -> ExtractUrlResponse:
+    """Extract title, description, published_at from a URL for form prefill. Does not create any article."""
+    url = (payload.url or "").strip()
+    if not url:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail={
+                "code": "MISSING_URL",
+                "message": "URL is required.",
+            },
+        )
+    try:
+        parsed = fetch_and_parse_url(url)
+    except OSError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail={
+                "code": "AUTOFILL_FAILED",
+                "message": "Could not fetch or parse URL for autofill.",
+                "details": {"reason": str(exc)},
+            },
+        ) from exc
+    title = (parsed.get("title") or "").strip() or None
+    description = (parsed.get("description") or "").strip() or None
+    pub_dt = parsed.get("published_at")
+    published_at = pub_dt.isoformat() if isinstance(pub_dt, datetime) else None
+    return ExtractUrlResponse(title=title, description=description, published_at=published_at)
 
 
 @router.put("/{feed_id}", response_model=FeedRead)

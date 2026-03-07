@@ -267,6 +267,55 @@ def test_create_custom_article_rejects_rss_feed(tmp_path: Path, monkeypatch) -> 
     assert post_response.status_code == 400
 
 
+# --- Extract URL metadata (form prefill only, no article created) ---
+
+
+def test_extract_url_metadata_success(monkeypatch) -> None:
+    """POST /api/feeds/extract-url returns title, description, published_at from URL."""
+    from datetime import datetime, timezone
+
+    def mock_fetch(url: str):
+        return {
+            "title": "Extracted Title",
+            "description": "Extracted description.",
+            "published_at": datetime(2025, 3, 5, 14, 0, 0, tzinfo=timezone.utc),
+        }
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch)
+    client = TestClient(app)
+
+    r = client.post("/api/feeds/extract-url", json={"url": "https://example.com/page"})
+    assert r.status_code == 200
+    data = r.json()
+    assert data["title"] == "Extracted Title"
+    assert data["description"] == "Extracted description."
+    assert data["published_at"] == "2025-03-05T14:00:00+00:00"
+
+
+def test_extract_url_metadata_empty_url_returns_400() -> None:
+    """POST /api/feeds/extract-url with empty url returns 400."""
+    client = TestClient(app)
+    r = client.post("/api/feeds/extract-url", json={"url": "   "})
+    assert r.status_code == 400
+
+
+def test_extract_url_metadata_fetch_failure_returns_400(monkeypatch) -> None:
+    """POST /api/feeds/extract-url when fetch fails returns 400."""
+
+    def mock_fetch_fails(url: str):
+        raise OSError("Connection refused")
+
+    from app.api import feeds as feeds_module
+
+    monkeypatch.setattr(feeds_module, "fetch_and_parse_url", mock_fetch_fails)
+    client = TestClient(app)
+    r = client.post("/api/feeds/extract-url", json={"url": "https://example.com/bad"})
+    assert r.status_code == 400
+    assert "AUTOFILL_FAILED" in (r.json().get("detail") or {}).get("code", "")
+
+
 # --- S029: URL-branch missing-field autofill ---
 
 
