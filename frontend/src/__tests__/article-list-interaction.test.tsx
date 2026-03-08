@@ -306,8 +306,9 @@ describe("Article list interaction (S010)", () => {
       await waitFor(() => {
         expect(screen.getByText("Article First")).toBeInTheDocument();
       });
-      const dateLabels = screen.getAllByText("2025年3月");
-      expect(dateLabels.length).toBe(3);
+      expect(screen.getByText("2025.03.01")).toBeInTheDocument();
+      expect(screen.getByText("2025.03.02")).toBeInTheDocument();
+      expect(screen.getByText("2025.03.03")).toBeInTheDocument();
     });
 
     it("each row has an age-based date wrap (rounded block + text, gradient by recency)", async () => {
@@ -319,7 +320,7 @@ describe("Article list interaction (S010)", () => {
       const rows = within(list).getAllByRole("listitem");
       expect(rows.length).toBe(3);
       rows.forEach((row) => {
-        const wrap = row.querySelector('[aria-hidden][title*="年"]');
+        const wrap = row.querySelector('[aria-hidden][title*="."]');
         expect(wrap).toBeTruthy();
         const className = wrap?.getAttribute("class") ?? "";
         const hasGradient =
@@ -980,7 +981,7 @@ describe("Article list interaction (S010)", () => {
       expect(link).toBeInTheDocument();
       expect(within(item).getByRole("button", { name: /收藏|取消收藏/ })).toBeInTheDocument();
       expect(within(item).getByTestId("delete-article-art1")).toBeInTheDocument();
-      expect(item.textContent).toMatch(/2025年3月/);
+      expect(item.textContent).toMatch(/2025\.03\.01/);
     });
 
     it("delete requires confirmation; cancel does not call deleteArticle", async () => {
@@ -1111,9 +1112,9 @@ describe("Article list interaction (S010)", () => {
         expect(screen.getByText("Fav One")).toBeInTheDocument();
         expect(screen.getByText("Fav Two")).toBeInTheDocument();
       });
-      const dateLabels = screen.getAllByText("2025年3月");
+      const dateLabels = screen.getAllByText("2025.03.01");
       expect(dateLabels.length).toBe(1);
-      expect(screen.getByText("2026年4月")).toBeInTheDocument();
+      expect(screen.getByText("2026.04.15")).toBeInTheDocument();
     });
 
     it("virtual feed article row has age-based date wrap (bordered color block by recency)", async () => {
@@ -1138,7 +1139,7 @@ describe("Article list interaction (S010)", () => {
       const rows = within(list).getAllByRole("listitem");
       expect(rows.length).toBe(1);
       rows.forEach((row) => {
-        const wrap = row.querySelector('[aria-hidden][title*="年"]');
+        const wrap = row.querySelector('[aria-hidden][title*="."]');
         expect(wrap).toBeTruthy();
         const className = wrap?.getAttribute("class") ?? "";
         const hasGradient =

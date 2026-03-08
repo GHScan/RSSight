@@ -186,7 +186,7 @@ describe("Routing and page structure", () => {
         await waitFor(() => {
           expect(screen.getByRole("heading", { name: "待读" })).toBeInTheDocument();
         });
-        expect(screen.getByText("2024年1月")).toBeInTheDocument();
+        expect(screen.getByText("2024.01.01")).toBeInTheDocument();
         expect(screen.getByRole("link", { name: "Article One" })).toBeInTheDocument();
       });
     });
