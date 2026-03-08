@@ -56,6 +56,21 @@ export function ArticleList() {
       .finally(() => setLoading(false));
   }, [feedId]);
 
+  /** Re-fetch RSS for this feed then reload article list (RSS feeds only). */
+  const handleRefresh = useCallback(async () => {
+    if (!feedId) return;
+    setError(null);
+    setLoading(true);
+    try {
+      await api.refreshFeed(feedId);
+      await api.getArticles(feedId).then(setArticles);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "刷新失败");
+    } finally {
+      setLoading(false);
+    }
+  }, [feedId]);
+
   useEffect(() => {
     loadArticles();
   }, [loadArticles]);
@@ -166,7 +181,7 @@ export function ArticleList() {
           {feed?.feed_type !== "virtual" && (
             <button
               type="button"
-              onClick={loadArticles}
+              onClick={handleRefresh}
               disabled={loading}
               aria-label="刷新"
               className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-accent disabled:opacity-50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"

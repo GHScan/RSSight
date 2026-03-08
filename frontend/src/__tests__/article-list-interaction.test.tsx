@@ -17,6 +17,7 @@ vi.mock("../api/client", () => ({
     getFeeds: vi.fn(),
     getFeed: vi.fn(),
     getArticles: vi.fn(),
+    refreshFeed: vi.fn(),
     getSummaryProfiles: vi.fn(),
     createFeed: vi.fn(),
     updateFeed: vi.fn(),
@@ -81,6 +82,7 @@ describe("Article list interaction (S010)", () => {
         ...mockArticles,
         { id: "a4", title: "Article After Refresh", link: "https://example.com/4", published: "2025-03-04T10:00:00Z" },
       ];
+      vi.mocked(api.refreshFeed).mockResolvedValue(undefined);
       vi.mocked(api.getArticles)
         .mockResolvedValueOnce([...mockArticles])
         .mockResolvedValueOnce(refreshed);

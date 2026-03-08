@@ -205,6 +205,76 @@ def test_get_feed_returns_single_feed(tmp_path: Path, monkeypatch) -> None:
     assert not_found.status_code == 404
 
 
+# Minimal RSS for refresh endpoint tests (no network).
+_REFRESH_TEST_RSS = """<?xml version='1.0' encoding='UTF-8'?>
+<rss version="2.0"><channel><title>Test</title>
+<item><title>Item One</title><link>https://example.com/1</link><description>D1</description>
+<guid isPermaLink="false">g1</guid><pubDate>Mon, 02 Mar 2026 12:00:00 +0000</pubDate></item>
+<item><title>Item Two</title><link>https://example.com/2</link><description>D2</description>
+<guid isPermaLink="false">g2</guid><pubDate>Sun, 01 Mar 2026 12:00:00 +0000</pubDate></item>
+</channel></rss>"""
+
+
+def test_refresh_feed_returns_204_and_updates_articles(tmp_path: Path, monkeypatch) -> None:
+    """POST .../refresh re-fetches RSS (204); GET articles then returns new list."""
+    from app import main as app_main
+    from app.api.feeds import get_article_service
+    from app.services.articles import ArticleService
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+
+    def _fake_fetch(_url: str) -> str:
+        return _REFRESH_TEST_RSS
+
+    def _get_article_service_override() -> ArticleService:
+        return ArticleService(data_root=tmp_path, fetch_rss=_fake_fetch)
+
+    app.dependency_overrides[get_article_service] = _get_article_service_override
+    try:
+        client = TestClient(app)
+        create_response = client.post("/api/feeds", json={"title": "RSS Feed", "url": "https://example.com/rss"})
+        assert create_response.status_code == 201
+        feed_id = create_response.json()["id"]
+
+        refresh_response = client.post(f"/api/feeds/{feed_id}/refresh")
+        assert refresh_response.status_code == 204
+
+        list_response = client.get(f"/api/feeds/{feed_id}/articles")
+        assert list_response.status_code == 200
+        articles = list_response.json()
+        assert len(articles) == 2
+        titles = {a["title"] for a in articles}
+        assert titles == {"Item One", "Item Two"}
+    finally:
+        app.dependency_overrides.pop(get_article_service, None)
+
+
+def test_refresh_feed_nonexistent_returns_404(tmp_path: Path, monkeypatch) -> None:
+    """POST /api/feeds/{feed_id}/refresh when feed does not exist returns 404."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+    response = client.post("/api/feeds/nonexistent-feed-id/refresh")
+    assert response.status_code == 404
+    assert response.json().get("detail", {}).get("code") == "FEED_NOT_FOUND"
+
+
+def test_refresh_feed_virtual_returns_400(tmp_path: Path, monkeypatch) -> None:
+    """POST /api/feeds/{feed_id}/refresh for a virtual feed returns 400 NOT_RSS_FEED."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+    create_response = client.post("/api/feeds/virtual", json={"name": "Favorites"})
+    assert create_response.status_code == 201
+    feed_id = create_response.json()["id"]
+
+    response = client.post(f"/api/feeds/{feed_id}/refresh")
+    assert response.status_code == 400
+    assert response.json().get("detail", {}).get("code") == "NOT_RSS_FEED"
+
+
 def test_create_custom_article_via_api(tmp_path: Path, monkeypatch) -> None:
     """S028: POST /api/feeds/{feed_id}/articles creates custom article for virtual feed."""
     from app import main as app_main

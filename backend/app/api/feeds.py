@@ -89,7 +89,7 @@ def create_virtual_feed(
 
 @router.post("/extract-url", response_model=ExtractUrlResponse)
 def extract_url_metadata(payload: ExtractUrlRequest) -> ExtractUrlResponse:
-    """Extract title, description, published_at from a URL for form prefill. Does not create any article."""
+    """Extract title, description, published_at from URL for form prefill. No article created."""
     url = (payload.url or "").strip()
     if not url:
         raise HTTPException(
@@ -173,6 +173,50 @@ def get_feed(
             },
         ) from exc
     return FeedRead.model_validate(feed.model_dump())
+
+
+@router.post("/{feed_id}/refresh", status_code=HTTPStatus.NO_CONTENT)
+def refresh_feed(
+    feed_id: str,
+    feed_service: FeedService = Depends(get_feed_service),
+    article_service: ArticleService = Depends(get_article_service),
+) -> None:
+    """
+    Manually re-fetch RSS for this feed and persist articles.
+    404 if feed not found; 400 if feed is not RSS (e.g. virtual); 502 on fetch failure.
+    """
+    try:
+        feed_service.get_feed(feed_id)
+    except FeedNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "FEED_NOT_FOUND",
+                "message": "Feed not found.",
+                "details": {"feedId": exc.feed_id},
+            },
+        ) from exc
+    try:
+        article_service.fetch_and_persist_feed(feed_id)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail={
+                "code": "NOT_RSS_FEED",
+                "message": str(exc),
+                "details": {"feedId": feed_id},
+            },
+        ) from exc
+    except Exception as exc:
+        logging.getLogger(__name__).warning("Feed refresh failed for feed_id=%s: %s", feed_id, exc)
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_GATEWAY,
+            detail={
+                "code": "REFRESH_FAILED",
+                "message": f"Failed to fetch feed: {exc!s}",
+                "details": {"feedId": feed_id},
+            },
+        ) from exc
 
 
 @router.get("/{feed_id}/articles", response_model=List[ArticleRead])

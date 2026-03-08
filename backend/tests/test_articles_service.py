@@ -81,6 +81,28 @@ def test_fetch_and_persist_articles_for_single_feed_happy_path(tmp_path: Path) -
     assert articles[0].published_at >= articles[1].published_at
 
 
+def test_fetch_and_persist_feed_single_feed_happy_path(tmp_path: Path) -> None:
+    """fetch_and_persist_feed for one RSS feed persists articles and lists them."""
+    feed_service = _make_feed_service(tmp_path)
+    feed = feed_service.create_feed(
+        payload=FeedCreate(title="Claude Blog", url="https://example.com/feed.xml"),
+    )
+    article_service = _make_article_service(tmp_path)
+    article_service.fetch_and_persist_feed(feed.id)
+    articles = article_service.list_articles_for_feed(feed.id)
+    assert len(articles) == 2
+    assert articles[0].published_at >= articles[1].published_at
+
+
+def test_fetch_and_persist_feed_rejects_virtual_feed(tmp_path: Path) -> None:
+    """fetch_and_persist_feed for a virtual feed raises ValueError."""
+    feed_service = _make_feed_service(tmp_path)
+    virtual = feed_service.create_virtual_feed("Favorites")
+    article_service = _make_article_service(tmp_path)
+    with pytest.raises(ValueError, match="only supported for RSS"):
+        article_service.fetch_and_persist_feed(virtual.id)
+
+
 def test_fetch_is_idempotent_for_duplicate_items(tmp_path: Path) -> None:
     """
     Idempotency: running the fetch process twice for the same feed should not

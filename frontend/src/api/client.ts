@@ -74,6 +74,10 @@ export const api = {
   getArticles(feedId: string): Promise<Article[]> {
     return fetch(`${BASE}/feeds/${feedId}/articles`).then(handleResponse);
   },
+  /** Re-fetch RSS for this feed and persist articles; then use getArticles to refresh list. */
+  refreshFeed(feedId: string): Promise<void> {
+    return fetch(`${BASE}/feeds/${feedId}/refresh`, { method: "POST" }).then(handleResponse);
+  },
   setArticleFavorite(feedId: string, articleId: string, favorite: boolean): Promise<void> {
     return fetch(`${BASE}/feeds/${feedId}/articles/${articleId}/favorite`, {
       method: "PUT",

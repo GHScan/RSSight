@@ -9,7 +9,7 @@ from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from typing import Callable, Iterable, List, Tuple, cast
-from urllib.request import urlopen
+from urllib.request import Request, urlopen
 from xml.etree import ElementTree as ET
 
 from app.models.articles import Article
@@ -84,6 +84,22 @@ class ArticleService:
                         exc_info=True,
                     )
                 continue
+
+    def fetch_and_persist_feed(self, feed_id: str) -> None:
+        """
+        Fetch RSS for a single feed and persist its articles.
+
+        Raises FeedNotFoundError if the feed does not exist.
+        Raises ValueError if the feed is virtual or has no URL (not an RSS feed).
+        Propagates network/parse errors so the caller can map to HTTP responses.
+        """
+        feed = self._feed_service.get_feed(feed_id)
+        if feed.feed_type == "virtual" or feed.url is None:
+            raise ValueError("Refresh is only supported for RSS feeds with a URL")
+        xml = self._fetch_rss(str(feed.url))
+        items = self._parse_rss(xml)
+        for item in items:
+            self._persist_article(feed_id=feed_id, item=item)
 
     def _get_favorited_at(self, article_dir: Path) -> datetime | None:
         """Return mtime of favorite marker if present, else None."""
@@ -286,7 +302,8 @@ class ArticleService:
 
     @staticmethod
     def _default_fetch_rss(url: str) -> str:
-        with urlopen(url) as response:
+        req = Request(url, headers={"User-Agent": "RSSight/1.0 (RSS feed fetch)"})
+        with urlopen(req, timeout=30) as response:
             data = cast(bytes, response.read())
         return data.decode("utf-8")
 
