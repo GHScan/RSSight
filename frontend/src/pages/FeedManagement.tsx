@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { BackLink } from "../components/BackLink";
 import type { Feed } from "../api/types";
@@ -26,7 +26,14 @@ export function FeedManagement() {
       .finally(() => setLoading(false));
   }, []);
 
-  const rssFeeds = feeds.filter((f) => (f.feed_type ?? "rss") === "rss");
+  const rssFeeds = feeds
+    .filter((f) => (f.feed_type ?? "rss") === "rss")
+    .slice()
+    .sort((a, b) => (a.title ?? "").localeCompare(b.title ?? "", "zh-CN"));
+  const sortedRssFeeds = useMemo(
+    () => [...rssFeeds].sort((a, b) => (a.title || "").localeCompare(b.title || "", "zh-CN")),
+    [rssFeeds]
+  );
 
   useEffect(() => {
     loadFeeds();
@@ -158,12 +165,12 @@ export function FeedManagement() {
           </div>
         </form>
       )}
-            {rssFeeds.length === 0 && !showAddForm && (
+            {sortedRssFeeds.length === 0 && !showAddForm && (
               <p className="text-muted-foreground">暂无 RSS 订阅，请先添加订阅源。</p>
             )}
-            {rssFeeds.length > 0 && (
+            {sortedRssFeeds.length > 0 && (
               <ul className="space-y-4 list-none p-0">
-                {rssFeeds.map((f) => (
+                {sortedRssFeeds.map((f) => (
                   <li key={f.id} className="border border-border rounded-lg p-4">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div className="flex items-center gap-2 min-w-0 flex-1">
