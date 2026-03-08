@@ -101,11 +101,6 @@ def run_translation_pass(
     try:
         profile_svc.get_profile(TRANSLATION_PROFILE_NAME)
     except ProfileNotFoundError:
-        if logger:
-            logger.info(
-                "Translation pass skipped: profile %r not found",
-                TRANSLATION_PROFILE_NAME,
-            )
         return 0
 
     feed_svc = feed_service or FeedService(data_root)
@@ -127,8 +122,6 @@ def run_translation_pass(
                 unique_titles.append(article.title)
 
     if not unique_titles:
-        if logger:
-            logger.info("Translation pass: no articles without title_trans")
         return 0
 
     if logger:
