@@ -17,7 +17,7 @@ const proseClasses = {
   ul: "list-disc list-outside pl-6 mb-3 space-y-1 text-foreground",
   ol: "list-decimal list-outside pl-6 mb-3 space-y-1 text-foreground",
   li: "text-foreground leading-relaxed pl-1",
-  blockquote: "border-l-4 border-primary/60 bg-muted/30 pl-4 py-1 my-3 text-muted-foreground italic rounded-r",
+  blockquote: "border-l-4 border-primary/60 bg-muted/30 pl-4 py-2 my-3 text-muted-foreground italic rounded-r whitespace-pre-wrap",
   code: "bg-muted text-foreground px-1.5 py-0.5 rounded text-sm font-mono border border-border/50",
   pre: "bg-muted rounded-lg p-4 overflow-x-auto my-3 text-sm border border-border/50",
   a: "text-primary hover:underline font-medium",
@@ -158,7 +158,10 @@ function BlockquoteWithCopy({ children }: { children: React.ReactNode }) {
   const ref = useRef<HTMLQuoteElement>(null);
   return (
     <div className="relative my-3 group">
-      <CopyButton getText={() => ref.current?.innerText?.trim() ?? ""} />
+      <CopyButton
+        getText={() => ref.current?.innerText?.trim() ?? ""}
+        className="top-1 right-1 min-h-[28px] min-w-[50px] px-2 py-1 text-xs"
+      />
       <blockquote ref={ref} className={proseClasses.blockquote}>
         {children}
       </blockquote>
@@ -224,7 +227,8 @@ export function MarkdownContent({ content }: { content: string }) {
             if (lang === "mermaid") {
               return <MermaidDiagram code={code} />;
             }
-            const isBlock = className?.includes("language-");
+            // Unlabeled fenced code blocks have no language class but still contain line breaks.
+            const isBlock = className?.includes("language-") || code.includes("\n");
             if (isBlock) {
               return (
                 <div className="relative my-3 rounded-lg overflow-hidden border border-border/50 [&>pre]:!mt-0 [&>pre]:!rounded-lg">
