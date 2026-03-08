@@ -308,15 +308,65 @@ class ArticleService:
         return data.decode("utf-8")
 
     @staticmethod
+    def _local_name(tag: str) -> str:
+        """Return local part of tag (no namespace)."""
+        return tag.split("}")[-1] if "}" in tag else tag
+
+    @staticmethod
+    def _elem_text(el: ET.Element | None) -> str:
+        if el is None:
+            return ""
+        return (el.text or "").strip()
+
+    @staticmethod
+    def _get_link_from_item(item: ET.Element) -> str:
+        """Get link from RSS <link>text</link> or Atom <link href="..."/> (any namespace)."""
+        # RSS: <link>URL</link>
+        link = (item.findtext("link") or "").strip()
+        if link:
+            return link
+        for child in item:
+            if ArticleService._local_name(child.tag) == "link":
+                link = (child.text or "").strip() or (child.attrib.get("href") or "").strip()
+                if link:
+                    return link
+        return ""
+
+    @staticmethod
+    def _get_text_from_item(item: ET.Element, *names: str) -> str:
+        """Get first non-empty text from child elements (any of names, any namespace)."""
+        for name in names:
+            text = (item.findtext(name) or "").strip()
+            if text:
+                return text
+            for child in item:
+                if ArticleService._local_name(child.tag) == name:
+                    text = "".join(child.itertext()).strip()
+                    if text:
+                        return text
+        return ""
+
+    @staticmethod
     def _parse_rss(xml: str) -> Iterable[ParsedRssItem]:
         root = ET.fromstring(xml)
-        for item in root.findall(".//item"):
-            title = (item.findtext("title") or "").strip()
-            link = (item.findtext("link") or "").strip()
-            description = item.findtext("description") or ""
-            guid = item.findtext("guid")
-            pubdate_text = item.findtext("pubDate") or item.findtext("pubdate")
-
+        for item in root.iter():
+            local = ArticleService._local_name(item.tag)
+            if local not in ("item", "entry"):
+                continue
+            title = ArticleService._get_text_from_item(item, "title")
+            link = ArticleService._get_link_from_item(item)
+            description = ArticleService._get_text_from_item(
+                item, "description", "content", "summary"
+            )
+            guid = item.findtext("guid") or item.findtext("id")
+            if guid:
+                guid = guid.strip() or None
+            pubdate_text = (
+                item.findtext("pubDate")
+                or item.findtext("pubdate")
+                or item.findtext("published")
+                or item.findtext("updated")
+            )
             if pubdate_text:
                 try:
                     published_at = parsedate_to_datetime(pubdate_text.strip())

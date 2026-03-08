@@ -150,7 +150,7 @@ class SummaryService:
         # 若 RSS 只有标题/短描述（如 description 与 title 相同），从文章链接抓取正文
         content_override = None
         desc = (article.description or "").strip()
-        if not desc or desc == article.title or len(desc) < 200:
+        if article.link and (not desc or desc == article.title or len(desc) < 200):
             content_override = _fetch_article_text(article.link)
         prompt = _render_prompt(profile.prompt_template, article, content_override=content_override)
         summary_body = self._call_ai(prompt, profile_name)

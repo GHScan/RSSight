@@ -13,7 +13,8 @@ from app.models.feeds import FeedCreate
 from app.services.articles import FAVORITE_MARKER, ArticleService
 from app.services.feeds import FeedService
 
-SAMPLE_RSS = dedent("""\
+SAMPLE_RSS = dedent(
+    """\
     <?xml version='1.0' encoding='UTF-8'?>
     <rss version="2.0">
       <channel>
@@ -36,7 +37,25 @@ SAMPLE_RSS = dedent("""\
         </item>
       </channel>
     </rss>
-    """)
+    """
+)
+
+# Atom feed: link is in <link href="..."/>, entries are <entry>
+SAMPLE_ATOM = dedent(
+    """\
+    <?xml version='1.0' encoding='UTF-8'?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <title>Example Atom</title>
+      <entry>
+        <title>Atom Post</title>
+        <link href="https://example.com/atom-post"/>
+        <summary>Short summary</summary>
+        <id>urn:uuid:atom-1</id>
+        <updated>2026-03-03T00:00:00Z</updated>
+      </entry>
+    </feed>
+    """
+)
 
 
 def _make_feed_service(tmp_path: Path) -> FeedService:
@@ -92,6 +111,21 @@ def test_fetch_and_persist_feed_single_feed_happy_path(tmp_path: Path) -> None:
     articles = article_service.list_articles_for_feed(feed.id)
     assert len(articles) == 2
     assert articles[0].published_at >= articles[1].published_at
+
+
+def test_fetch_and_persist_feed_parses_atom_link_href(tmp_path: Path) -> None:
+    """Atom feed with <link href="..."/> is parsed and article has correct link."""
+    feed_service = _make_feed_service(tmp_path)
+    feed = feed_service.create_feed(
+        payload=FeedCreate(title="Atom Feed", url="https://example.com/atom.xml"),
+    )
+    article_service = ArticleService(tmp_path, fetch_rss=lambda _: SAMPLE_ATOM)
+    article_service.fetch_and_persist_feed(feed.id)
+    articles = article_service.list_articles_for_feed(feed.id)
+    assert len(articles) == 1
+    assert articles[0].title == "Atom Post"
+    assert articles[0].link == "https://example.com/atom-post"
+    assert articles[0].description == "Short summary"
 
 
 def test_fetch_and_persist_feed_rejects_virtual_feed(tmp_path: Path) -> None:
