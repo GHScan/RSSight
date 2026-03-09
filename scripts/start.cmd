@@ -11,7 +11,7 @@ if errorlevel 1 (
 )
 
 set "BACKEND_PORT=%~1"
-if "%BACKEND_PORT%"=="" set "BACKEND_PORT=8000"
+if "%BACKEND_PORT%"=="" set "BACKEND_PORT=8173"
 set "FRONTEND_PORT=%~2"
 if "%FRONTEND_PORT%"=="" set "FRONTEND_PORT=5173"
 
