@@ -47,6 +47,8 @@ export function ArticleSummary() {
   const { feedId, articleId } = useParams<{ feedId: string; articleId: string }>();
   const [articleTitle, setArticleTitle] = useState<string | null>(null);
   const [articleLink, setArticleLink] = useState<string | null>(null);
+  const [articleTitleTrans, setArticleTitleTrans] = useState<string | null>(null);
+  const [articleOriginalTitle, setArticleOriginalTitle] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<SummaryProfile[]>([]);
   const [summaryMeta, setSummaryMeta] = useState<Array<{ profile_name: string; generated_at: string }>>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>("");
@@ -54,6 +56,7 @@ export function ArticleSummary() {
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loadingProfiles, setLoadingProfiles] = useState(true);
   const [inReadLater, setInReadLater] = useState(false);
@@ -87,10 +90,14 @@ export function ArticleSummary() {
       .then((list) => {
         const a = list.find((x) => x.id === articleId);
         setArticleTitle(a ? (a.title_trans ?? a.title) : null);
+        setArticleTitleTrans(a?.title_trans ?? null);
+        setArticleOriginalTitle(a?.title ?? null);
         setArticleLink(a?.link ?? null);
       })
       .catch(() => {
         setArticleTitle(null);
+        setArticleTitleTrans(null);
+        setArticleOriginalTitle(null);
         setArticleLink(null);
       });
   }, [feedId, articleId]);
@@ -179,6 +186,66 @@ export function ArticleSummary() {
       setError(e instanceof Error ? e.message : "删除失败");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const sanitizeFileName = (name: string): string => {
+    // 移除或替换 Windows 文件名中的非法字符
+    return name
+      .replace(/[<>:"/\\|?*]/g, "_")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 200); // 限制长度
+  };
+
+  const handleExport = async () => {
+    if (!summary || !articleOriginalTitle) return;
+    setExporting(true);
+    setError(null);
+    try {
+      // 优先使用 title_trans，如果没有则使用 title
+      const defaultFileName = articleTitleTrans || articleOriginalTitle;
+      const fileName = sanitizeFileName(defaultFileName) + ".md";
+
+      // 尝试使用 File System Access API（如果浏览器支持）
+      if ("showSaveFilePicker" in window) {
+        try {
+          const fileHandle = await (window as any).showSaveFilePicker({
+            suggestedName: fileName,
+            types: [
+              {
+                description: "Markdown 文件",
+                accept: { "text/markdown": [".md"] },
+              },
+            ],
+          });
+          const writable = await fileHandle.createWritable();
+          await writable.write(summary);
+          await writable.close();
+          return;
+        } catch (e: any) {
+          // 用户取消选择文件，不显示错误
+          if (e.name === "AbortError") {
+            return;
+          }
+          // 其他错误则降级到下载方式
+        }
+      }
+
+      // 降级方案：使用传统的下载方式
+      const blob = new Blob([summary], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "导出失败");
+    } finally {
+      setExporting(false);
     }
   };
 
@@ -288,6 +355,15 @@ export function ArticleSummary() {
                       className={btnPrimary}
                     >
                       {generating ? "生成中…" : "重新生成"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleExport}
+                      disabled={exporting || !articleOriginalTitle}
+                      aria-label="导出摘要"
+                      className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
+                    >
+                      {exporting ? "导出中…" : "导出"}
                     </button>
                     <button
                       type="button"
