@@ -4,6 +4,7 @@ import type { SummaryProfile } from "../api/types";
 import { api } from "../api/client";
 import { MarkdownContent } from "../components/MarkdownContent";
 import { BackLink } from "../components/BackLink";
+import { formatYearMonth, getDateWrapClass } from "../utils/dateDisplay";
 
 function PlusIcon() {
   return (
@@ -49,6 +50,7 @@ export function ArticleSummary() {
   const [articleLink, setArticleLink] = useState<string | null>(null);
   const [articleTitleTrans, setArticleTitleTrans] = useState<string | null>(null);
   const [articleOriginalTitle, setArticleOriginalTitle] = useState<string | null>(null);
+  const [articlePublished, setArticlePublished] = useState<string | null>(null);
   const [profiles, setProfiles] = useState<SummaryProfile[]>([]);
   const [summaryMeta, setSummaryMeta] = useState<Array<{ profile_name: string; generated_at: string }>>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>("");
@@ -93,12 +95,14 @@ export function ArticleSummary() {
         setArticleTitleTrans(a?.title_trans ?? null);
         setArticleOriginalTitle(a?.title ?? null);
         setArticleLink(a?.link ?? null);
+        setArticlePublished(a?.published ?? null);
       })
       .catch(() => {
         setArticleTitle(null);
         setArticleTitleTrans(null);
         setArticleOriginalTitle(null);
         setArticleLink(null);
+        setArticlePublished(null);
       });
   }, [feedId, articleId]);
 
@@ -263,6 +267,17 @@ export function ArticleSummary() {
       <div className="rounded-xl border border-border bg-background p-4 sm:p-5">
         {articleTitle && (
         <div className="flex flex-wrap items-center gap-3 mb-4 border-b border-border pb-3">
+          {articlePublished && (
+            <div
+              className={`inline-flex items-center gap-2 rounded-md border-l-4 py-0.5 pl-2 pr-2 min-w-[6rem] shrink-0 ${getDateWrapClass(articlePublished)}`}
+              aria-hidden
+              title={formatYearMonth(articlePublished)}
+            >
+              <span className="text-sm tabular-nums text-muted-foreground">
+                {formatYearMonth(articlePublished)}
+              </span>
+            </div>
+          )}
           <p className="text-xl font-serif font-semibold text-foreground tracking-tight break-words flex-1 min-w-0">
             {articleLink ? (
               <a
