@@ -22,6 +22,9 @@ function MinusIcon() {
   );
 }
 
+/** 原文选项的特殊值 */
+const ORIGINAL_PROFILE_VALUE = "__original__";
+
 /** 有当前文章摘要的配置按 generated_at 降序，无摘要的按 last_used_at 降序。 */
 function sortProfilesForArticle(
   profiles: SummaryProfile[],
@@ -55,7 +58,9 @@ export function ArticleSummary() {
   const [summaryMeta, setSummaryMeta] = useState<Array<{ profile_name: string; generated_at: string }>>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>("");
   const [summary, setSummary] = useState<string | null>(null);
+  const [articleDescription, setArticleDescription] = useState<string | null>(null);
   const [loadingSummary, setLoadingSummary] = useState(false);
+  const [loadingOriginal, setLoadingOriginal] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [exporting, setExporting] = useState(false);
@@ -118,9 +123,29 @@ export function ArticleSummary() {
 
   const loadSummary = useCallback(() => {
     if (!feedId || !articleId || !selectedProfile) return;
+
+    // 如果是"原文"选项，加载文章详情
+    if (selectedProfile === ORIGINAL_PROFILE_VALUE) {
+      setLoadingOriginal(true);
+      setError(null);
+      setSummary(null);
+      setArticleDescription(null);
+      api
+        .getArticle(feedId, articleId)
+        .then((article) => setArticleDescription(article.description))
+        .catch(() => {
+          setArticleDescription(null);
+          setError("加载原文失败");
+        })
+        .finally(() => setLoadingOriginal(false));
+      return;
+    }
+
+    // 否则加载摘要
     setLoadingSummary(true);
     setError(null);
     setSummary(null);
+    setArticleDescription(null);
     api
       .getSummary(feedId, articleId, selectedProfile)
       .then(setSummary)
@@ -133,10 +158,22 @@ export function ArticleSummary() {
     [profiles, summaryMeta],
   );
 
+  // 将profiles分为有摘要和没有摘要的两组
+  const profilesWithSummary = useMemo(() => {
+    const metaByProfile = Object.fromEntries(summaryMeta.map((m) => [m.profile_name, m]));
+    return sortedProfiles.filter((p) => p.name in metaByProfile);
+  }, [sortedProfiles, summaryMeta]);
+
+  const profilesWithoutSummary = useMemo(() => {
+    const metaByProfile = Object.fromEntries(summaryMeta.map((m) => [m.profile_name, m]));
+    return sortedProfiles.filter((p) => !(p.name in metaByProfile));
+  }, [sortedProfiles, summaryMeta]);
+
   useEffect(() => {
     if (selectedProfile) loadSummary();
     else {
       setSummary(null);
+      setArticleDescription(null);
       setError(null);
     }
   }, [selectedProfile, loadSummary]);
@@ -333,7 +370,13 @@ export function ArticleSummary() {
             className="w-full max-w-md px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
           >
             <option value="">请选择摘要配置</option>
-            {sortedProfiles.map((p) => (
+            {profilesWithSummary.map((p) => (
+              <option key={p.name} value={p.name}>
+                {p.name}
+              </option>
+            ))}
+            <option value={ORIGINAL_PROFILE_VALUE}>原文</option>
+            {profilesWithoutSummary.map((p) => (
               <option key={p.name} value={p.name}>
                 {p.name}
               </option>
@@ -344,72 +387,92 @@ export function ArticleSummary() {
           )}
           {selectedProfile && (
             <div className="space-y-4">
-              {loadingSummary && <p className="text-muted-foreground">加载摘要中…</p>}
-              {!loadingSummary && summary === null && !error && (
-                <div className="space-y-2">
-                  <p className="text-muted-foreground">暂无摘要</p>
-                  <button
-                    type="button"
-                    onClick={handleGenerate}
-                    disabled={generating}
-                    aria-label="生成摘要"
-                    className={btnPrimary}
-                  >
-                    {generating ? "生成中…" : "生成"}
-                  </button>
-                </div>
-              )}
-              {!loadingSummary && summary !== null && (
-                <div className="space-y-4">
-                  <div className="flex flex-wrap gap-3">
-                    <button
-                      type="button"
-                      onClick={handleGenerate}
-                      disabled={generating}
-                      aria-label="重新生成"
-                      className={btnPrimary}
-                    >
-                      {generating ? "生成中…" : "重新生成"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleExport}
-                      disabled={exporting || !articleOriginalTitle}
-                      aria-label="导出摘要"
-                      className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
-                    >
-                      {exporting ? "导出中…" : "导出"}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleDelete}
-                      disabled={deleting}
-                      aria-label="删除摘要"
-                      className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
-                    >
-                      {deleting ? "删除中…" : "删除"}
-                    </button>
-                  </div>
-                  <div data-testid="summary-content" className="mt-4">
-                    <MarkdownContent content={summary} />
-                  </div>
-                </div>
-              )}
-              {error && (
-                <div className="space-y-2">
-                  <p className="text-destructive" role="alert">
-                    {error}
-                  </p>
-                  <button
-                    type="button"
-                    onClick={handleGenerate}
-                    disabled={generating}
-                    aria-label="重试"
-                    className={btnPrimary}
-                  >
-                    {generating ? "生成中…" : "重试"}
-                  </button>
-                </div>
+              {selectedProfile === ORIGINAL_PROFILE_VALUE ? (
+                // 原文模式
+                <>
+                  {loadingOriginal && <p className="text-muted-foreground">加载原文中…</p>}
+                  {!loadingOriginal && articleDescription !== null && (
+                    <div data-testid="original-content" className="mt-4">
+                      <MarkdownContent content={articleDescription} />
+                    </div>
+                  )}
+                  {!loadingOriginal && articleDescription === null && error && (
+                    <p className="text-destructive" role="alert">
+                      {error}
+                    </p>
+                  )}
+                </>
+              ) : (
+                // 摘要模式
+                <>
+                  {loadingSummary && <p className="text-muted-foreground">加载摘要中…</p>}
+                  {!loadingSummary && summary === null && !error && (
+                    <div className="space-y-2">
+                      <p className="text-muted-foreground">暂无摘要</p>
+                      <button
+                        type="button"
+                        onClick={handleGenerate}
+                        disabled={generating}
+                        aria-label="生成摘要"
+                        className={btnPrimary}
+                      >
+                        {generating ? "生成中…" : "生成"}
+                      </button>
+                    </div>
+                  )}
+                  {!loadingSummary && summary !== null && (
+                    <div className="space-y-4">
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          type="button"
+                          onClick={handleGenerate}
+                          disabled={generating}
+                          aria-label="重新生成"
+                          className={btnPrimary}
+                        >
+                          {generating ? "生成中…" : "重新生成"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleExport}
+                          disabled={exporting || !articleOriginalTitle}
+                          aria-label="导出摘要"
+                          className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
+                        >
+                          {exporting ? "导出中…" : "导出"}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={handleDelete}
+                          disabled={deleting}
+                          aria-label="删除摘要"
+                          className="inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg border border-border bg-background text-foreground text-base font-medium hover:bg-secondary/50 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:opacity-50"
+                        >
+                          {deleting ? "删除中…" : "删除"}
+                        </button>
+                      </div>
+                      <div data-testid="summary-content" className="mt-4">
+                        <MarkdownContent content={summary} />
+                      </div>
+                    </div>
+                  )}
+                  {error && (
+                    <div className="space-y-2">
+                      <p className="text-destructive" role="alert">
+                        {error}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={handleGenerate}
+                        disabled={generating}
+                        aria-label="重试"
+                        className={btnPrimary}
+                      >
+                        {generating ? "生成中…" : "重试"}
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           )}

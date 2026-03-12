@@ -26,6 +26,11 @@ export interface Article {
   source?: string | null;
 }
 
+export interface ArticleDetail extends Article {
+  /** Article description/content. */
+  description: string;
+}
+
 /** Payload for creating a custom article under a virtual feed (S028). */
 export interface CustomArticleCreatePayload {
   title: string;

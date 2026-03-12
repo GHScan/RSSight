@@ -167,6 +167,15 @@ class ArticleService:
         raw = json.loads(article_json.read_text(encoding="utf-8"))
         return Article.model_validate(raw)
 
+    def get_article_favorite_time(self, feed_id: str, article_id: str) -> datetime | None:
+        """
+        Get the favorite time for an article, or None if not favorited.
+        Raises ArticleNotFoundError if the article does not exist.
+        """
+        self.get_article(feed_id, article_id)  # raise if not found
+        article_dir = self._feeds_dir / feed_id / "articles" / article_id
+        return self._get_favorited_at(article_dir)
+
     def _persist_article(self, feed_id: str, item: ParsedRssItem) -> None:
         """
         Persist a single article in an idempotent way.

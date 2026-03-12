@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
-from app.models.articles import ArticleRead, CustomArticleCreate
+from app.models.articles import ArticleDetail, ArticleRead, CustomArticleCreate
 from app.models.feeds import FeedCreate, FeedRead, FeedUpdate, VirtualFeedCreate
 from app.services.articles import ArticleNotFoundError, ArticleService
 from app.services.feeds import FeedNotFoundError, FeedService
@@ -409,6 +409,50 @@ def delete_article(
                 "details": {"feedId": feed_id},
             },
         ) from exc
+
+
+@router.get("/{feed_id}/articles/{article_id}", response_model=ArticleDetail)
+def get_article(
+    feed_id: str,
+    article_id: str,
+    feed_service: FeedService = Depends(get_feed_service),
+    article_service: ArticleService = Depends(get_article_service),
+) -> ArticleDetail:
+    """Get a single article detail by feed id and article id, including description."""
+    try:
+        feed_service.get_feed(feed_id)
+    except FeedNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "FEED_NOT_FOUND",
+                "message": "Feed not found.",
+                "details": {"feedId": exc.feed_id},
+            },
+        ) from exc
+    try:
+        article = article_service.get_article(feed_id, article_id)
+        favorited_at = article_service.get_article_favorite_time(feed_id, article_id)
+    except ArticleNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "ARTICLE_NOT_FOUND",
+                "message": "Article not found.",
+                "details": {"feedId": exc.feed_id, "articleId": exc.article_id},
+            },
+        ) from exc
+    return ArticleDetail(
+        id=article.id,
+        title=article.title,
+        link=article.link,
+        published=article.published_at.isoformat(),
+        description=article.description,
+        title_trans=article.title_trans,
+        favorite=favorited_at is not None,
+        favorited_at=favorited_at.isoformat() if favorited_at else None,
+        source=article.source,
+    )
 
 
 @router.put("/{feed_id}/articles/{article_id}/favorite", status_code=HTTPStatus.NO_CONTENT)

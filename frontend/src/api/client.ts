@@ -5,6 +5,7 @@
 import type {
   Feed,
   Article,
+  ArticleDetail,
   SummaryProfile,
   ApiError,
   ApiErrorDetail,
@@ -73,6 +74,9 @@ export const api = {
   },
   getArticles(feedId: string): Promise<Article[]> {
     return fetch(`${BASE}/feeds/${feedId}/articles`).then(handleResponse);
+  },
+  getArticle(feedId: string, articleId: string): Promise<ArticleDetail> {
+    return fetch(`${BASE}/feeds/${feedId}/articles/${encodeURIComponent(articleId)}`).then(handleResponse);
   },
   /** Re-fetch RSS for this feed and persist articles; then use getArticles to refresh list. */
   refreshFeed(feedId: string): Promise<void> {

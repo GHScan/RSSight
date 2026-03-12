@@ -36,6 +36,20 @@ class ArticleRead(BaseModel):
     source: str | None = None  # Optional; custom article source metadata
 
 
+class ArticleDetail(BaseModel):
+    """Response model for article detail; includes description field."""
+
+    id: str
+    title: str
+    link: str
+    published: str
+    description: str
+    title_trans: str | None = None
+    favorite: bool = False
+    favorited_at: str | None = None  # ISO datetime when favorited, for sort/display
+    source: str | None = None  # Optional; custom article source metadata
+
+
 class CustomArticleCreate(BaseModel):
     """Payload for custom article under virtual feed (S027/S028).
     When link is provided, missing fields may be filled by URL autofill (S029).
