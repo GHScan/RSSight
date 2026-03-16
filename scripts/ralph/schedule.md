@@ -1,73 +1,38 @@
 # Ralph Scheduling Strategy
 
-This document defines the **single parent-agent** scheduling strategy for Ralph runs.
-
-It is a process/playbook under `scripts/ralph/`, not a subagent definition.
-
-## Scope split
-
-Parent agent (single instance) owns:
-
-- dependency inference from `prd.json`
-- wave graph planning and wave-by-wave dispatch
-- unique `branch_name` assignment
-- legal `worktree_name` allocation
-- subagent timeout control and forced stop
-- cleanup of timed-out/failed run worktrees and branches
-- final user-facing execution summary
-
-Ralph subagent owns:
-
-- single-story TDD implementation
-- create worktree/branch from assigned `branch_name` and `worktree_name`
-- conflict handling against local `base_branch`
-- re-running checks after conflict resolution
-
-Parent agent does **not** resolve code conflicts.
+Parent-agent scheduling strategy for parallel Ralph runs.
+All safety and engineering rules are in `CLAUDE.md`; this file covers scheduling mechanics only.
 
 ## Local-only branch model
 
-- During parallel development, do not use remote synchronization logic.
-- Before scheduling starts, parent agent may optionally sync remote once.
-- **Parent detach (mandatory before launching subagents):** In the parent workspace run `git checkout --detach base_branch`. The parent workspace then points to the same commit as `base_branch` but is in detached HEAD state; the parent must not commit or merge in this workspace during waves. This leaves the branch ref `base_branch` free for subagents to update from their worktrees. Subagents checkout and merge into `base_branch` only inside their own worktrees.
-- During wave execution, all subagents operate only on local branches.
-- A subagent may fail to merge because another subagent merged earlier; this is the expected conflict source.
-- After all waves end, parent agent runs `git checkout base_branch` again so the parent workspace is back on the branch.
-- After all waves complete, parent agent may decide whether to sync/push remote.
+- No remote sync during wave execution; parent may optionally sync remote once before scheduling.
+- **Parent detach (mandatory before launching subagents):** Run `git checkout --detach base_branch` in the parent workspace so `base_branch` ref is free for subagent merges. Parent must not commit or merge during waves.
+- During execution, all subagents operate only on local branches.
+- A subagent may fail to merge because another subagent merged first; this is expected.
+- After all waves end, parent runs `git checkout base_branch` to restore the workspace.
+- Parent may then decide whether to push remote.
 
 ## Inputs
 
 - `base_branch` (default: current branch)
 - `max_parallel_per_wave` (fixed: `8`)
 - `subagent_timeout_minutes` (default: 45)
-- optional fixed list `target_prd_ids`; if absent, pick from `passes=false`
+- Optional `target_prd_ids`; if absent, pick all stories with `passes=false`.
 
-## Branch naming contract (parent)
+## Branch naming contract
 
-Parent only generates one name per wave item:
+Parent generates per wave item:
 
-- `branch_name`: git branch identifier passed to subagent
-- `worktree_name`: filesystem-safe worktree folder name passed to subagent
+- `branch_name`: git branch identifier passed to subagent.
+- `worktree_name`: filesystem-safe folder name passed to subagent.
 
 Rules:
 
-1. `branch_name` pattern:
-   - `ralph/{prd_id}-{title_word1}-{title_word2}-{title_word3}`
-2. Word extraction:
-   - use the story `title` from `prd.json`
-   - split into alphanumeric words, keep the first 3 non-empty words
-   - if fewer than 3 words exist, use all available words
-3. Normalization for branch slug:
-   - lowercase words
-   - join with `-`
-4. Uniqueness in one run:
-   - if duplicate appears, append suffix `-n` (`-2`, `-3`, ...)
-   - if local git branch already exists, keep incrementing suffix until available
+1. Pattern: `ralph/{prd_id}-{word1}-{word2}-{word3}` (first 3 alphanumeric words from story title, lowercased).
+2. If fewer than 3 words, use all available; fallback slug is `story`.
+3. Uniqueness: append `-2`, `-3`, ... if duplicate in run or branch already exists locally.
 
-Parent scheduler is the **single source of truth** for branch and worktree allocation.
-Subagent must not generate or alter naming/path decisions.
-
-Parent uses this deterministic function (no random path generation):
+Parent is the single source of truth for naming. Subagent must not alter these values.
 
 ```python
 import re
@@ -95,125 +60,78 @@ def build_worktree_name(branch_name: str) -> str:
 
 ### Step 1: Build candidate set
 
-1. Read `prd.json`.
-2. Take stories where `passes=false`.
-3. If `target_prd_ids` exists, intersect with it.
+1. Read `prd.json`; take stories where `passes=false`.
+2. If `target_prd_ids` provided, intersect.
 
-### Step 2: Infer dependencies from content
+### Step 2: Infer dependencies
 
-Infer directed edges `A -> B` (B depends on A) by title/description semantics:
+Infer directed edges `A -> B` (B depends on A) from title/description semantics:
 
-- If B is "Add UI automation for X flow", depend on story "Complete X interaction details".
-- If B says "migrate visual design" or "verification after migration", depend on Tailwind foundation/migration stories.
-- If B wording implies "refine/complete details", depend on foundational API/flow stories for that domain.
-- If uncertain, prefer conservative dependency (serialize rather than parallelize).
+- UI automation stories depend on their interaction/flow stories.
+- Visual migration/verification stories depend on foundation/migration stories.
+- "Refine/complete details" stories depend on foundational API/flow stories for that domain.
+- When uncertain, serialize (conservative).
 
-Keep this inference dynamic from current `prd.json`; do not rely on hardcoded story IDs.
+Keep inference dynamic from current `prd.json`; do not hardcode story IDs.
 
-### Step 3: Generate waves by topological layering
+### Step 3: Topological wave generation
 
-1. Run topological sort on remaining nodes.
+1. Topological sort on candidate graph.
 2. Build waves by indegree-0 layers.
-3. Split oversized layer into chunks of size <= `max_parallel_per_wave` (8).
-4. Each wave item carries:
-   - `prd_id`
-   - `branch_name` (unique, assigned by parent)
-   - `worktree_name` (legal folder name, assigned by parent)
-   - `depends_on`
+3. Split oversized layers into chunks <= `max_parallel_per_wave`.
+4. Each wave item carries: `prd_id`, `branch_name`, `worktree_name`, `depends_on`.
 
 ## Launch contract
 
-Parent passes to subagent:
-
-- `prd_id`
-- `branch_name`
-- `worktree_name` (computed by `build_worktree_name`)
-- `base_branch`
-
-Subagent must use these values as-is and create worktree/branch in:
-
-- `.worktrees/ralph/{worktree_name}`
+Parent passes to each subagent: `prd_id`, `branch_name`, `worktree_name`, `base_branch`.
+Subagent creates worktree at `.worktrees/ralph/{worktree_name}`.
 
 ## Wave dispatch protocol
 
 For each wave in order:
 
-1. Launch all wave items concurrently (up to 8).
+1. Launch all items concurrently (up to 8).
 2. Monitor running subagents.
-3. If every item in wave succeeds, continue to next wave.
-4. If any item fails/times out/needs handoff, mark this wave as failed and stop scheduling later waves.
-5. Do not cancel other running subagents in this failed wave; wait for all of them to finish naturally.
-6. Record wave-level status and exit reason.
+3. If every item succeeds, continue to next wave.
+4. If any item fails/times out/needs handoff, mark wave failed and stop scheduling later waves.
+5. Do not cancel other running subagents in the failed wave; wait for all to finish.
 
 ## Timeout and forced cleanup
 
-Parent checks each running subagent on interval (for example every 60s):
-
-- if runtime > `subagent_timeout_minutes`: mark `timed_out`, stop the subagent.
+Parent checks each subagent on interval (e.g. every 60s). If runtime exceeds `subagent_timeout_minutes`, mark `timed_out` and stop the subagent.
 
 After stop/failure:
 
-1. **Restore `base_branch` if left mid-merge/mid-rebase.** A stopped subagent may have left `base_branch` in an incomplete merge or rebase (worktrees share refs). In the parent workspace run:
-   - `git checkout base_branch`
-   - If `git status` reports merge in progress: run `git merge --abort`
-   - If `git status` reports rebase in progress: run `git rebase --abort`
-   - This returns `base_branch` to the last consistent commit (e.g. before the failed subagent started its merge). Do not reset to a wave-start commit; other subagents in the same wave may already have merged successfully.
-2. Use scheduled `worktree_name` to get deterministic `worktree_path`.
-3. Remove worktree safely (`git worktree remove <path>` when possible).
-4. Delete the associated branch if safe and not merged.
-5. Record cleanup result (`cleaned`, `partial`, `skipped`) with reason.
-
-Because only one parent scheduler exists, no extra cross-scheduler lock mechanism is required.
+1. **Restore `base_branch` if left mid-merge/rebase.** In parent workspace: `git checkout base_branch`, then `git merge --abort` or `git rebase --abort` as needed. Do not reset to wave-start commit; other subagents may have merged successfully.
+2. Remove worktree safely (`git worktree remove <path>`).
+3. Delete associated branch if not merged.
+4. Record cleanup result (`cleaned`, `partial`, `skipped`) with reason.
 
 ## Shared-file conflict policy
 
-During parallel merges back to local `base_branch`:
+- `prd.json`: unique `prd_id` per subagent -> updates on different lines, merge directly.
+- `progress.txt` / `AGENTS.md`: same-line conflicts -> resolve by coexistence (keep both sides).
+- Other source files: resolved by subagents during their merge flow.
 
-- Parent scheduler guarantees each active subagent gets a different `prd_id`.
-- `prd.json`: because `prd_id` is unique per subagent, updates are expected on different lines and should be merged directly.
-- `progress.txt` and `AGENTS.md`: if same-line conflict appears, resolve by coexistence (keep both sides, preserving append intent).
-- Other source files: conflicts are resolved by subagents during their merge flow.
+After all waves:
 
-After all waves finish (or stop):
+1. Parent runs a non-concurrent reconciliation pass on `progress.txt` and `AGENTS.md`.
+2. If coexistence merge introduces logical contradiction, parent resolves or reports error.
 
-1. Parent agent performs a non-concurrent reconciliation pass.
-2. Re-check `progress.txt` and `AGENTS.md` for consistency/coherence only.
-3. If coexistence merge in these two files introduces logical contradiction, parent resolves it in this phase; if unresolved, report error to user.
-4. Parent does not run a second conflict-resolution pass for other source files.
+## Final integration gate
 
-## Final integration gate (mandatory)
-
-Before declaring overall success, parent agent must run one full-project integration gate on local `base_branch`:
+Before declaring success, parent must run a full integration gate on `base_branch`:
 
 1. Ensure parent workspace is on `base_branch`.
-2. Run `scripts\ci-check.cmd` once against the fully merged combined state.
-3. If this gate fails:
-   - set final run outcome to failed (even if all per-story subagent checks passed);
-   - keep existing completed-story marks as-is (no rollback in this flow);
-   - append one new `prd.json` item for fixing this integration failure;
-   - report failing command summary and next-action handoff.
-4. Only when this final gate passes can the run be reported as successful.
+2. Run `scripts\ci-check.cmd` against the fully merged state.
+3. If gate fails: set run outcome to failed; keep per-story marks as-is; append a new `prd.json` fix item (`passes=false`, next priority, clear title/description of the failure, acceptance criteria including reproducer + fix + green ci-check).
+4. Only when this gate passes is the run successful.
 
-When appending the integration-fix item to `prd.json`:
+## Result report format
 
-- set `passes=false`
-- place it at the next available priority
-- title should clearly indicate integration gate failure fix scope
-- description should include failing command summary and key error symptom
-- acceptance criteria should include:
-  - reproducible failing case
-  - implemented fix with tests
-  - `scripts\ci-check.cmd` passing on `base_branch`
+Trigger report when all waves finish, scheduling stops on failure, or integration gate fails.
 
-## Result aggregation and user report
-
-Trigger final report when:
-
-- all waves finished successfully, or
-- scheduling stopped due to first failed wave, or
-- final integration gate failed after wave completion.
-
-### Per-wave report block
+### Per-wave block
 
 ```text
 wave: <index>
@@ -248,10 +166,3 @@ story_counts:
 next_action:
   - <concise operator suggestion>
 ```
-
-## Safety constraints
-
-- Never schedule two subagents for the same `prd_id` in one run.
-- Never exceed `max_parallel_per_wave=8`.
-- Never modify files outside repository root.
-- Never use destructive git operations.

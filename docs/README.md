@@ -1,10 +1,10 @@
 # Documentation index
 
-- `developer-guide.md`: Developer entry commands and document links (policy is centralized in `AGENTS.md`).
-- `architecture.md`: Overall architecture and data flow.
-- `api-contract.md`: MVP API contract draft.
-- `testing-strategy.md`: Testing scopes and command references.
-- `story-template.md`: Story breakdown template.
-- `ralph-workflow.md`: Ralph execution mechanics and template usage.
+- `developer-guide.md`: Developer setup, run, and test commands.
+- `architecture.md`: System design, file layout, and runtime flow.
+- `api-contract.md`: REST API contract.
+- `testing-strategy.md`: Testing scope and command references.
+- `frontend-styling.md`: Tailwind design tokens and styling conventions.
+- `story-template.md`: Story template for `prd.json` entries.
 - `deployment-windows.md`: Windows deployment draft.
-- `adr/`: Key architecture decision records.
+- `adr/`: Architecture decision records.
