@@ -32,16 +32,23 @@ Read other docs **only when relevant** to the current story:
 - `frontend/` — React pages/components, API client layer (`src/api/`).
 - `data/` — runtime data only (feeds, articles, summaries, metadata).
 - `docs/` — architecture, contracts, ADRs.
-- `scripts/` — startup and quality scripts (`start.cmd`, `ci-check.cmd`).
+- `scripts/` — startup and quality scripts (`start.cmd`, `start.sh`, `ci-check.cmd`, `ci-check.sh`).
 - `prd.json` — story backlog and pass/fail status.
 - `progress.txt` — cross-iteration lessons learned only.
 
 ## 3) Engineering rules
 
 ### Platform
-- Target Windows. Prefer `.cmd`/`.bat` commands.
+- **Supported platforms:** Windows, macOS, Linux.
+- **Script conventions:**
+  - Windows: use `.cmd`/`.bat` scripts (e.g., `start.cmd`, `ci-check.cmd`).
+  - macOS/Linux: use `.sh` bash scripts (e.g., `start.sh`, `ci-check.sh`).
+  - **Rule:** When adding new scripts, create both `.cmd` and `.sh` versions.
+- **Shell command differences:**
+  - Windows `cmd`: chain with `&&`, use `%VAR%` for variables, `\` for paths.
+  - Windows PowerShell: chain with `;` not `&&` (PowerShell issue).
+  - Bash (macOS/Linux): chain with `&&`, use `$VAR` for variables, `/` for paths.
 - Do not use PowerShell for script logic; use Python invoked from `cmd` wrappers.
-- In PowerShell, use `;` not `&&` to chain commands.
 - Verify cwd and shell type before running terminal commands.
 
 ### TDD and change granularity
@@ -79,7 +86,7 @@ A story is done only when **all** are true:
 - Minimum per story: 1 happy-path test (written failing first), 1 boundary/exception test, 1 regression test.
 - Frontend behavior changes require UI component/page test updates.
 - Never skip tests to bypass failures.
-- Full local gate: `scripts\ci-check.cmd`
+- Full local gate: `scripts/ci-check.cmd` (Windows) or `scripts/ci-check.sh` (macOS/Linux)
 
 ## 6) Documentation, status updates, and lessons
 

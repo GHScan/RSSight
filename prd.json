@@ -123,7 +123,7 @@
         "Guidance for shell command differences (cmd vs bash) included.",
         "Rule added: when adding new scripts, create both .cmd and .sh versions."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "L009",
