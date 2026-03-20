@@ -17,6 +17,174 @@
         "Relevant frontend tests are updated or added, and pass."
       ],
       "passes": true
+    },
+    {
+      "id": "L001",
+      "priority": 40,
+      "title": "Create Linux/macOS startup script (start.sh)",
+      "description": "Create scripts/start.sh as the Unix equivalent of scripts/start.cmd. The script should support the same features: one-click start of backend + frontend, optional port arguments, auto-detect venv, bind to all interfaces for LAN access.",
+      "acceptanceCriteria": [
+        "scripts/start.sh exists and is executable (chmod +x).",
+        "Script accepts optional [backend_port] [frontend_port] arguments with same defaults as start.cmd.",
+        "Script auto-detects and activates backend/.venv if present.",
+        "Script starts backend (uvicorn) and frontend (npm run dev) in background or separate terminals.",
+        "Script works on both Linux and macOS (bash-compatible, no bashisms that break on macOS).",
+        "Script prints startup URLs and instructions.",
+        "README.md updated to reference start.sh for macOS/Linux."
+      ],
+      "passes": false
+    },
+    {
+      "id": "L002",
+      "priority": 41,
+      "title": "Create Linux/macOS CI check script (ci-check.sh)",
+      "description": "Create scripts/ci-check.sh as the Unix equivalent of scripts/ci-check.cmd. The script should run the same quality gates: ruff, black, mypy, pytest for backend; lint, typecheck, test:ui, test:e2e for frontend.",
+      "acceptanceCriteria": [
+        "scripts/ci-check.sh exists and is executable.",
+        "Script runs all backend checks: ruff check, black --check, mypy, pytest.",
+        "Script runs all frontend checks: npm run lint, typecheck, test:ui, test:e2e.",
+        "Script exits with non-zero code on any failure.",
+        "Script works on both Linux and macOS.",
+        "docs/developer-guide.md updated to mention ci-check.sh for Unix systems."
+      ],
+      "passes": false
+    },
+    {
+      "id": "L003",
+      "priority": 42,
+      "title": "Update developer-guide.md with Linux/macOS instructions",
+      "description": "Expand docs/developer-guide.md to include setup, run, and quality gate commands for Linux and macOS alongside the existing Windows instructions.",
+      "acceptanceCriteria": [
+        "Local setup section shows both Windows (.bat) and Unix (.sh) commands side by side.",
+        "Local run section references both start.cmd and start.sh.",
+        "Quality gate section references both ci-check.cmd and ci-check.sh.",
+        "Manual start instructions (without scripts) included for both platforms.",
+        "venv activation syntax shown for both Windows and Unix."
+      ],
+      "passes": false
+    },
+    {
+      "id": "L004",
+      "priority": 43,
+      "title": "Update README.md installation instructions for cross-platform",
+      "description": "Update README.md to show installation and quick start commands for all three platforms (Windows, macOS, Linux) instead of Windows-only .bat syntax.",
+      "acceptanceCriteria": [
+        "Installation section shows commands for Windows (cmd), macOS/Linux (bash).",
+        "venv activation shown for both platforms: .venv\\Scripts\\activate.bat vs source .venv/bin/activate.",
+        "Quick start section references both start.cmd (Windows) and start.sh (Unix).",
+        "Manual start commands included for users who prefer not to use the scripts."
+      ],
+      "passes": false
+    },
+    {
+      "id": "L005",
+      "priority": 44,
+      "title": "Create Linux deployment guide (deployment-linux.md)",
+      "description": "Create docs/deployment-linux.md with production deployment instructions for Linux servers, covering systemd service setup, reverse proxy (nginx), and best practices.",
+      "acceptanceCriteria": [
+        "docs/deployment-linux.md exists with complete deployment guide.",
+        "Guide covers systemd unit files for backend service.",
+        "Guide covers nginx reverse proxy configuration.",
+        "Guide covers static frontend hosting (nginx or separate).",
+        "Guide includes environment variable configuration.",
+        "Guide includes data directory permissions setup.",
+        "Guide includes pre-run checklist (healthz, logs, permissions).",
+        "docs/README.md updated to link to the new deployment guide."
+      ],
+      "passes": false
+    },
+    {
+      "id": "L006",
+      "priority": 45,
+      "title": "Create systemd service unit files",
+      "description": "Create ready-to-use systemd unit files for running RSSight backend as a Linux service, with optional frontend service or static hosting.",
+      "acceptanceCriteria": [
+        "scripts/systemd/rssight-backend.service exists with proper unit file.",
+        "Service file uses correct ExecStart for uvicorn.",
+        "Service file includes proper User, WorkingDirectory, Environment settings.",
+        "Service file includes Restart=on-failure for reliability.",
+        "Optional: scripts/systemd/rssight-frontend.service for dev-mode frontend.",
+        "Installation instructions included in deployment-linux.md."
+      ],
+      "passes": false
+    },
+    {
+      "id": "L007",
+      "priority": 46,
+      "title": "Create nginx configuration template",
+      "description": "Create a sample nginx configuration file for reverse-proxying to RSSight backend and serving static frontend files.",
+      "acceptanceCriteria": [
+        "scripts/nginx/rssight.conf exists with sample configuration.",
+        "Config includes upstream block for backend API.",
+        "Config includes location blocks for /api proxy and static frontend.",
+        "Config includes WebSocket support if needed for future features.",
+        "Config includes recommended security headers.",
+        "Installation instructions included in deployment-linux.md."
+      ],
+      "passes": false
+    },
+    {
+      "id": "L008",
+      "priority": 47,
+      "title": "Update AGENTS.md platform rules for cross-platform",
+      "description": "Update AGENTS.md section 3 (Platform) to acknowledge cross-platform support and provide guidance for agents working on Linux/macOS.",
+      "acceptanceCriteria": [
+        "Platform section no longer states 'Target Windows' exclusively.",
+        "Section acknowledges Windows, macOS, and Linux as supported platforms.",
+        "Guidance provided for when to use .cmd vs .sh scripts.",
+        "Guidance for shell command differences (cmd vs bash) included.",
+        "Rule added: when adding new scripts, create both .cmd and .sh versions."
+      ],
+      "passes": false
+    },
+    {
+      "id": "L009",
+      "priority": 48,
+      "title": "Add cross-platform CI workflow (GitHub Actions)",
+      "description": "Create .github/workflows/ci.yml to run quality gates on Linux (and optionally Windows/macOS) using GitHub Actions.",
+      "acceptanceCriteria": [
+        ".github/workflows/ci.yml exists with working CI configuration.",
+        "Workflow runs on ubuntu-latest (primary).",
+        "Workflow installs Python 3.12+ and Node 20+.",
+        "Workflow runs backend checks: ruff, black, mypy, pytest.",
+        "Workflow runs frontend checks: lint, typecheck, test:ui.",
+        "Workflow triggers on push and pull_request.",
+        "Optional: matrix build for multiple OS (ubuntu, windows, macos)."
+      ],
+      "passes": false
+    },
+    {
+      "id": "L010",
+      "priority": 49,
+      "title": "Create Docker support for Linux deployment",
+      "description": "Create Dockerfile and docker-compose.yml for containerized deployment on Linux servers.",
+      "acceptanceCriteria": [
+        "Dockerfile exists for building backend image.",
+        "Dockerfile uses multi-stage build for smaller image.",
+        "Dockerfile properly handles Python dependencies and uvicorn.",
+        "docker-compose.yml exists with backend and frontend services.",
+        "docker-compose.yml includes volume mount for data/ persistence.",
+        "docker-compose.yml includes proper networking between services.",
+        "docs/deployment-linux.md updated with Docker deployment option."
+      ],
+      "passes": false
+    },
+    {
+      "id": "L011",
+      "priority": 50,
+      "title": "Add Makefile for cross-platform development commands",
+      "description": "Create a Makefile with common development targets (install, dev, test, lint, build) that work on Linux/macOS and provide a consistent interface.",
+      "acceptanceCriteria": [
+        "Makefile exists at repository root.",
+        "make install: installs backend and frontend dependencies.",
+        "make dev: starts development servers.",
+        "make test: runs all tests.",
+        "make lint: runs all linters.",
+        "make build: builds frontend for production.",
+        "make clean: removes generated files and caches.",
+        "Makefile documented in developer-guide.md."
+      ],
+      "passes": false
     }
   ]
 }
