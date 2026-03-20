@@ -7,4 +7,5 @@
 - `frontend-styling.md`: Tailwind design tokens and styling conventions.
 - `story-template.md`: Story template for `prd.json` entries.
 - `deployment-windows.md`: Windows deployment draft.
+- `deployment-linux.md`: Linux production deployment guide (systemd, nginx).
 - `adr/`: Architecture decision records.

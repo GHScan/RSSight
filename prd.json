@@ -79,7 +79,7 @@
         "Guide includes pre-run checklist (healthz, logs, permissions).",
         "docs/README.md updated to link to the new deployment guide."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "L006",

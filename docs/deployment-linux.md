@@ -1,0 +1,435 @@
+# Linux deployment guide
+
+Production deployment instructions for running RSSight on Linux servers.
+
+## Goals
+
+- Run backend and frontend reliably on Linux servers.
+- Ensure the `data/` directory is persistent and backup-friendly.
+- Provide systemd service management for reliability.
+- Support reverse proxy setup with nginx for production traffic.
+
+## Recommended architecture
+
+```
+                    +-----------------+
+                    |     nginx       |
+                    |   (reverse      |
+                    |    proxy)       |
+                    +--------+--------+
+                             |
+              +--------------+--------------+
+              |                             |
+      +-------v-------+            +--------v--------+
+      |   Backend     |            |    Frontend     |
+      |  (uvicorn)    |            |   (static or    |
+      |  port 8173    |            |    dev server)  |
+      +---------------+            +-----------------+
+              |
+      +-------v-------+
+      |    data/      |
+      |  (persistent) |
+      +---------------+
+```
+
+### Backend options
+
+1. **Systemd + uvicorn** (recommended for single server): Run uvicorn directly as a systemd service.
+2. **Systemd + Gunicorn + uvicorn workers** (recommended for production): Use Gunicorn as process manager with uvicorn workers.
+
+### Frontend options
+
+1. **Static hosting via nginx** (recommended for production): Build the frontend (`npm run build`) and serve the `dist/` directory via nginx.
+2. **Separate dev server** (development only): Run `npm run dev` on a separate port.
+
+## Prerequisites
+
+- **Python 3.12+** installed
+- **Node.js 20+** installed (for frontend build, optional in production if serving pre-built static files)
+- **nginx** (for reverse proxy)
+- **systemd** (for service management)
+
+## Step 1: Prepare the application
+
+### Clone and setup
+
+```bash
+# Clone the repository
+git clone <repository-url> /opt/rssight
+cd /opt/rssight
+
+# Create Python virtual environment
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+
+# Install frontend dependencies (if building on server)
+cd ../frontend
+npm install
+```
+
+### Verify installation
+
+Run the quality gate to ensure everything is working:
+
+```bash
+cd /opt/rssight
+./scripts/ci-check.sh
+```
+
+## Step 2: Configure environment variables
+
+Create environment configuration for the backend:
+
+```bash
+# Create environment file (do not commit this)
+sudo mkdir -p /etc/rssight
+sudo tee /etc/rssight/backend.env <<EOF
+# OpenAI-compatible API configuration
+OPENAI_API_KEY=your-api-key-here
+OPENAI_BASE_URL=https://api.openai.com/v1
+OPENAI_MODEL=gpt-4o-mini
+
+# Debug mode (set to 0 in production)
+WEBRSS_DEBUG=0
+EOF
+
+# Secure the file
+sudo chmod 600 /etc/rssight/backend.env
+```
+
+## Step 3: Set up data directory permissions
+
+```bash
+# Create data directory with proper ownership
+sudo mkdir -p /opt/rssight/data
+sudo chown -R rssight:rssight /opt/rssight/data
+sudo chmod 755 /opt/rssight/data
+```
+
+Create a dedicated user for running the service:
+
+```bash
+sudo useradd -r -s /bin/false rssight
+sudo chown -R rssight:rssight /opt/rssight
+```
+
+## Step 4: Create systemd service files
+
+### Backend service
+
+Create `/etc/systemd/system/rssight-backend.service`:
+
+```ini
+[Unit]
+Description=RSSight Backend (FastAPI + uvicorn)
+After=network.target
+
+[Service]
+Type=notify
+User=rssight
+Group=rssight
+WorkingDirectory=/opt/rssight/backend
+EnvironmentFile=/etc/rssight/backend.env
+ExecStart=/opt/rssight/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8173
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### Optional: Frontend dev server service
+
+For development or if running the Vite dev server:
+
+Create `/etc/systemd/system/rssight-frontend.service`:
+
+```ini
+[Unit]
+Description=RSSight Frontend (Vite dev server)
+After=network.target
+
+[Service]
+Type=simple
+User=rssight
+Group=rssight
+WorkingDirectory=/opt/rssight/frontend
+ExecStart=/usr/bin/npm run dev -- --host 127.0.0.1 --port 5173
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+### Enable and start services
+
+```bash
+# Reload systemd to pick up new units
+sudo systemctl daemon-reload
+
+# Enable services to start on boot
+sudo systemctl enable rssight-backend
+
+# Start the backend
+sudo systemctl start rssight-backend
+
+# Check status
+sudo systemctl status rssight-backend
+```
+
+## Step 5: Configure nginx reverse proxy
+
+### Install nginx
+
+```bash
+sudo apt update
+sudo apt install nginx
+```
+
+### Create nginx configuration
+
+Create `/etc/nginx/sites-available/rssight.conf`:
+
+```nginx
+# Upstream for backend API
+upstream rssight_backend {
+    server 127.0.0.1:8173;
+    keepalive 32;
+}
+
+server {
+    listen 80;
+    server_name your-domain.com;  # Replace with your domain or IP
+
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+
+    # API proxy
+    location /api/ {
+        proxy_pass http://rssight_backend/api/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # Health check endpoint
+    location /healthz {
+        proxy_pass http://rssight_backend/healthz;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+    }
+
+    # Static frontend (production)
+    root /opt/rssight/frontend/dist;
+    index index.html;
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # Cache static assets
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+```
+
+### Enable the site
+
+```bash
+# Create symlink to enable the site
+sudo ln -s /etc/nginx/sites-available/rssight.conf /etc/nginx/sites-enabled/
+
+# Remove default site (optional)
+sudo rm /etc/nginx/sites-enabled/default
+
+# Test configuration
+sudo nginx -t
+
+# Reload nginx
+sudo systemctl reload nginx
+```
+
+## Step 6: Build frontend for production
+
+```bash
+cd /opt/rssight/frontend
+
+# Set the backend URL for production
+VITE_API_BASE_URL=https://your-domain.com/api npm run build
+
+# The output will be in frontend/dist/
+# nginx serves these static files
+```
+
+## Step 7: SSL/TLS configuration (recommended)
+
+Use Let's Encrypt for free SSL certificates:
+
+```bash
+# Install certbot
+sudo apt install certbot python3-certbot-nginx
+
+# Obtain and install certificate
+sudo certbot --nginx -d your-domain.com
+
+# This will automatically modify nginx config for HTTPS
+# and set up auto-renewal
+```
+
+## Pre-run checklist
+
+Before going live, verify:
+
+- [ ] `scripts/ci-check.sh` passes completely
+- [ ] `GET /healthz` returns `ok`:
+  ```bash
+  curl http://127.0.0.1:8173/healthz
+  ```
+- [ ] Data directory is writable by the `rssight` user:
+  ```bash
+  sudo -u rssight touch /opt/rssight/data/test.txt && sudo -u rssight rm /opt/rssight/data/test.txt
+  ```
+- [ ] Logs are accessible:
+  ```bash
+  sudo journalctl -u rssight-backend -f
+  ```
+- [ ] nginx is properly proxying requests:
+  ```bash
+  curl http://your-domain.com/healthz
+  ```
+- [ ] SSL certificate is valid (if using HTTPS)
+
+## Log management
+
+### Viewing logs
+
+```bash
+# Backend service logs
+sudo journalctl -u rssight-backend -f
+
+# View last 100 lines
+sudo journalctl -u rssight-backend -n 100
+
+# nginx access/error logs
+sudo tail -f /var/log/nginx/access.log
+sudo tail -f /var/log/nginx/error.log
+```
+
+### Log rotation
+
+systemd journals are automatically rotated by the system. For nginx, logs are typically rotated via `/etc/logrotate.d/nginx`.
+
+## Service management commands
+
+```bash
+# Start services
+sudo systemctl start rssight-backend
+
+# Stop services
+sudo systemctl stop rssight-backend
+
+# Restart services
+sudo systemctl restart rssight-backend
+
+# View status
+sudo systemctl status rssight-backend
+
+# Enable on boot
+sudo systemctl enable rssight-backend
+
+# Disable on boot
+sudo systemctl disable rssight-backend
+```
+
+## Updating the application
+
+```bash
+# Stop services
+sudo systemctl stop rssight-backend
+
+# Pull latest changes
+cd /opt/rssight
+git pull
+
+# Update backend dependencies
+cd backend
+source .venv/bin/activate
+pip install -e .[dev]
+
+# Rebuild frontend (if needed)
+cd ../frontend
+npm install
+npm run build
+
+# Start services
+sudo systemctl start rssight-backend
+```
+
+## Troubleshooting
+
+### Backend won't start
+
+1. Check logs: `sudo journalctl -u rssight-backend -n 50`
+2. Verify Python environment: `/opt/rssight/backend/.venv/bin/python --version`
+3. Check environment file: `sudo cat /etc/rssight/backend.env`
+4. Verify permissions: `ls -la /opt/rssight/data`
+
+### 502 Bad Gateway
+
+1. Verify backend is running: `sudo systemctl status rssight-backend`
+2. Check if backend responds directly: `curl http://127.0.0.1:8173/healthz`
+3. Check nginx error log: `sudo tail -f /var/log/nginx/error.log`
+
+### Permission denied errors
+
+1. Verify ownership: `ls -la /opt/rssight`
+2. Fix ownership: `sudo chown -R rssight:rssight /opt/rssight`
+3. Check file permissions: `sudo chmod 755 /opt/rssight/data`
+
+### Frontend not loading
+
+1. Verify build exists: `ls -la /opt/rssight/frontend/dist/`
+2. Check nginx configuration: `sudo nginx -t`
+3. Verify nginx is serving: `sudo systemctl status nginx`
+
+## Production hardening recommendations
+
+1. **Firewall**: Use `ufw` to restrict ports
+   ```bash
+   sudo ufw allow 80/tcp
+   sudo ufw allow 443/tcp
+   sudo ufw allow 22/tcp
+   sudo ufw enable
+   ```
+
+2. **Fail2ban**: Protect against brute force attacks
+   ```bash
+   sudo apt install fail2ban
+   ```
+
+3. **Regular backups**: Backup the `data/` directory regularly
+   ```bash
+   # Example backup command
+   tar -czf rssight-backup-$(date +%Y%m%d).tar.gz /opt/rssight/data
+   ```
+
+4. **Monitoring**: Consider adding monitoring (Prometheus, Grafana, or similar)
+
+5. **Rate limiting**: Configure nginx rate limiting for the API
