@@ -177,7 +177,57 @@ sudo apt install nginx
 
 ### Create nginx configuration
 
-Create `/etc/nginx/sites-available/rssight.conf`:
+RSSight provides a ready-to-use nginx configuration template in `scripts/nginx/rssight.conf`.
+
+#### Using the template
+
+```bash
+# Copy the provided nginx configuration
+sudo cp scripts/nginx/rssight.conf /etc/nginx/sites-available/
+
+# Create symlink to enable the site
+sudo ln -s /etc/nginx/sites-available/rssight.conf /etc/nginx/sites-enabled/
+
+# Remove default site (optional)
+sudo rm /etc/nginx/sites-enabled/default
+
+# Test configuration
+sudo nginx -t
+
+# Reload nginx
+sudo systemctl reload nginx
+```
+
+#### Template contents
+
+The template (`scripts/nginx/rssight.conf`) includes:
+
+- **Upstream block** for backend API (127.0.0.1:8173)
+- **Location blocks** for `/api/` proxy and static frontend
+- **WebSocket support** for future real-time features
+- **Security headers** (X-Frame-Options, X-Content-Type-Options, X-XSS-Protection, Referrer-Policy)
+- **Gzip compression** for text-based assets
+- **Static asset caching** (30-day expiry for js, css, images, fonts)
+- **Health check endpoint** without access logging
+- **Optional HTTPS block** (commented out, ready for SSL setup)
+
+#### Customization
+
+Before enabling, edit the configuration to match your setup:
+
+```bash
+sudo nano /etc/nginx/sites-available/rssight.conf
+```
+
+Key settings to update:
+
+- `server_name your-domain.com;` — Replace with your domain or server IP
+- `root /opt/rssight/frontend/dist;` — Adjust if frontend is built elsewhere
+- Upstream port `127.0.0.1:8173` — Adjust if backend runs on different port
+
+#### Manual configuration (alternative)
+
+If you prefer to create the configuration manually, use this minimal example:
 
 ```nginx
 # Upstream for backend API

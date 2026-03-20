@@ -109,7 +109,7 @@
         "Config includes recommended security headers.",
         "Installation instructions included in deployment-linux.md."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "L008",
