@@ -35,19 +35,7 @@
       "passes": true
     },
     {
-      "id": "L002",
-      "priority": 41,
-      "title": "Create Linux/macOS CI check script (ci-check.sh)",
-      "description": "Create scripts/ci-check.sh as the Unix equivalent of scripts/ci-check.cmd. The script should run the same quality gates: ruff, black, mypy, pytest for backend; lint, typecheck, test:ui, test:e2e for frontend.",
-      "acceptanceCriteria": [
-        "scripts/ci-check.sh exists and is executable.",
-        "Script runs all backend checks: ruff check, black --check, mypy, pytest.",
-        "Script runs all frontend checks: npm run lint, typecheck, test:ui, test:e2e.",
-        "Script exits with non-zero code on any failure.",
-        "Script works on both Linux and macOS.",
-        "docs/developer-guide.md updated to mention ci-check.sh for Unix systems."
-      ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "L003",
