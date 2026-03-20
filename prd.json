@@ -32,7 +32,7 @@
         "Script prints startup URLs and instructions.",
         "README.md updated to reference start.sh for macOS/Linux."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "L002",

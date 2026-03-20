@@ -47,9 +47,13 @@ npm install
 scripts\start.cmd
 ```
 
-Optional ports: `scripts\start.cmd [backend_port] [frontend_port]`. Defaults: backend `8000`, frontend `5173`.
+**macOS / Linux** — From the repository root:
 
-**macOS / Linux** — Start backend and frontend separately (see [developer guide](docs/developer-guide.md)).
+```bash
+./scripts/start.sh
+```
+
+Optional ports: `scripts\start.cmd [backend_port] [frontend_port]` (Windows) or `./scripts/start.sh [backend_port] [frontend_port]` (Unix). Defaults: backend `8173`, frontend `5173`.
 
 Then open the frontend in your browser (default port 5173; use `http://127.0.0.1:5173` if needed).
 
