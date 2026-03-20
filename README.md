@@ -21,21 +21,25 @@
 
 ## Installation
 
-From the repository root in `cmd`:
-
-**Backend:**
+**Windows (cmd):**
 
 ```bat
 cd backend
 python -m venv .venv
 .venv\Scripts\activate.bat
 pip install -e .[dev]
+cd ..\frontend
+npm install
 ```
 
-**Frontend:**
+**macOS / Linux (bash):**
 
-```bat
-cd ..\frontend
+```bash
+cd backend
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
+cd ../frontend
 npm install
 ```
 
@@ -56,6 +60,37 @@ scripts\start.cmd
 Optional ports: `scripts\start.cmd [backend_port] [frontend_port]` (Windows) or `./scripts/start.sh [backend_port] [frontend_port]` (Unix). Defaults: backend `8173`, frontend `5173`.
 
 Then open the frontend in your browser (default port 5173; use `http://127.0.0.1:5173` if needed).
+
+### Manual start
+
+If you prefer to start services manually (e.g., for debugging):
+
+**Windows (cmd) — two terminals:**
+
+```bat
+:: Terminal 1 (backend)
+cd backend
+.venv\Scripts\activate.bat
+set WEBRSS_DEBUG=1
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8173
+
+:: Terminal 2 (frontend)
+cd frontend
+npm run dev -- --port 5173 --host
+```
+
+**macOS / Linux (bash) — two terminals:**
+
+```bash
+# Terminal 1 (backend)
+cd backend
+source .venv/bin/activate
+WEBRSS_DEBUG=1 uvicorn app.main:app --reload --host 0.0.0.0 --port 8173
+
+# Terminal 2 (frontend)
+cd frontend
+npm run dev -- --port 5173 --host
+```
 
 ## Usage
 
@@ -82,4 +117,8 @@ Then open the frontend in your browser (default port 5173; use `http://127.0.0.1
 
 ## Contributing
 
-Read [AGENTS.md](AGENTS.md) and [docs/developer-guide.md](docs/developer-guide.md) for rules, local run, and quality gates (e.g. `scripts\ci-check.cmd`).
+Read [AGENTS.md](AGENTS.md) and [docs/developer-guide.md](docs/developer-guide.md) for rules, local run, and quality gates.
+
+**Quality gate:**
+- Windows: `scripts\ci-check.cmd`
+- macOS / Linux: `./scripts/ci-check.sh`

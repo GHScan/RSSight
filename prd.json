@@ -62,7 +62,7 @@
         "Quick start section references both start.cmd (Windows) and start.sh (Unix).",
         "Manual start commands included for users who prefer not to use the scripts."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "L005",
