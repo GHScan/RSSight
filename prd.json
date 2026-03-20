@@ -155,7 +155,7 @@
         "docker-compose.yml includes proper networking between services.",
         "docs/deployment-linux.md updated with Docker deployment option."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "L011",

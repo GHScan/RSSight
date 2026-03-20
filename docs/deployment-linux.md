@@ -465,3 +465,230 @@ sudo systemctl start rssight-backend
 4. **Monitoring**: Consider adding monitoring (Prometheus, Grafana, or similar)
 
 5. **Rate limiting**: Configure nginx rate limiting for the API
+
+## Docker Deployment
+
+RSSight provides Docker support for containerized deployment. This is an alternative to the systemd + nginx approach described above.
+
+### Prerequisites
+
+- **Docker** 20.10+ installed
+- **Docker Compose** v2.0+ installed
+
+### Quick Start with Docker Compose
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url> /opt/rssight
+   cd /opt/rssight
+   ```
+
+2. **Create environment file**
+   ```bash
+   cat > .env <<EOF
+   OPENAI_API_KEY=your-api-key-here
+   OPENAI_BASE_URL=https://api.openai.com/v1
+   OPENAI_MODEL=gpt-4o-mini
+   WEBRSS_DEBUG=0
+   EOF
+   ```
+
+3. **Build and start containers**
+   ```bash
+   docker compose up -d
+   ```
+
+4. **Verify containers are running**
+   ```bash
+   docker compose ps
+   ```
+
+5. **Access the application**
+   - Frontend: http://localhost:5173
+   - Backend API: http://localhost:8173
+   - Health check: http://localhost:8173/healthz
+
+### Docker Files
+
+| File | Description |
+|------|-------------|
+| `Dockerfile` | Multi-stage build for backend (Python 3.12-slim) |
+| `Dockerfile.frontend` | Multi-stage build for frontend (Node 20 + nginx) |
+| `docker-compose.yml` | Orchestrates backend and frontend services |
+| `.dockerignore` | Excludes unnecessary files from build context |
+
+### Data Persistence
+
+The `rssight-data` Docker volume is used to persist the `data/` directory:
+
+```bash
+# List volumes
+docker volume ls | grep rssight
+
+# Inspect volume
+docker volume inspect rssight_rssight-data
+
+# Backup data
+docker run --rm -v rssight_rssight-data:/data -v $(pwd):/backup alpine tar -czf /backup/rssight-backup-$(date +%Y%m%d).tar.gz /data
+```
+
+### Docker Commands
+
+```bash
+# Start services
+docker compose up -d
+
+# Stop services
+docker compose down
+
+# View logs
+docker compose logs -f
+
+# View backend logs only
+docker compose logs -f backend
+
+# Rebuild images
+docker compose build --no-cache
+
+# Restart services
+docker compose restart
+
+# Stop and remove containers, networks, volumes
+docker compose down -v
+```
+
+### Environment Variables
+
+Configure these in `.env` file or pass them directly:
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OPENAI_API_KEY` | OpenAI API key | (required) |
+| `OPENAI_BASE_URL` | OpenAI API base URL | `https://api.openai.com/v1` |
+| `OPENAI_MODEL` | Model to use for summarization | `gpt-4o-mini` |
+| `WEBRSS_DEBUG` | Enable debug mode | `0` |
+
+### Health Checks
+
+Both containers include health checks:
+
+- **Backend**: Checks `/healthz` endpoint every 30 seconds
+- **Frontend**: Checks nginx is responding every 30 seconds
+
+```bash
+# Check container health
+docker compose ps
+docker inspect --format='{{.State.Health.Status}}' rssight-backend
+docker inspect --format='{{.State.Health.Status}}' rssight-frontend
+```
+
+### Custom Ports
+
+To use different ports, modify `docker-compose.yml` or use environment variables:
+
+```bash
+# Run backend on port 9000, frontend on port 3000
+BACKEND_PORT=9000 FRONTEND_PORT=3000 docker compose up -d
+```
+
+Or update the ports section in `docker-compose.yml`:
+
+```yaml
+services:
+  backend:
+    ports:
+      - "9000:8000"
+  frontend:
+    ports:
+      - "3000:80"
+```
+
+### Production Considerations
+
+1. **Use a reverse proxy** (nginx, Traefik, Caddy) in front of Docker containers for:
+   - SSL/TLS termination
+   - Domain-based routing
+   - Rate limiting
+
+2. **Resource limits**: Add resource constraints to `docker-compose.yml`:
+   ```yaml
+   services:
+     backend:
+       deploy:
+         resources:
+           limits:
+             cpus: '1'
+             memory: 512M
+   ```
+
+3. **Logging**: Configure Docker logging driver:
+   ```yaml
+   services:
+     backend:
+       logging:
+         driver: "json-file"
+         options:
+           max-size: "10m"
+           max-file: "3"
+   ```
+
+4. **Network security**: Place containers behind a reverse proxy and don't expose ports directly to the internet.
+
+### Updating Docker Deployment
+
+```bash
+# Pull latest changes
+git pull
+
+# Rebuild and restart
+docker compose up -d --build
+
+# Or step by step
+docker compose build
+docker compose down
+docker compose up -d
+```
+
+### Troubleshooting Docker
+
+**Backend won't start**
+```bash
+# Check logs
+docker compose logs backend
+
+# Check if environment variables are set
+docker compose exec backend env | grep OPENAI
+
+# Test health check manually
+docker compose exec backend python -c "import urllib.request; print(urllib.request.urlopen('http://localhost:8000/healthz').read())"
+```
+
+**Frontend not loading**
+```bash
+# Check if nginx is serving files
+docker compose exec frontend ls /usr/share/nginx/html
+
+# Check nginx logs
+docker compose logs frontend
+
+# Test nginx config
+docker compose exec frontend nginx -t
+```
+
+**API proxy not working**
+```bash
+# Verify backend is reachable from frontend container
+docker compose exec frontend wget -qO- http://backend:8000/healthz
+
+# Check network connectivity
+docker network inspect rssight_rssight-network
+```
+
+**Volume issues**
+```bash
+# Check volume contents
+docker run --rm -v rssight_rssight-data:/data alpine ls -la /data
+
+# Fix permissions
+docker run --rm -v rssight_rssight-data:/data alpine chown -R 1000:1000 /data
+```
