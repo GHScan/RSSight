@@ -94,7 +94,7 @@
         "Optional: scripts/systemd/rssight-frontend.service for dev-mode frontend.",
         "Installation instructions included in deployment-linux.md."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "L007",

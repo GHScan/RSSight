@@ -115,58 +115,40 @@ sudo useradd -r -s /bin/false rssight
 sudo chown -R rssight:rssight /opt/rssight
 ```
 
-## Step 4: Create systemd service files
+## Step 4: Install systemd service files
+
+RSSight provides ready-to-use systemd unit files in `scripts/systemd/`.
+
+### Copy service files
+
+```bash
+# Copy the provided service files to systemd directory
+sudo cp scripts/systemd/rssight-backend.service /etc/systemd/system/
+
+# Optional: Copy frontend dev server service (development only)
+sudo cp scripts/systemd/rssight-frontend.service /etc/systemd/system/
+```
 
 ### Backend service
 
-Create `/etc/systemd/system/rssight-backend.service`:
+The backend service file (`rssight-backend.service`) runs uvicorn with:
 
-```ini
-[Unit]
-Description=RSSight Backend (FastAPI + uvicorn)
-After=network.target
-
-[Service]
-Type=notify
-User=rssight
-Group=rssight
-WorkingDirectory=/opt/rssight/backend
-EnvironmentFile=/etc/rssight/backend.env
-ExecStart=/opt/rssight/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8173
-Restart=on-failure
-RestartSec=5
-
-# Security hardening
-NoNewPrivileges=true
-PrivateTmp=true
-
-[Install]
-WantedBy=multi-user.target
-```
+- **User/Group**: `rssight` (create this user first, see Step 3)
+- **WorkingDirectory**: `/opt/rssight/backend`
+- **EnvironmentFile**: `/etc/rssight/backend.env` (see Step 2)
+- **ExecStart**: Uses venv uvicorn at `/opt/rssight/backend/.venv/bin/uvicorn`
+- **Restart**: `on-failure` with 5-second delay
+- **Security**: `NoNewPrivileges=true`, `PrivateTmp=true`
 
 ### Optional: Frontend dev server service
 
-For development or if running the Vite dev server:
+For development or if running the Vite dev server, use `rssight-frontend.service`:
 
-Create `/etc/systemd/system/rssight-frontend.service`:
+- **WorkingDirectory**: `/opt/rssight/frontend`
+- **ExecStart**: `npm run dev -- --host 127.0.0.1 --port 5173`
+- **Requires**: `rssight-backend.service`
 
-```ini
-[Unit]
-Description=RSSight Frontend (Vite dev server)
-After=network.target
-
-[Service]
-Type=simple
-User=rssight
-Group=rssight
-WorkingDirectory=/opt/rssight/frontend
-ExecStart=/usr/bin/npm run dev -- --host 127.0.0.1 --port 5173
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=multi-user.target
-```
+> **Note**: For production, use static hosting (build + nginx) instead of the dev server.
 
 ### Enable and start services
 

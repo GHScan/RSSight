@@ -1,0 +1,25 @@
+# RSSight Backend Systemd Service
+# Install: sudo cp rssight-backend.service /etc/systemd/system/
+# Enable:  sudo systemctl enable rssight-backend
+# Start:   sudo systemctl start rssight-backend
+
+[Unit]
+Description=RSSight Backend (FastAPI + uvicorn)
+After=network.target
+
+[Service]
+Type=notify
+User=rssight
+Group=rssight
+WorkingDirectory=/opt/rssight/backend
+EnvironmentFile=/etc/rssight/backend.env
+ExecStart=/opt/rssight/backend/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8173
+Restart=on-failure
+RestartSec=5
+
+# Security hardening
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

@@ -64,7 +64,7 @@ def test_translate_batch_uses_fixed_prompt() -> None:
     """Prompt contains fixed instruction and example, plus payload JSON."""
 
     def call_ai(prompt: str, profile_name: str) -> str:
-        assert "用中文翻译补全下面json" in prompt
+        assert "将下面 json 中任意语种的 key 翻译成简体中文的 value" in prompt
         assert "america" in prompt and "美洲" in prompt
         assert '{"key":""}' in prompt or '"key": ""' in prompt
         return json.dumps({"key": "键"})

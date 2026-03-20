@@ -11,6 +11,11 @@ ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 echo "==> Backend checks"
 cd "$ROOT/backend"
 
+# Auto-detect and activate venv if present
+if [ -d ".venv/bin" ]; then
+    source .venv/bin/activate
+fi
+
 python -m ruff check app tests
 
 python -m black --check app tests

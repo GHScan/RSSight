@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { BackLink } from "../components/BackLink";
 import type { Feed } from "../api/types";
@@ -19,10 +19,6 @@ export function ArticleFavorites() {
     .filter((f) => f.feed_type === "virtual")
     .slice()
     .sort((a, b) => (a.title ?? "").localeCompare(b.title ?? "", "zh-CN"));
-  const sortedFavoritesFeeds = useMemo(
-    () => [...favoritesFeeds].sort((a, b) => (a.title || "").localeCompare(b.title || "", "zh-CN")),
-    [favoritesFeeds]
-  );
 
   const loadFeeds = useCallback(() => {
     setLoading(true);

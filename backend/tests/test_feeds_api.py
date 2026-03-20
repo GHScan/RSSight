@@ -232,7 +232,9 @@ def test_refresh_feed_returns_204_and_updates_articles(tmp_path: Path, monkeypat
     app.dependency_overrides[get_article_service] = _get_article_service_override
     try:
         client = TestClient(app)
-        create_response = client.post("/api/feeds", json={"title": "RSS Feed", "url": "https://example.com/rss"})
+        create_response = client.post(
+            "/api/feeds", json={"title": "RSS Feed", "url": "https://example.com/rss"}
+        )
         assert create_response.status_code == 201
         feed_id = create_response.json()["id"]
 

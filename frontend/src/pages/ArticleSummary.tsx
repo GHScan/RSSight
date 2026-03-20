@@ -251,7 +251,7 @@ export function ArticleSummary() {
       // 尝试使用 File System Access API（如果浏览器支持）
       if ("showSaveFilePicker" in window) {
         try {
-          const fileHandle = await (window as any).showSaveFilePicker({
+          const fileHandle = await (window as unknown as { showSaveFilePicker: (options: unknown) => Promise<{ createWritable: () => Promise<{ write: (data: string) => Promise<void>; close: () => Promise<void> }> }> }).showSaveFilePicker({
             suggestedName: fileName,
             types: [
               {
@@ -264,9 +264,9 @@ export function ArticleSummary() {
           await writable.write(summary);
           await writable.close();
           return;
-        } catch (e: any) {
+        } catch (e: unknown) {
           // 用户取消选择文件，不显示错误
-          if (e.name === "AbortError") {
+          if ((e as { name?: string }).name === "AbortError") {
             return;
           }
           // 其他错误则降级到下载方式

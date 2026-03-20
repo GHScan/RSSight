@@ -1,0 +1,24 @@
+# RSSight Frontend Systemd Service (Dev Mode)
+# Install: sudo cp rssight-frontend.service /etc/systemd/system/
+# Enable:  sudo systemctl enable rssight-frontend
+# Start:   sudo systemctl start rssight-frontend
+#
+# NOTE: This service runs the Vite dev server, which is intended for development.
+# For production, use static hosting (npm run build + nginx) instead.
+
+[Unit]
+Description=RSSight Frontend (Vite dev server)
+After=network.target
+Requires=rssight-backend.service
+
+[Service]
+Type=simple
+User=rssight
+Group=rssight
+WorkingDirectory=/opt/rssight/frontend
+ExecStart=/usr/bin/npm run dev -- --host 127.0.0.1 --port 5173
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

@@ -13,8 +13,7 @@ from app.models.feeds import FeedCreate
 from app.services.articles import FAVORITE_MARKER, ArticleService
 from app.services.feeds import FeedService
 
-SAMPLE_RSS = dedent(
-    """\
+SAMPLE_RSS = dedent("""\
     <?xml version='1.0' encoding='UTF-8'?>
     <rss version="2.0">
       <channel>
@@ -37,12 +36,10 @@ SAMPLE_RSS = dedent(
         </item>
       </channel>
     </rss>
-    """
-)
+    """)
 
 # Atom feed: link is in <link href="..."/>, entries are <entry>
-SAMPLE_ATOM = dedent(
-    """\
+SAMPLE_ATOM = dedent("""\
     <?xml version='1.0' encoding='UTF-8'?>
     <feed xmlns="http://www.w3.org/2005/Atom">
       <title>Example Atom</title>
@@ -54,8 +51,7 @@ SAMPLE_ATOM = dedent(
         <updated>2026-03-03T00:00:00Z</updated>
       </entry>
     </feed>
-    """
-)
+    """)
 
 
 def _make_feed_service(tmp_path: Path) -> FeedService:
