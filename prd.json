@@ -139,7 +139,7 @@
         "Workflow triggers on push and pull_request.",
         "Optional: matrix build for multiple OS (ubuntu, windows, macos)."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "L010",
