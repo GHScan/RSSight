@@ -172,7 +172,7 @@
         "make clean: removes generated files and caches.",
         "Makefile documented in developer-guide.md."
       ],
-      "passes": false
+      "passes": true
     }
   ]
 }

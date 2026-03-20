@@ -113,3 +113,33 @@ The quality gate runs:
 | `docs/testing-strategy.md` | Test scope and commands |
 | `docs/api-contract.md` | Backend API contract |
 | `docs/adr/` | Architecture Decision Records |
+
+## Makefile (Linux/macOS)
+
+For convenience on Linux and macOS, a `Makefile` provides common development commands:
+
+```bash
+make install     # Install all dependencies (backend + frontend)
+make dev         # Start development servers
+make test        # Run all tests
+make lint        # Run all linters
+make build       # Build frontend for production
+make clean       # Remove generated files and caches
+make ci          # Run full CI quality gate
+make format      # Auto-format code
+make help        # Show all available targets
+```
+
+### Port configuration
+
+Override default ports with environment variables:
+
+```bash
+make dev BACKEND_PORT=9000 FRONTEND_PORT=3000
+```
+
+### Notes
+
+- The Makefile requires `make` (standard on Linux/macOS).
+- For Windows, use the `scripts/*.cmd` files directly or run in WSL.
+- `make clean` removes `.venv` - reinstall with `make install` after cleaning.
