@@ -1,12 +1,16 @@
 """
-Stream progress tracker for Cursor CLI (agent) runs.
-Runs agent with --output-format stream-json --stream-partial-output,
-parses NDJSON and prints progress (model, char count, tool calls, result).
+Stream progress tracker for Ralph loop runs.
+By default it uses CodeBuddy CLI with stream-json output, and can fallback
+to `agent` for backward compatibility.
+Parses NDJSON and prints progress (model, char count, tool calls, result).
 Exits with the agent process exit code.
 """
 from __future__ import annotations
 
 import json
+import os
+import shlex
+import shutil
 import subprocess
 import sys
 import time
@@ -19,6 +23,53 @@ def safe_get(obj: dict, *keys: str, default: str = ""):
         except (KeyError, TypeError):
             return default
     return obj if isinstance(obj, str) else default
+
+
+def build_agent_command(prompt: str) -> list[str]:
+    """Build command for Ralph agent execution.
+
+    Environment variables:
+    - RALPH_AGENT_CMD: full command (highest priority)
+    - RALPH_AGENT_EXEC: executable name (default: codebuddy)
+    - RALPH_AGENT_FLAGS: flags for executable
+    """
+    full_cmd = os.environ.get("RALPH_AGENT_CMD", "").strip()
+    if full_cmd:
+        return shlex.split(full_cmd) + [prompt]
+
+    exec_name = os.environ.get("RALPH_AGENT_EXEC", "codebuddy").strip() or "codebuddy"
+    explicit_flags = os.environ.get("RALPH_AGENT_FLAGS")
+
+    using_codebuddy = exec_name.lower() == "codebuddy"
+    if explicit_flags is None:
+        flags = "--model glm-5.0-ioa --dangerously-skip-permissions" if using_codebuddy else "-p --force"
+    else:
+        flags = explicit_flags.strip()
+
+    # Backward compatibility: if default codebuddy is not available, fallback to agent.
+    if using_codebuddy and shutil.which(exec_name) is None and shutil.which("agent") is not None:
+        exec_name = "agent"
+        using_codebuddy = False
+        if explicit_flags is None:
+            flags = "-p --force"
+
+    cmd_args = [exec_name]
+    if flags:
+        cmd_args.extend(shlex.split(flags))
+
+    # stream-json is required for this progress parser.
+    cmd_args.extend(["--output-format", "stream-json"])
+
+    if using_codebuddy:
+        # codebuddy requires --print/-p for non-interactive stream-json output.
+        if "-p" not in cmd_args and "--print" not in cmd_args:
+            cmd_args.insert(1, "-p")
+    else:
+        # keep existing behavior for Cursor CLI agent.
+        cmd_args.append("--stream-partial-output")
+
+    cmd_args.append(prompt)
+    return cmd_args
 
 
 def main() -> int:
@@ -34,16 +85,8 @@ def main() -> int:
     tool_count = 0
     start_time = time.time()
 
-    # Use shell=True on Windows so "agent" resolves like in cmd (agent.cmd/agent.exe in PATH)
-    cmd_args = [
-        "agent",
-        "-p",
-        "--force",
-        "--output-format",
-        "stream-json",
-        "--stream-partial-output",
-        prompt,
-    ]
+    # Use shell=True on Windows so .cmd/.exe commands resolve via PATH.
+    cmd_args = build_agent_command(prompt)
     cmd_str = subprocess.list2cmdline(cmd_args)
     proc = subprocess.Popen(
         cmd_str,
