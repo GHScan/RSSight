@@ -45,6 +45,43 @@ scripts/start.sh
 
 Both backend (port 8173 default) and frontend (port 5173 default) must be running. The frontend proxies `/api` to the backend.
 
+### Manual start (without scripts)
+
+If you prefer to start backend and frontend manually in separate terminals:
+
+**Windows (two separate terminals):**
+
+Terminal 1 (backend):
+```bat
+cd backend
+.venv\Scripts\activate.bat
+set WEBRSS_DEBUG=1
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8173
+```
+
+Terminal 2 (frontend):
+```bat
+cd frontend
+set BACKEND_PORT=8173
+set FRONTEND_PORT=5173
+npm run dev -- --port 5173 --host
+```
+
+**macOS/Linux (two separate terminals):**
+
+Terminal 1 (backend):
+```bash
+cd backend
+source .venv/bin/activate
+WEBRSS_DEBUG=1 uvicorn app.main:app --reload --host 0.0.0.0 --port 8173
+```
+
+Terminal 2 (frontend):
+```bash
+cd frontend
+BACKEND_PORT=8173 FRONTEND_PORT=5173 npm run dev -- --port 5173 --host
+```
+
 ## Debugging
 
 To get tracebacks in API error responses (500), set `WEBRSS_DEBUG=1` before starting the backend.

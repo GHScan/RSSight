@@ -49,7 +49,7 @@
         "Manual start instructions (without scripts) included for both platforms.",
         "venv activation syntax shown for both Windows and Unix."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "L004",
