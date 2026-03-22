@@ -17,6 +17,73 @@
         "Relevant frontend tests are updated or added, and pass."
       ],
       "passes": true
+    },
+    {
+      "id": "S070",
+      "priority": 35,
+      "title": "Implement data-repo sync service for pull/rebase and push",
+      "description": "Add a backend service that performs one data repository sync cycle in the data directory (including symlink target): detect repository, pull remote changes with rebase, and push local updates to remote when local changes exist.",
+      "acceptanceCriteria": [
+        "A dedicated backend service encapsulates git sync logic for the data directory.",
+        "The service resolves data directory symlink targets before running git commands.",
+        "Sync flow includes pull with rebase from the tracking remote branch.",
+        "If local working tree changes exist, the flow stages, commits, and pushes to remote.",
+        "Failures are logged with actionable error messages and do not crash the process."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S071",
+      "priority": 36,
+      "title": "Run data-repo sync once at backend startup",
+      "description": "Integrate the data sync service into FastAPI app startup so one sync cycle is executed during startup lifecycle before normal background jobs continue.",
+      "acceptanceCriteria": [
+        "Backend startup lifecycle triggers one data sync cycle.",
+        "Startup sync invocation is wired in the existing FastAPI lifespan flow.",
+        "Startup remains resilient when sync fails (error logged, app still starts unless explicitly configured otherwise).",
+        "Relevant startup/lifecycle tests are added or updated and pass."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S072",
+      "priority": 37,
+      "title": "Schedule recurring data-repo sync every 30 minutes",
+      "description": "Add recurring scheduling for the same data sync logic at a 30-minute interval and ensure lifecycle-safe start/stop behavior.",
+      "acceptanceCriteria": [
+        "A recurring scheduler runs data sync every 30 minutes.",
+        "The scheduler starts during app startup and stops cleanly on shutdown.",
+        "The recurring job reuses the same sync service logic as startup sync.",
+        "Exceptions in scheduled runs are handled and logged without terminating future cycles.",
+        "Relevant scheduler tests are added or updated and pass."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S073",
+      "priority": 38,
+      "title": "Add test coverage for data sync edge cases",
+      "description": "Add focused backend tests for data sync behavior covering non-repository paths, symlink paths, clean/dirty working trees, and pull/rebase conflict or command failure scenarios.",
+      "acceptanceCriteria": [
+        "At least one happy-path test validates successful sync flow.",
+        "Boundary/exception tests cover non-git data directory and command failure handling.",
+        "Regression test covers a previously identified failure mode in sync orchestration.",
+        "Tests isolate git command execution via mocks or stubs and pass in CI."
+      ],
+      "passes": false
+    },
+    {
+      "id": "S074",
+      "priority": 39,
+      "title": "Document data repository sync behavior and operations",
+      "description": "Update project documentation for the data git synchronization mechanism, including prerequisites, trigger timings (startup + 30-minute cycle), and operational troubleshooting.",
+      "acceptanceCriteria": [
+        "README and/or developer guide documents the data sync mechanism and prerequisites.",
+        "Documentation explains startup trigger and 30-minute recurring trigger clearly.",
+        "Documentation includes failure-handling and troubleshooting notes for git auth/conflicts.",
+        "Docs are consistent with implemented behavior and reviewed for accuracy."
+      ],
+      "passes": false
     }
   ]
 }
