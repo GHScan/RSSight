@@ -2,6 +2,7 @@
 
 > **AI-powered RSS reader**: summarization and translation for your feeds. Plug in any OpenAI-compatible AI (OpenAI, Azure, local models, etc.), use multiple profiles at once, and run on Windows, macOS, or Linux.
 
+[![CI](https://github.com/GHScan/RSSight/actions/workflows/ci.yml/badge.svg)](https://github.com/GHScan/RSSight/actions/workflows/ci.yml)
 [![Python 3.12+](https://img.shields.io/badge/python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Node 20+](https://img.shields.io/badge/node-20+-green.svg)](https://nodejs.org/)
 
