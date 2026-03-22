@@ -115,6 +115,51 @@ sudo useradd -r -s /bin/false rssight
 sudo chown -R rssight:rssight /opt/rssight
 ```
 
+### Optional: Enable data repository sync
+
+RSSight can automatically sync `data/` with a git remote for backup and multi-instance synchronization.
+
+**Prerequisites for the `rssight` user:**
+
+```bash
+# Create SSH directory for rssight user
+sudo mkdir -p /var/lib/rssight/.ssh
+sudo chown rssight:rssight /var/lib/rssight/.ssh
+sudo chmod 700 /var/lib/rssight/.ssh
+
+# Add SSH key for git authentication
+sudo tee /var/lib/rssight/.ssh/id_ed25519 <<EOF
+-----BEGIN OPENSSH PRIVATE KEY-----
+... your private key content ...
+-----END OPENSSH PRIVATE KEY-----
+EOF
+sudo chown rssight:rssight /var/lib/rssight/.ssh/id_ed25519
+sudo chmod 600 /var/lib/rssight/.ssh/id_ed25519
+
+# Add known hosts for git server
+sudo -u rssight ssh-keyscan github.com >> /var/lib/rssight/.ssh/known_hosts 2>/dev/null
+```
+
+**Initialize data repository:**
+
+```bash
+# As the rssight user
+sudo -u rssight git -C /opt/rssight/data init
+sudo -u rssight git -C /opt/rssight/data remote add origin git@github.com:your-org/rssight-data.git
+
+# Initial commit and push
+sudo -u rssight git -C /opt/rssight/data add -A
+sudo -u rssight git -C /opt/rssight/data commit -m "Initial data"
+sudo -u rssight git -C /opt/rssight/data push -u origin HEAD
+```
+
+**Sync behavior:**
+- Sync runs once at backend startup
+- Sync runs every 30 minutes thereafter
+- Failures are logged but don't crash the application
+
+See [developer-guide.md](developer-guide.md) for detailed sync configuration and troubleshooting.
+
 ## Step 4: Install systemd service files
 
 RSSight provides ready-to-use systemd unit files in `scripts/systemd/`.

@@ -106,6 +106,35 @@ npm run dev -- --port 5173 --host
 - Deleting a feed removes its full data subtree.
 - Deleting or renaming a summary profile removes all summaries and metadata for that profile across feeds.
 
+### Data repository sync
+
+If the `data/` directory (or its symlink target) is a git repository with a configured `origin` remote, RSSight automatically syncs with the remote:
+
+- **Startup sync**: One sync cycle runs when the backend starts, before normal background jobs.
+- **Recurring sync**: Every 30 minutes, the backend syncs with the remote.
+
+**Sync flow:**
+1. Resolve symlink target if `data/` is a symlink
+2. Pull with rebase from `origin`
+3. If local changes exist, stage all, commit, and push
+
+**Prerequisites for data sync:**
+- `data/` must be a git repository (or a symlink to one)
+- Remote `origin` must be configured with appropriate URL
+- Git credentials must be configured for non-interactive authentication (SSH key or credential helper)
+
+**Troubleshooting:**
+
+| Symptom | Likely cause | Solution |
+|---------|--------------|----------|
+| "Not a git repository" | `data/` is not a git repo | Run `git init` in `data/` (optional; sync skips silently if not a repo) |
+| "No remote 'origin' configured" | Missing remote | Run `git remote add origin <url>` in `data/` |
+| "Pull/rebase failed" | Auth failure or conflict | Check git credentials; resolve conflicts manually in `data/` |
+| "Push failed" | No push access or diverged | Check credentials; try `git pull --rebase` manually first |
+| Changes not syncing | Silent failure | Check backend logs for sync errors |
+
+Sync failures are logged but do not crash the application. The backend continues running even if sync fails.
+
 ## Documentation
 
 | Topic | Doc |
