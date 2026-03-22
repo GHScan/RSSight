@@ -30,7 +30,7 @@
         "If local working tree changes exist, the flow stages, commits, and pushes to remote.",
         "Failures are logged with actionable error messages and do not crash the process."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S071",
