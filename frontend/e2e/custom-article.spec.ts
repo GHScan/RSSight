@@ -5,6 +5,8 @@
  */
 
 import { test, expect } from "@playwright/test";
+import type { Route } from "@playwright/test";
+import { mockReadLaterApi } from "./helpers/api-mocks";
 
 const baseFeeds = [
   { id: "f1", title: "Feed One", url: "https://example.com/one.xml", feed_type: "rss" as const },
@@ -20,7 +22,46 @@ function parseFeedsPath(url: string): { isList: boolean; feedId: string | null; 
   return { isList, feedId, isArticles };
 }
 
+async function fulfillFeedsFallback(route: Route): Promise<void> {
+  const url = route.request().url();
+  const method = route.request().method();
+  const pathname = new URL(url).pathname.replace(/\/$/, "") || "/";
+  if (pathname === "/api/feeds/extract-url" && method === "POST") {
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ title: "Fetched Title", description: null, published_at: null }),
+    });
+  }
+  if (pathname.match(/^\/api\/feeds\/[^/]+\/refresh$/) && method === "POST") {
+    return route.fulfill({ status: 204 });
+  }
+  const detail = pathname.match(/^\/api\/feeds\/([^/]+)\/articles\/([^/]+)$/);
+  if (detail && !pathname.includes("/summaries") && method === "GET") {
+    return route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        id: detail[2],
+        title: "Article",
+        link: "https://example.com/a",
+        published: "2025-03-01T10:00:00Z",
+        description: "Body",
+      }),
+    });
+  }
+  return route.fulfill({
+    status: 404,
+    contentType: "application/json",
+    body: JSON.stringify({ message: "unmocked feeds path", path: pathname }),
+  });
+}
+
 test.describe("Custom article create flow E2E (S035)", () => {
+  test.beforeEach(async ({ page }) => {
+    await mockReadLaterApi(page);
+  });
+
   test("Happy path: create virtual feed and open its article list", async ({ page }) => {
     const feeds = [...baseFeeds];
     await page.route("**/api/feeds**", async (route) => {
@@ -71,7 +112,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
           body: JSON.stringify(newFeed),
         });
       }
-      return route.continue();
+      return fulfillFeedsFallback(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
@@ -88,7 +129,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
 
     await page.getByRole("link", { name: "My Favorites" }).click();
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /添加文章/ })).toBeVisible();
+    await expect(page.getByTestId("add-custom-article-toggle")).toBeVisible();
     await expect(page.getByText(/暂无文章/)).toBeVisible();
   });
 
@@ -143,18 +184,20 @@ test.describe("Custom article create flow E2E (S035)", () => {
           body: JSON.stringify(created),
         });
       }
-      return route.continue();
+      return fulfillFeedsFallback(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
     });
 
     await page.goto("/feeds/v1/articles");
-    await expect(page.getByRole("button", { name: /添加文章/ })).toBeVisible();
-    await page.getByRole("button", { name: /添加文章/ }).click();
+    await expect(page.getByTestId("add-custom-article-toggle")).toBeVisible();
+    await page.getByTestId("add-custom-article-toggle").click();
     await expect(page.getByLabel(/链接 \(URL\)/)).toBeVisible();
     await page.getByPlaceholder("https://...").fill("https://example.com/page");
     await page.getByRole("button", { name: "提交" }).click();
+    await expect(page.getByText(/已从链接填充|请确认后再次点击/)).toBeVisible();
+    await page.getByRole("button", { name: "确认创建" }).click();
 
     await expect(page.getByText("创建成功")).toBeVisible();
     await expect(page.getByText("Fetched Title")).toBeVisible();
@@ -168,6 +211,14 @@ test.describe("Custom article create flow E2E (S035)", () => {
     await page.route("**/api/feeds**", async (route) => {
       const method = route.request().method();
       const url = route.request().url();
+      const pathname = new URL(url).pathname.replace(/\/$/, "") || "/";
+      if (method === "POST" && pathname === "/api/feeds/extract-url") {
+        return route.fulfill({
+          status: 400,
+          contentType: "application/json",
+          body: JSON.stringify({ message: "Could not fetch or parse URL for autofill." }),
+        });
+      }
       const { isList, feedId, isArticles } = parseFeedsPath(url);
       if (method === "GET") {
         if (isList) {
@@ -202,14 +253,14 @@ test.describe("Custom article create flow E2E (S035)", () => {
           body: JSON.stringify({ message: "Could not fetch or parse URL for autofill." }),
         });
       }
-      return route.continue();
+      return fulfillFeedsFallback(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
     });
 
     await page.goto("/feeds/v1/articles");
-    await page.getByRole("button", { name: /添加文章/ }).click();
+    await page.getByTestId("add-custom-article-toggle").click();
     await page.getByPlaceholder("https://...").fill("https://bad.example/");
     await page.getByRole("button", { name: "提交" }).click();
 
@@ -269,14 +320,14 @@ test.describe("Custom article create flow E2E (S035)", () => {
           body: JSON.stringify(created),
         });
       }
-      return route.continue();
+      return fulfillFeedsFallback(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
     });
 
     await page.goto("/feeds/v1/articles");
-    await page.getByRole("button", { name: /添加文章/ }).click();
+    await page.getByTestId("add-custom-article-toggle").click();
     await page.getByLabel(/标题/).fill("My Note");
     await page.getByLabel(/内容/).fill("Some content");
     await page.getByRole("button", { name: "提交" }).click();
@@ -324,14 +375,14 @@ test.describe("Custom article create flow E2E (S035)", () => {
           });
         }
       }
-      return route.continue();
+      return fulfillFeedsFallback(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
     });
 
     await page.goto("/feeds/v1/articles");
-    await page.getByRole("button", { name: /添加文章/ }).click();
+    await page.getByTestId("add-custom-article-toggle").click();
     await page.getByLabel(/内容/).fill("Only content");
     await page.getByRole("button", { name: "提交" }).click();
 
@@ -374,7 +425,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
           });
         }
       }
-      return route.continue();
+      return fulfillFeedsFallback(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
@@ -383,7 +434,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
     await page.goto("/feeds/f1/articles");
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
     await expect(page.getByText("RSS Article")).toBeVisible();
-    await expect(page.getByRole("button", { name: /添加文章/ })).not.toBeVisible();
+    await expect(page.getByTestId("add-custom-article-toggle")).not.toBeVisible();
   });
 
   test("Regression: feed management and RSS list navigation still work after custom-article flow", async ({
@@ -427,7 +478,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
           });
         }
       }
-      return route.continue();
+      return fulfillFeedsFallback(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
@@ -439,7 +490,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
     await page.getByRole("link", { name: "Feed One" }).click();
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
     await expect(page.getByText("RSS One")).toBeVisible();
-    await expect(page.getByRole("button", { name: /添加文章/ })).not.toBeVisible();
+    await expect(page.getByTestId("add-custom-article-toggle")).not.toBeVisible();
     await page.getByRole("link", { name: /返回RSS 订阅/ }).click();
     await expect(page.getByRole("button", { name: "添加 Feed" })).toBeVisible();
   });
@@ -492,7 +543,7 @@ test.describe("Custom article create flow E2E (S035)", () => {
           });
         }
       }
-      return route.continue();
+      return fulfillFeedsFallback(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       await route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
@@ -504,6 +555,8 @@ test.describe("Custom article create flow E2E (S035)", () => {
     await expect(page.getByRole("button", { name: "删除" })).toBeVisible();
 
     await page.getByTestId("delete-article-del1").click();
+    await expect(page.getByRole("dialog")).toBeVisible();
+    await page.getByRole("button", { name: "确认" }).click();
     await expect(page.getByText("已删除")).toBeVisible();
     await expect(page.getByText("To Delete")).not.toBeVisible();
     await expect(page.getByText(/暂无文章/)).toBeVisible();

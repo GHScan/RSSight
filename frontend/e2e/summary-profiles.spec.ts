@@ -4,12 +4,14 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { fulfillUnmockedApi, mockReadLaterApi } from "./helpers/api-mocks";
 
 test.describe("Summary profile E2E (S015)", () => {
   test.beforeEach(async ({ page }) => {
+    await mockReadLaterApi(page);
     await page.route("**/api/feeds**", async (route) => {
       if (route.request().method() === "GET") return route.fulfill({ status: 200, contentType: "application/json", body: "[]" });
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       const method = route.request().method();
@@ -41,7 +43,7 @@ test.describe("Summary profile E2E (S015)", () => {
       if (method === "DELETE") {
         return route.fulfill({ status: 204 });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
   });
 
@@ -66,7 +68,7 @@ test.describe("Summary profile E2E (S015)", () => {
         profiles.push({ ...body, name: body.name ?? "new" });
         return route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify(profiles[profiles.length - 1]) });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
 
     await page.goto("/profiles");
@@ -97,7 +99,7 @@ test.describe("Summary profile E2E (S015)", () => {
       if (route.request().method() === "POST") {
         return route.fulfill({ status: 409, contentType: "application/json", body: JSON.stringify({ message: "Profile name already exists" }) });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.goto("/profiles");
     await page.getByRole("button", { name: /添加/ }).click();

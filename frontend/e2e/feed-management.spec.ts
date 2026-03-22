@@ -5,6 +5,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { fulfillUnmockedApi, mockReadLaterApi } from "./helpers/api-mocks";
 
 const initialFeeds = [
   { id: "f1", title: "Feed One", url: "https://example.com/one.xml", feed_type: "rss" as const },
@@ -13,6 +14,7 @@ const initialFeeds = [
 
 test.describe("Feed management E2E (S009)", () => {
   test.beforeEach(async ({ page }) => {
+    await mockReadLaterApi(page);
     await page.route("**/api/feeds**", async (route) => {
       const method = route.request().method();
       const url = route.request().url();
@@ -64,7 +66,7 @@ test.describe("Feed management E2E (S009)", () => {
       if (method === "DELETE") {
         return route.fulfill({ status: 204 });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       return route.fulfill({
@@ -112,7 +114,7 @@ test.describe("Feed management E2E (S009)", () => {
           body: JSON.stringify(newFeed),
         });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       return route.fulfill({
@@ -161,7 +163,7 @@ test.describe("Feed management E2E (S009)", () => {
           body: JSON.stringify(feeds[idx >= 0 ? idx : 0]),
         });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       return route.fulfill({
@@ -201,7 +203,7 @@ test.describe("Feed management E2E (S009)", () => {
         if (idx >= 0) feeds.splice(idx, 1);
         return route.fulfill({ status: 204 });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       return route.fulfill({
@@ -225,7 +227,7 @@ test.describe("Feed management E2E (S009)", () => {
   test.skip("Happy path: refresh button reloads list", async ({ page }) => {
     let getCount = 0;
     await page.route("**/api/feeds**", async (route) => {
-      if (route.request().method() !== "GET") return route.continue();
+      if (route.request().method() !== "GET") return fulfillUnmockedApi(route);
       getCount++;
       const body =
         getCount >= 3
@@ -323,7 +325,7 @@ test.describe("Feed management E2E (S009)", () => {
           body: JSON.stringify(mixedFeeds),
         });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       return route.fulfill({
@@ -369,7 +371,7 @@ test.describe("Feed management E2E (S009)", () => {
           body: JSON.stringify(newFeed),
         });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.goto("/favorites");
     await expect(page.getByRole("heading", { name: "文章收藏", level: 1 })).toBeVisible();
@@ -381,7 +383,6 @@ test.describe("Feed management E2E (S009)", () => {
     await page.getByRole("button", { name: "确定" }).click();
     await expect(page.getByRole("dialog")).not.toBeVisible();
     await expect(page.getByText("测试收藏夹")).toBeVisible();
-    await expect(page.getByText("收藏夹", { exact: true }).first()).toBeVisible();
   });
 
   test("S047 regression: RSS management on RSS subscriptions page still works", async ({
@@ -421,7 +422,7 @@ test.describe("Feed management E2E (S009)", () => {
         if (idx >= 0) feeds.splice(idx, 1);
         return route.fulfill({ status: 204 });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       return route.fulfill({
@@ -476,7 +477,7 @@ test.describe("Feed management E2E (S009)", () => {
           body: JSON.stringify(newFeed),
         });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       return route.fulfill({

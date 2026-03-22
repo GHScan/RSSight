@@ -5,6 +5,7 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { mockReadLaterApi } from "./helpers/api-mocks";
 
 const mockFeeds = [
   { id: "f1", title: "Feed One", url: "https://example.com/one.xml" },
@@ -16,26 +17,61 @@ const mockArticles = [
   { id: "a1", title: "Article First", link: "https://example.com/1", published: "2025-03-01T10:00:00Z" },
 ];
 
+function apiPath(url: string): string {
+  const p = new URL(url).pathname;
+  return p.endsWith("/") && p.length > 1 ? p.slice(0, -1) : p;
+}
+
 test.describe("Article list E2E (S011)", () => {
   test.beforeEach(async ({ page }) => {
+    await mockReadLaterApi(page);
     await page.route("**/api/feeds**", async (route) => {
       const url = route.request().url();
       const method = route.request().method();
-      if (method === "GET" && !url.includes("/articles")) {
+      const p = apiPath(url);
+      if (p.endsWith("/refresh") && method === "POST") {
+        return route.fulfill({ status: 204 });
+      }
+      if (p === "/api/feeds" && method === "GET") {
         return route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify(mockFeeds),
+          body: JSON.stringify(mockFeeds.map((f) => ({ ...f, feed_type: "rss" as const }))),
         });
       }
-      if (method === "GET" && url.includes("/articles")) {
+      const feedOnly = p.match(/^\/api\/feeds\/([^/]+)$/);
+      if (feedOnly && method === "GET") {
+        const base = mockFeeds.find((x) => x.id === feedOnly[1]);
+        if (base) {
+          return route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ ...base, feed_type: "rss" as const }),
+          });
+        }
+      }
+      const articlesList = p.match(/^\/api\/feeds\/([^/]+)\/articles$/);
+      if (articlesList && method === "GET") {
         return route.fulfill({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify(mockArticles),
         });
       }
-      return route.continue();
+      const articleDetail = p.match(/^\/api\/feeds\/([^/]+)\/articles\/([^/]+)$/);
+      if (articleDetail && method === "GET" && !p.includes("/summaries")) {
+        const row = mockArticles.find((a) => a.id === articleDetail[2]) ?? mockArticles[0];
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ ...row, description: "Desc" }),
+        });
+      }
+      return route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "unmocked", path: p }),
+      });
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       return route.fulfill({
@@ -74,21 +110,50 @@ test.describe("Article list E2E (S011)", () => {
     await page.route("**/api/feeds/**", async (route) => {
       const reqUrl = route.request().url();
       const method = route.request().method();
-      if (method === "GET" && !reqUrl.includes("/articles")) {
+      const p = apiPath(reqUrl);
+      if (p.endsWith("/refresh") && method === "POST") {
+        return route.fulfill({ status: 204 });
+      }
+      if (p === "/api/feeds" && method === "GET") {
         return route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify(mockFeeds),
+          body: JSON.stringify(mockFeeds.map((f) => ({ ...f, feed_type: "rss" as const }))),
         });
       }
-      if (method === "GET" && reqUrl.includes("/articles")) {
+      const feedOnly = p.match(/^\/api\/feeds\/([^/]+)$/);
+      if (feedOnly && method === "GET") {
+        const base = mockFeeds.find((x) => x.id === feedOnly[1]);
+        if (base) {
+          return route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ ...base, feed_type: "rss" as const }),
+          });
+        }
+      }
+      const articlesList = p.match(/^\/api\/feeds\/([^/]+)\/articles$/);
+      if (articlesList && method === "GET") {
         return route.fulfill({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify(articles),
         });
       }
-      return route.continue();
+      const articleDetail = p.match(/^\/api\/feeds\/([^/]+)\/articles\/([^/]+)$/);
+      if (articleDetail && method === "GET" && !p.includes("/summaries")) {
+        const row = articles.find((a) => a.id === articleDetail[2]) ?? articles[0];
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({ ...row, description: "Desc" }),
+        });
+      }
+      return route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "unmocked", path: p }),
+      });
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       return route.fulfill({
@@ -119,21 +184,55 @@ test.describe("Article list E2E (S011)", () => {
     await page.route("**/api/feeds/**", async (route) => {
       const reqUrl = route.request().url();
       const method = route.request().method();
-      if (method === "GET" && !reqUrl.includes("/articles")) {
+      const p = apiPath(reqUrl);
+      if (p.endsWith("/refresh") && method === "POST") {
+        return route.fulfill({ status: 204 });
+      }
+      if (p === "/api/feeds" && method === "GET") {
         return route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify(mockFeeds),
+          body: JSON.stringify(mockFeeds.map((f) => ({ ...f, feed_type: "rss" as const }))),
         });
       }
-      if (method === "GET" && reqUrl.includes("/articles")) {
+      const feedOnly = p.match(/^\/api\/feeds\/([^/]+)$/);
+      if (feedOnly && method === "GET") {
+        const base = mockFeeds.find((x) => x.id === feedOnly[1]);
+        if (base) {
+          return route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify({ ...base, feed_type: "rss" as const }),
+          });
+        }
+      }
+      const articlesList = p.match(/^\/api\/feeds\/([^/]+)\/articles$/);
+      if (articlesList && method === "GET") {
         return route.fulfill({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify([]),
         });
       }
-      return route.continue();
+      const articleDetail = p.match(/^\/api\/feeds\/([^/]+)\/articles\/([^/]+)$/);
+      if (articleDetail && method === "GET" && !p.includes("/summaries")) {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            id: articleDetail[2],
+            title: "T",
+            link: "https://example.com",
+            published: "2025-03-01T10:00:00Z",
+            description: "Desc",
+          }),
+        });
+      }
+      return route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "unmocked", path: p }),
+      });
     });
 
     await page.goto("/feeds/f1/articles");
@@ -146,7 +245,9 @@ test.describe("Article list E2E (S011)", () => {
   }) => {
     let getArticlesCount = 0;
     await page.route("**/api/feeds/f1/articles**", async (route) => {
-      if (route.request().method() !== "GET") return route.continue();
+      if (route.request().method() !== "GET") {
+        return route.fulfill({ status: 404, body: "{}" });
+      }
       getArticlesCount++;
       if (getArticlesCount <= 2) {
         return route.fulfill({
@@ -196,31 +297,58 @@ test.describe("Article list E2E (S011)", () => {
       { id: "f1", title: "Feed One", url: "https://example.com/one.xml", feed_type: "rss" as const },
       { id: "v1", title: "My Favorites", url: null, feed_type: "virtual" as const },
     ];
+    await page.unroute("**/api/feeds**");
+    await page.unroute("**/api/feeds/**");
+    await page.unroute("**/api/summary-profiles**");
     await page.route("**/api/feeds**", async (route) => {
       const url = route.request().url();
       const method = route.request().method();
-      if (method === "GET" && !url.includes("/articles")) {
+      const p = apiPath(url);
+      if (p.endsWith("/refresh") && method === "POST") {
+        return route.fulfill({ status: 204 });
+      }
+      if (p === "/api/feeds" && method === "GET") {
         return route.fulfill({
           status: 200,
           contentType: "application/json",
           body: JSON.stringify(feedsWithVirtual),
         });
       }
-      if (method === "GET" && url.includes("/feeds/v1/articles")) {
+      const feedOnly = p.match(/^\/api\/feeds\/([^/]+)$/);
+      if (feedOnly && method === "GET") {
+        const row = feedsWithVirtual.find((f) => f.id === feedOnly[1]);
+        if (row) {
+          return route.fulfill({
+            status: 200,
+            contentType: "application/json",
+            body: JSON.stringify(row),
+          });
+        }
+      }
+      const articlesList = p.match(/^\/api\/feeds\/([^/]+)\/articles$/);
+      if (articlesList && method === "GET") {
+        const fid = articlesList[1];
+        const body = fid === "v1" ? [] : mockArticles;
         return route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify([]),
+          body: JSON.stringify(body),
         });
       }
-      if (method === "GET" && url.includes("/articles")) {
+      const articleDetail = p.match(/^\/api\/feeds\/([^/]+)\/articles\/([^/]+)$/);
+      if (articleDetail && method === "GET" && !p.includes("/summaries")) {
+        const row = mockArticles.find((a) => a.id === articleDetail[2]) ?? mockArticles[0];
         return route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify(mockArticles),
+          body: JSON.stringify({ ...row, description: "Desc" }),
         });
       }
-      return route.continue();
+      return route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "unmocked", path: p }),
+      });
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       return route.fulfill({
@@ -230,12 +358,12 @@ test.describe("Article list E2E (S011)", () => {
       });
     });
 
-    await page.goto("/feeds");
+    await page.goto("/favorites");
     await expect(page.getByRole("link", { name: "My Favorites" })).toBeVisible();
     await page.getByRole("link", { name: "My Favorites" }).click();
     await expect(page.getByRole("heading", { name: /文章列表/ })).toBeVisible();
     await expect(page.getByText(/暂无文章/)).toBeVisible();
-    await expect(page.getByRole("link", { name: /返回RSS 订阅/ })).toBeVisible();
+    await expect(page.getByRole("link", { name: /返回文章收藏/ })).toBeVisible();
   });
 
   test("S026: virtual feed article list error state shows retry", async ({
@@ -244,23 +372,39 @@ test.describe("Article list E2E (S011)", () => {
     await page.route("**/api/feeds/**", async (route) => {
       const reqUrl = route.request().url();
       const method = route.request().method();
-      if (method === "GET" && !reqUrl.includes("/articles")) {
+      const p = apiPath(reqUrl);
+      const virtualFeed = { id: "v1", title: "Virtual", url: null, feed_type: "virtual" as const };
+      if (p.endsWith("/refresh") && method === "POST") {
+        return route.fulfill({ status: 204 });
+      }
+      if (p === "/api/feeds" && method === "GET") {
         return route.fulfill({
           status: 200,
           contentType: "application/json",
-          body: JSON.stringify([
-            { id: "v1", title: "Virtual", url: null, feed_type: "virtual" },
-          ]),
+          body: JSON.stringify([virtualFeed]),
         });
       }
-      if (method === "GET" && reqUrl.includes("/feeds/v1/articles")) {
+      const feedOnly = p.match(/^\/api\/feeds\/([^/]+)$/);
+      if (feedOnly && method === "GET") {
+        return route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(virtualFeed),
+        });
+      }
+      const articlesList = p.match(/^\/api\/feeds\/([^/]+)\/articles$/);
+      if (articlesList && method === "GET") {
         return route.fulfill({
           status: 500,
           contentType: "application/json",
           body: JSON.stringify({ message: "Server error" }),
         });
       }
-      return route.continue();
+      return route.fulfill({
+        status: 404,
+        contentType: "application/json",
+        body: JSON.stringify({ message: "unmocked", path: p }),
+      });
     });
     await page.route("**/api/summary-profiles**", async (route) => {
       return route.fulfill({

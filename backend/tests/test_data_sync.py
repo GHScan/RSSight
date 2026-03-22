@@ -146,7 +146,9 @@ class TestDataRepoSyncService:
         assert not result.success
         assert "no remote" in result.message.lower() or "remote" in result.message.lower()
 
-    def test_sync_with_local_changes_commits_before_pull_and_pushes_after(self, tmp_path: Path) -> None:
+    def test_sync_with_local_changes_commits_before_pull_and_pushes_after(
+        self, tmp_path: Path
+    ) -> None:
         """
         Working tree has local changes.
         Sync should stage+commit first, then pull --rebase, then push.

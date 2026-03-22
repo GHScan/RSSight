@@ -5,12 +5,14 @@
  */
 
 import { test, expect } from "@playwright/test";
+import { fulfillUnmockedApi, mockReadLaterApi } from "./helpers/api-mocks";
 
 const DESKTOP_VIEWPORT = { width: 1280, height: 720 };
 const MOBILE_VIEWPORT = { width: 375, height: 667 };
 
 test.describe("Visual regression (S018)", () => {
   test.beforeEach(async ({ page }) => {
+    await mockReadLaterApi(page);
     await page.setViewportSize(DESKTOP_VIEWPORT);
     await page.route("**/api/summary-profiles**", (route) =>
       route.fulfill({
@@ -36,7 +38,7 @@ test.describe("Visual regression (S018)", () => {
           body: JSON.stringify([]),
         });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.goto("/feeds");
     await expect(page.locator("main")).toBeVisible();
@@ -54,7 +56,7 @@ test.describe("Visual regression (S018)", () => {
           ]),
         });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.goto("/feeds");
     await expect(page.locator("main")).toBeVisible();
@@ -66,7 +68,7 @@ test.describe("Visual regression (S018)", () => {
       if (route.request().method() === "GET") {
         return route.fulfill({ status: 500, body: "Server error" });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.goto("/feeds");
     await expect(page.locator("main")).toBeVisible();
@@ -82,6 +84,7 @@ test.describe("Visual regression (S018)", () => {
 
 test.describe("Visual regression narrow viewport (S018)", () => {
   test.beforeEach(async ({ page }) => {
+    await mockReadLaterApi(page);
     await page.setViewportSize(MOBILE_VIEWPORT);
     await page.route("**/api/summary-profiles**", (route) =>
       route.fulfill({
@@ -107,7 +110,7 @@ test.describe("Visual regression narrow viewport (S018)", () => {
           body: JSON.stringify([]),
         });
       }
-      return route.continue();
+      return fulfillUnmockedApi(route);
     });
     await page.goto("/feeds");
     await expect(page.locator("main")).toBeVisible();
