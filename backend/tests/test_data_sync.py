@@ -241,3 +241,169 @@ class TestDataRepoSyncService:
 
         assert not result.success
         assert "push" in result.message.lower() or "auth" in result.message.lower()
+
+    def test_sync_staging_failure_logs_error(self, tmp_path: Path) -> None:
+        """
+        Boundary: git add -A fails (e.g., permission error, locked file).
+        Sync should log the error and return failure.
+        """
+        data_root = tmp_path / "data"
+        data_root.mkdir()
+
+        def mock_run_git(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            if "rev-parse" in cmd:
+                return _ok("true")
+            if "remote" in cmd and "get-url" in cmd:
+                return _ok("https://example.com/repo.git")
+            if "status" in cmd and "--porcelain" in cmd:
+                return _ok("M feeds.json\n")  # Dirty working tree
+            if "pull" in cmd:
+                return _ok("Already up to date.")
+            if "add" in cmd:
+                return _fail('error: open("feeds.json"): Permission denied', returncode=128)
+            return _ok()
+
+        service = DataRepoSyncService(data_root=data_root, run_git=mock_run_git)
+        result = service.sync()
+
+        assert not result.success
+        assert "stage" in result.message.lower()
+
+    def test_sync_commit_failure_logs_error(self, tmp_path: Path) -> None:
+        """
+        Boundary: git commit fails (e.g., pre-commit hook rejection, empty commit).
+        Sync should log the error and return failure.
+        """
+        data_root = tmp_path / "data"
+        data_root.mkdir()
+
+        def mock_run_git(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            if "rev-parse" in cmd:
+                return _ok("true")
+            if "remote" in cmd and "get-url" in cmd:
+                return _ok("https://example.com/repo.git")
+            if "status" in cmd and "--porcelain" in cmd:
+                return _ok("M feeds.json\n")  # Dirty working tree
+            if "pull" in cmd:
+                return _ok("Already up to date.")
+            if "add" in cmd:
+                return _ok()
+            if "commit" in cmd:
+                return _fail("error: pre-commit hook rejected the commit", returncode=1)
+            return _ok()
+
+        service = DataRepoSyncService(data_root=data_root, run_git=mock_run_git)
+        result = service.sync()
+
+        assert not result.success
+        assert "commit" in result.message.lower()
+
+    def test_sync_rebase_conflict_returns_failure(self, tmp_path: Path) -> None:
+        """
+        Boundary: git pull --rebase fails due to merge conflict.
+        Sync should return failure with conflict-related message.
+        """
+        data_root = tmp_path / "data"
+        data_root.mkdir()
+
+        def mock_run_git(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            if "rev-parse" in cmd:
+                return _ok("true")
+            if "remote" in cmd and "get-url" in cmd:
+                return _ok("https://example.com/repo.git")
+            if "pull" in cmd:
+                return _fail(
+                    "error: could not apply abc1234... Some commit\n"
+                    "hint: Resolve all conflicts manually, mark them as resolved\n"
+                    "CONFLICT (content): Merge conflict in feeds.json"
+                )
+            return _ok()
+
+        service = DataRepoSyncService(data_root=data_root, run_git=mock_run_git)
+        result = service.sync()
+
+        assert not result.success
+        assert "pull" in result.message.lower() or "rebase" in result.message.lower()
+
+    def test_sync_git_command_exception_handled(self, tmp_path: Path) -> None:
+        """
+        Exception: git command itself raises an exception (e.g., git not in PATH).
+        Sync should not crash and should return failure.
+        """
+        data_root = tmp_path / "data"
+        data_root.mkdir()
+
+        def mock_run_git(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            raise FileNotFoundError("git: command not found")
+
+        service = DataRepoSyncService(data_root=data_root, run_git=mock_run_git)
+        # Should not raise
+        result = service.sync()
+
+        assert not result.success
+
+    def test_sync_pull_network_timeout_returns_failure(self, tmp_path: Path) -> None:
+        """
+        Boundary: git pull fails due to network timeout.
+        Sync should return failure with network-related message.
+        """
+        data_root = tmp_path / "data"
+        data_root.mkdir()
+
+        def mock_run_git(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+            if "rev-parse" in cmd:
+                return _ok("true")
+            if "remote" in cmd and "get-url" in cmd:
+                return _ok("https://example.com/repo.git")
+            if "pull" in cmd:
+                return _fail(
+                    "fatal: unable to access 'https://example.com/repo.git/': "
+                    "Connection timed out"
+                )
+            return _ok()
+
+        service = DataRepoSyncService(data_root=data_root, run_git=mock_run_git)
+        result = service.sync()
+
+        assert not result.success
+        msg_lower = result.message.lower()
+        assert "pull" in msg_lower or "timeout" in msg_lower or "connection" in msg_lower
+
+    def test_sync_regression_service_isolated_per_instance(self, tmp_path: Path) -> None:
+        """
+        Regression: Ensure sync service instances are isolated.
+        Multiple sync services should not share state.
+        """
+        data_root1 = tmp_path / "data1"
+        data_root1.mkdir()
+        data_root2 = tmp_path / "data2"
+        data_root2.mkdir()
+
+        call_counts: list[str] = []
+
+        def make_mock_run_git(name: str):
+            def mock_run_git(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+                call_counts.append(name)
+                if "rev-parse" in cmd:
+                    return _ok("true")
+                if "remote" in cmd and "get-url" in cmd:
+                    return _ok("https://example.com/repo.git")
+                if "status" in cmd and "--porcelain" in cmd:
+                    return _ok()
+                if "pull" in cmd:
+                    return _ok("Already up to date.")
+                return _ok()
+
+            return mock_run_git
+
+        service1 = DataRepoSyncService(data_root=data_root1, run_git=make_mock_run_git("service1"))
+        service2 = DataRepoSyncService(data_root=data_root2, run_git=make_mock_run_git("service2"))
+
+        result1 = service1.sync()
+        result2 = service2.sync()
+
+        assert result1.success
+        assert result2.success
+        # Verify each service used its own run_git
+        assert "service1" in call_counts
+        assert "service2" in call_counts

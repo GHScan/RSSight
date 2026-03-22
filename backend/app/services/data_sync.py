@@ -145,6 +145,15 @@ class DataRepoSyncService:
 
         Returns a SyncResult indicating success/failure and a message.
         """
+        try:
+            return self._do_sync()
+        except Exception as e:
+            msg = f"Sync failed with unexpected error: {e}"
+            self._logger.exception(f"Data sync failed: {msg}")
+            return SyncResult(success=False, message=msg)
+
+    def _do_sync(self) -> SyncResult:
+        """Internal sync implementation."""
         # Step 1: Resolve symlink target
         target = self._resolve_target()
         self._logger.info(f"Data sync: resolved path {self._data_root} -> {target}")

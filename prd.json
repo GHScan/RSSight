@@ -70,7 +70,7 @@
         "Regression test covers a previously identified failure mode in sync orchestration.",
         "Tests isolate git command execution via mocks or stubs and pass in CI."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S074",
