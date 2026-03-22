@@ -146,30 +146,31 @@ class TestDataRepoSyncService:
         assert not result.success
         assert "no remote" in result.message.lower() or "remote" in result.message.lower()
 
-    def test_sync_with_local_changes_commits_and_pushes(self, tmp_path: Path) -> None:
+    def test_sync_with_local_changes_commits_before_pull_and_pushes_after(self, tmp_path: Path) -> None:
         """
         Working tree has local changes.
-        Sync should stage, commit, and push the changes.
+        Sync should stage+commit first, then pull --rebase, then push.
         """
         data_root = tmp_path / "data"
         data_root.mkdir()
-        call_count = 0
+        commands_run: list[str] = []
 
         def mock_run_git(cmd: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
-            nonlocal call_count
-            call_count += 1
+            cmd_name = cmd[1] if len(cmd) > 1 else cmd[0]
+            commands_run.append(cmd_name)
+
             if "rev-parse" in cmd:
                 return _ok("true")
             if "remote" in cmd and "get-url" in cmd:
                 return _ok("https://example.com/repo.git")
             if "status" in cmd and "--porcelain" in cmd:
                 return _ok("M feeds.json\n")  # Dirty working tree
-            if "pull" in cmd:
-                return _ok("Already up to date.")
             if "add" in cmd:
                 return _ok()
             if "commit" in cmd:
                 return _ok("[main abc123] Auto-sync")
+            if "pull" in cmd:
+                return _ok("Already up to date.")
             if "push" in cmd:
                 return _ok()
             return _ok()
@@ -178,7 +179,13 @@ class TestDataRepoSyncService:
         result = service.sync()
 
         assert result.success
-        assert call_count >= 5
+        assert "add" in commands_run
+        assert "commit" in commands_run
+        assert "pull" in commands_run
+        assert "push" in commands_run
+        assert commands_run.index("add") < commands_run.index("pull")
+        assert commands_run.index("commit") < commands_run.index("pull")
+        assert commands_run.index("pull") < commands_run.index("push")
 
     def test_sync_clean_working_tree_only_pulls(self, tmp_path: Path) -> None:
         """

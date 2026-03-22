@@ -5,8 +5,9 @@ This service performs a sync cycle for the data directory:
 1. Resolve symlink target if applicable
 2. Verify it's a git repository
 3. Check for configured remote
-4. Pull with rebase from remote
-5. If local changes exist, stage, commit, and push
+4. If local changes exist, stage and commit first
+5. Pull with rebase from remote
+6. Push when a local commit was created
 
 Failures are logged with actionable messages and do not crash the process.
 """
@@ -41,8 +42,9 @@ class DataRepoSyncService:
     1. Resolve symlink target if data_root is a symlink
     2. Check if the directory is a git repository
     3. Check if a remote (origin) is configured
-    4. Pull with rebase from the remote
-    5. If there are local changes, stage, commit, and push
+    4. If there are local changes, stage and commit first
+    5. Pull with rebase from the remote
+    6. Push if a local commit was created
 
     All git operations use the injectable `run_git` callable for testability.
     """
@@ -171,18 +173,10 @@ class DataRepoSyncService:
             self._logger.error(f"Data sync failed: {msg}")
             return SyncResult(success=False, message=msg)
 
-        # Step 4: Pull with rebase
-        success, error = self._pull_rebase(target, remote)
-        if not success:
-            msg = f"Pull/rebase failed: {error}"
-            self._logger.error(f"Data sync failed: {msg}")
-            return SyncResult(success=False, message=msg)
-
-        self._logger.info(f"Data sync: pull/rebase succeeded for {target}")
-
-        # Step 5: Check for local changes and push if any
-        if self._has_local_changes(target):
-            self._logger.info("Data sync: local changes detected, committing and pushing")
+        # Step 4: If local changes exist, commit them before pull/rebase
+        has_local_changes = self._has_local_changes(target)
+        if has_local_changes:
+            self._logger.info("Data sync: local changes detected, committing before pull/rebase")
 
             if not self._stage_all(target):
                 msg = "Failed to stage changes"
@@ -194,14 +188,27 @@ class DataRepoSyncService:
                 self._logger.error(f"Data sync failed: {msg}")
                 return SyncResult(success=False, message=msg)
 
+            self._logger.info(f"Data sync: local changes committed for {target}")
+        else:
+            self._logger.info(f"Data sync: no local changes to commit for {target}")
+
+        # Step 5: Pull with rebase
+        success, error = self._pull_rebase(target, remote)
+        if not success:
+            msg = f"Pull/rebase failed: {error}"
+            self._logger.error(f"Data sync failed: {msg}")
+            return SyncResult(success=False, message=msg)
+
+        self._logger.info(f"Data sync: pull/rebase succeeded for {target}")
+
+        # Step 6: Push only when a local commit was created in this sync cycle
+        if has_local_changes:
             success, error = self._push(target, remote)
             if not success:
                 msg = f"Push failed: {error}"
                 self._logger.error(f"Data sync failed: {msg}")
                 return SyncResult(success=False, message=msg)
 
-            self._logger.info(f"Data sync: committed and pushed changes to {target}")
-        else:
-            self._logger.info(f"Data sync: no local changes to commit for {target}")
+            self._logger.info(f"Data sync: committed changes pushed to {target}")
 
         return SyncResult(success=True, message="Sync completed successfully")
