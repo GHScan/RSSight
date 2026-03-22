@@ -43,7 +43,7 @@
         "Startup remains resilient when sync fails (error logged, app still starts unless explicitly configured otherwise).",
         "Relevant startup/lifecycle tests are added or updated and pass."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S072",

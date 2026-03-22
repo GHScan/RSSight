@@ -58,9 +58,22 @@ flowchart LR
 ## Scheduler
 
 - `FeedFetchScheduler` (in `app.services.scheduler`) runs in a background thread.
-- On startup (FastAPI lifespan), creates an `ArticleService` and scheduler calling `article_service.fetch_and_persist_all_feeds` at a fixed interval (default 300 s).
+- On startup (FastAPI lifespan):
+  - One data repository sync cycle runs first (see Data Repository Sync below).
+  - Creates an `ArticleService` and scheduler calling `article_service.fetch_and_persist_all_feeds` at a fixed interval (default 300 s).
 - Manual triggers and the scheduled task share the same fetch logic.
 - If the scheduled job raises, the scheduler logs the exception and continues.
+
+## Data Repository Sync
+
+- `DataRepoSyncService` (in `app.services.data_sync`) synchronizes the `data/` directory with a git remote.
+- Runs once at backend startup, before the feed fetch scheduler starts.
+- Sync flow:
+  1. Resolve symlink target if `data/` is a symlink.
+  2. Verify the directory is a git repository with an `origin` remote.
+  3. Pull with rebase from remote.
+  4. If local changes exist, stage, commit, and push.
+- Failures are logged with actionable messages and do not crash the app (startup remains resilient).
 
 ## Non-goals (current stage)
 

@@ -13,6 +13,7 @@ from app.api.profiles import router as profiles_router
 from app.api.read_later import router as read_later_router
 from app.api.summaries import router as summaries_router
 from app.services.articles import ArticleService
+from app.services.data_sync import DataRepoSyncService
 from app.services.profiles import SummaryProfileService
 from app.services.scheduler import FeedFetchScheduler
 from app.services.summary import make_openai_call_ai
@@ -36,6 +37,24 @@ FEED_FETCH_INTERVAL_SECONDS = 300.0
 TRANSLATION_PASS_INTERVAL_SECONDS = 600.0
 
 
+def _run_startup_data_sync(data_root: Path, log: logging.Logger) -> None:
+    """
+    Run one data repository sync cycle at startup.
+
+    This function is resilient to failures: errors are logged but do not crash the app.
+    """
+    try:
+        sync_service = DataRepoSyncService(data_root=data_root)
+        result = sync_service.sync()
+        if result.success:
+            log.info("Startup data sync completed: %s", result.message)
+        else:
+            log.warning("Startup data sync failed (non-fatal): %s", result.message)
+    except Exception:
+        # Catch any unexpected exceptions to ensure app still starts
+        log.exception("Startup data sync raised unexpected exception (non-fatal)")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
     """Start the feed fetch and translation schedulers on startup; stop them on shutdown."""
@@ -48,6 +67,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
         app_log.addHandler(_h)
     data_root = get_data_root()
     log = logging.getLogger(__name__)
+
+    # Run data repo sync once at startup (resilient to failures)
+    _run_startup_data_sync(data_root, log)
+
     article_service = ArticleService(data_root=data_root, logger=log)
     scheduler = FeedFetchScheduler(
         fetch_all=article_service.fetch_and_persist_all_feeds,
