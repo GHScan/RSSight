@@ -3,6 +3,7 @@ Tests for data repository sync integration with backend startup (S071).
 
 - One sync cycle runs during FastAPI lifespan startup.
 - Startup remains resilient when sync fails (error logged, app still starts).
+- Recurring scheduler also runs sync periodically (S072).
 """
 
 from __future__ import annotations
@@ -17,9 +18,12 @@ from app.services.data_sync import SyncResult
 class TestStartupSync:
     """Tests for data sync integration at backend startup."""
 
-    def test_sync_called_once_at_startup(self, tmp_path: Path) -> None:
+    def test_sync_called_at_startup(self, tmp_path: Path) -> None:
         """
-        Happy path: data sync is called once during backend startup.
+        Happy path: data sync is called during backend startup.
+
+        Note: With the recurring scheduler (S072), sync may be called multiple times
+        during the lifespan test (startup + scheduler runs). We verify at least one call.
         """
         data_root = tmp_path / "data"
         data_root.mkdir()
@@ -41,8 +45,8 @@ class TestStartupSync:
 
             asyncio.run(run_lifespan())
 
-            # Verify sync was called exactly once
-            mock_service.sync.assert_called_once()
+            # Verify sync was called at least once (startup)
+            assert mock_service.sync.call_count >= 1
 
     def test_startup_resilient_when_sync_fails(self, tmp_path: Path) -> None:
         """
@@ -69,8 +73,8 @@ class TestStartupSync:
             # The lifespan context manager should NOT raise an exception
             asyncio.run(run_lifespan())
 
-            # Verify sync was called
-            mock_service.sync.assert_called_once()
+            # Verify sync was called at least once
+            assert mock_service.sync.call_count >= 1
 
     def test_startup_resilient_when_sync_raises_exception(self, tmp_path: Path) -> None:
         """
@@ -95,5 +99,5 @@ class TestStartupSync:
             # The lifespan context manager should NOT raise an exception
             asyncio.run(run_lifespan())
 
-            # Verify sync was attempted
-            mock_service.sync.assert_called_once()
+            # Verify sync was attempted at least once
+            assert mock_service.sync.call_count >= 1

@@ -68,12 +68,14 @@ flowchart LR
 
 - `DataRepoSyncService` (in `app.services.data_sync`) synchronizes the `data/` directory with a git remote.
 - Runs once at backend startup, before the feed fetch scheduler starts.
+- A recurring scheduler runs sync every 30 minutes for continuous synchronization.
 - Sync flow:
   1. Resolve symlink target if `data/` is a symlink.
   2. Verify the directory is a git repository with an `origin` remote.
   3. Pull with rebase from remote.
   4. If local changes exist, stage, commit, and push.
 - Failures are logged with actionable messages and do not crash the app (startup remains resilient).
+- Exceptions in scheduled runs are logged and do not terminate future cycles.
 
 ## Non-goals (current stage)
 

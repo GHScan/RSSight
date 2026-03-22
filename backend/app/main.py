@@ -3,7 +3,7 @@ import os
 import traceback
 from contextlib import asynccontextmanager
 from pathlib import Path
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, Callable
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -35,6 +35,8 @@ def get_data_root() -> Path:
 FEED_FETCH_INTERVAL_SECONDS = 300.0
 # Default interval for title translation background pass (seconds).
 TRANSLATION_PASS_INTERVAL_SECONDS = 600.0
+# Default interval for data repository sync (seconds) - 30 minutes.
+DATA_SYNC_INTERVAL_SECONDS = 1800.0
 
 
 def _run_startup_data_sync(data_root: Path, log: logging.Logger) -> None:
@@ -55,9 +57,35 @@ def _run_startup_data_sync(data_root: Path, log: logging.Logger) -> None:
         log.exception("Startup data sync raised unexpected exception (non-fatal)")
 
 
+def _make_data_sync_job(data_root: Path, log: logging.Logger) -> Callable[[], None]:
+    """
+    Create a callable that runs data sync for the scheduler.
+
+    The returned callable logs failures without raising, ensuring the scheduler
+    continues running even if individual sync cycles fail.
+    """
+
+    def _sync_job() -> None:
+        try:
+            sync_service = DataRepoSyncService(data_root=data_root)
+            result = sync_service.sync()
+            if result.success:
+                log.info("Scheduled data sync completed: %s", result.message)
+            else:
+                log.warning("Scheduled data sync failed: %s", result.message)
+        except Exception:
+            # Catch any unexpected exceptions to ensure scheduler continues
+            log.exception("Scheduled data sync raised unexpected exception")
+
+    return _sync_job
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
-    """Start the feed fetch and translation schedulers on startup; stop them on shutdown."""
+    """Start schedulers on startup; stop them on shutdown.
+
+    Schedulers: feed fetch, translation, and data sync.
+    """
     # Ensure app loggers (e.g. translation pass) emit INFO to stderr for background jobs
     app_log = logging.getLogger("app")
     app_log.setLevel(logging.INFO)
@@ -70,6 +98,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
 
     # Run data repo sync once at startup (resilient to failures)
     _run_startup_data_sync(data_root, log)
+
+    # Create data sync scheduler for recurring sync (every 30 minutes)
+    data_sync_job = _make_data_sync_job(data_root, log)
+    data_sync_scheduler = FeedFetchScheduler(
+        fetch_all=data_sync_job,
+        interval_seconds=DATA_SYNC_INTERVAL_SECONDS,
+    )
+    data_sync_scheduler.start()
 
     article_service = ArticleService(data_root=data_root, logger=log)
     scheduler = FeedFetchScheduler(
@@ -101,6 +137,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:  # noqa: ARG001
     yield
     translation_scheduler.stop()
     scheduler.stop()
+    data_sync_scheduler.stop()
 
 
 app = FastAPI(title="RSSight API", version="0.1.0", lifespan=lifespan)

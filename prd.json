@@ -57,7 +57,7 @@
         "Exceptions in scheduled runs are handled and logged without terminating future cycles.",
         "Relevant scheduler tests are added or updated and pass."
       ],
-      "passes": false
+      "passes": true
     },
     {
       "id": "S073",
