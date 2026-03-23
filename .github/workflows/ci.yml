@@ -70,9 +70,15 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Install Playwright Chromium and system deps
+      - name: Install Playwright system dependencies
         working-directory: frontend
-        run: npx playwright install --with-deps chromium
+        run: |
+          sudo apt-get update
+          npx playwright install-deps chromium
+
+      - name: Install Playwright Chromium
+        working-directory: frontend
+        run: npx playwright install chromium
 
       - name: Run ESLint
         working-directory: frontend
