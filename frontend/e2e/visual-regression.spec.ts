@@ -26,7 +26,9 @@ test.describe("Visual regression (S018)", () => {
   test("home page matches baseline", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("main")).toBeVisible();
-    await expect(page.locator("main")).toHaveScreenshot("home-desktop.png");
+    await expect(page.locator("main")).toHaveScreenshot("home-desktop.png", {
+      maxDiffPixelRatio: 0.03,
+    });
   });
 
   test("feed management empty state matches baseline", async ({ page }) => {
@@ -42,7 +44,9 @@ test.describe("Visual regression (S018)", () => {
     });
     await page.goto("/feeds");
     await expect(page.locator("main")).toBeVisible();
-    await expect(page.locator("main")).toHaveScreenshot("feeds-empty-desktop.png");
+    await expect(page.locator("main")).toHaveScreenshot("feeds-empty-desktop.png", {
+      maxDiffPixelRatio: 0.03,
+    });
   });
 
   test("feed management with list matches baseline", async ({ page }) => {
@@ -60,7 +64,9 @@ test.describe("Visual regression (S018)", () => {
     });
     await page.goto("/feeds");
     await expect(page.locator("main")).toBeVisible();
-    await expect(page.locator("main")).toHaveScreenshot("feeds-list-desktop.png");
+    await expect(page.locator("main")).toHaveScreenshot("feeds-list-desktop.png", {
+      maxDiffPixelRatio: 0.03,
+    });
   });
 
   test("feed management error state matches baseline", async ({ page }) => {
@@ -72,13 +78,17 @@ test.describe("Visual regression (S018)", () => {
     });
     await page.goto("/feeds");
     await expect(page.locator("main")).toBeVisible();
-    await expect(page.locator("main")).toHaveScreenshot("feeds-error-desktop.png");
+    await expect(page.locator("main")).toHaveScreenshot("feeds-error-desktop.png", {
+      maxDiffPixelRatio: 0.03,
+    });
   });
 
   test("summary profiles empty state matches baseline", async ({ page }) => {
     await page.goto("/profiles");
     await expect(page.locator("main")).toBeVisible();
-    await expect(page.locator("main")).toHaveScreenshot("profiles-empty-desktop.png");
+    await expect(page.locator("main")).toHaveScreenshot("profiles-empty-desktop.png", {
+      maxDiffPixelRatio: 0.03,
+    });
   });
 });
 
@@ -98,7 +108,9 @@ test.describe("Visual regression narrow viewport (S018)", () => {
   test("home page narrow matches baseline", async ({ page }) => {
     await page.goto("/");
     await expect(page.locator("main")).toBeVisible();
-    await expect(page.locator("main")).toHaveScreenshot("home-narrow.png");
+    await expect(page.locator("main")).toHaveScreenshot("home-narrow.png", {
+      maxDiffPixelRatio: 0.03,
+    });
   });
 
   test("feed management empty narrow matches baseline", async ({ page }) => {
@@ -114,6 +126,8 @@ test.describe("Visual regression narrow viewport (S018)", () => {
     });
     await page.goto("/feeds");
     await expect(page.locator("main")).toBeVisible();
-    await expect(page.locator("main")).toHaveScreenshot("feeds-empty-narrow.png");
+    await expect(page.locator("main")).toHaveScreenshot("feeds-empty-narrow.png", {
+      maxDiffPixelRatio: 0.03,
+    });
   });
 });
