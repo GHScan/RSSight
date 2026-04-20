@@ -14,6 +14,7 @@ from xml.etree import ElementTree as ET
 
 from app.models.articles import Article
 from app.services.feeds import FeedService
+from app.services.json_write_policy import write_json_skip_published_at_only_change
 
 FetchRssCallable = Callable[[str], str]
 
@@ -218,9 +219,11 @@ class ArticleService:
             except (json.JSONDecodeError, KeyError):
                 pass
         payload = article.model_dump(mode="json")
-        article_json_path.write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        write_json_skip_published_at_only_change(
+            article_json_path,
+            payload,
+            indent=2,
+            ensure_ascii=False,
         )
 
     def update_article_title_trans(self, feed_id: str, article_id: str, title_trans: str) -> None:
@@ -232,9 +235,11 @@ class ArticleService:
         updated = article.model_copy(update={"title_trans": title_trans})
         article_dir = self._feeds_dir / feed_id / "articles" / article_id
         payload = updated.model_dump(mode="json")
-        (article_dir / "article.json").write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        write_json_skip_published_at_only_change(
+            article_dir / "article.json",
+            payload,
+            indent=2,
+            ensure_ascii=False,
         )
 
     def clear_article_title_trans(self, feed_id: str, article_id: str) -> None:
@@ -246,9 +251,11 @@ class ArticleService:
         updated = article.model_copy(update={"title_trans": None})
         article_dir = self._feeds_dir / feed_id / "articles" / article_id
         payload = updated.model_dump(mode="json")
-        (article_dir / "article.json").write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        write_json_skip_published_at_only_change(
+            article_dir / "article.json",
+            payload,
+            indent=2,
+            ensure_ascii=False,
         )
 
     def set_article_favorite(self, feed_id: str, article_id: str, favorite: bool) -> None:
@@ -297,9 +304,11 @@ class ArticleService:
         article_dir = self._feeds_dir / feed_id / "articles" / article_id
         article_dir.mkdir(parents=True, exist_ok=True)
         payload = article.model_dump(mode="json")
-        (article_dir / "article.json").write_text(
-            json.dumps(payload, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        write_json_skip_published_at_only_change(
+            article_dir / "article.json",
+            payload,
+            indent=2,
+            ensure_ascii=False,
         )
         return article
 
@@ -343,9 +352,11 @@ class ArticleService:
         article_json = dst_dir / "article.json"
         raw = json.loads(article_json.read_text(encoding="utf-8"))
         raw["feed_id"] = to_feed_id
-        article_json.write_text(
-            json.dumps(raw, indent=2, ensure_ascii=False),
-            encoding="utf-8",
+        write_json_skip_published_at_only_change(
+            article_json,
+            raw,
+            indent=2,
+            ensure_ascii=False,
         )
 
     @staticmethod

@@ -471,3 +471,62 @@ def test_move_article_raises_when_target_has_same_article_id(tmp_path: Path) -> 
     with pytest.raises(ArticleMoveTargetConflictError):
         art_svc.move_article(feed_a.id, created.id, feed_b.id)
     assert src.is_dir()
+
+
+RSS_SINGLE_ITEM_V1 = dedent("""\
+    <?xml version='1.0' encoding='UTF-8'?>
+    <rss version="2.0">
+      <channel>
+        <title>Test</title>
+        <item>
+          <title>Same Title</title>
+          <link>https://example.com/post</link>
+          <description>Same body</description>
+          <guid>stable-guid</guid>
+          <pubDate>Mon, 01 Jan 2024 00:00:00 GMT</pubDate>
+        </item>
+      </channel>
+    </rss>
+    """)
+
+RSS_SINGLE_ITEM_V2 = dedent("""\
+    <?xml version='1.0' encoding='UTF-8'?>
+    <rss version="2.0">
+      <channel>
+        <title>Test</title>
+        <item>
+          <title>Same Title</title>
+          <link>https://example.com/post</link>
+          <description>Same body</description>
+          <guid>stable-guid</guid>
+          <pubDate>Wed, 15 Jul 2030 12:00:00 GMT</pubDate>
+        </item>
+      </channel>
+    </rss>
+    """)
+
+
+def test_rss_refetch_pubdate_only_does_not_touch_article_json(tmp_path: Path) -> None:
+    """When RSS changes only pubDate, article.json on disk keeps the first published_at."""
+    feed_service = FeedService(tmp_path)
+    feed = feed_service.create_feed(
+        payload=FeedCreate(title="Feed", url="https://example.com/feed.xml"),
+    )
+    rss_versions = {"xml": RSS_SINGLE_ITEM_V1}
+
+    def _fetch(_url: str) -> str:
+        return rss_versions["xml"]
+
+    article_service = ArticleService(tmp_path, fetch_rss=_fetch)
+    article_service.fetch_and_persist_feed(feed.id)
+    articles = article_service.list_articles_for_feed(feed.id)
+    assert len(articles) == 1
+    article_id = articles[0].id
+    path = tmp_path / "feeds" / feed.id / "articles" / article_id / "article.json"
+    first_pub = json.loads(path.read_text(encoding="utf-8"))["published_at"]
+    mtime_first = path.stat().st_mtime_ns
+
+    rss_versions["xml"] = RSS_SINGLE_ITEM_V2
+    article_service.fetch_and_persist_feed(feed.id)
+    assert path.stat().st_mtime_ns == mtime_first
+    assert json.loads(path.read_text(encoding="utf-8"))["published_at"] == first_pub

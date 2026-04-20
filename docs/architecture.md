@@ -49,7 +49,7 @@ flowchart LR
 ## File storage conventions
 
 - **Feed index:** `data/feeds.json` — JSON object mapping feed ID to record (`id`, `title`, `url`, `feed_type`). `feed_type` is `"rss"` (default) or `"virtual"`. Virtual feeds have empty URL; scheduler and fetch logic skip them.
-- **Article metadata:** `data/feeds/{feedId}/articles/{articleId}/article.json` — same path for RSS-sourced and custom articles. Required fields: `id`, `feed_id`, `title`, `link`, `description`, `published_at`. Optional: `guid`, `title_trans`, `source`.
+- **Article metadata:** `data/feeds/{feedId}/articles/{articleId}/article.json` — same path for RSS-sourced and custom articles. Required fields: `id`, `feed_id`, `title`, `link`, `description`, `published_at`. Optional: `guid`, `title_trans`, `source`. When persisting JSON that includes `published_at`, the backend skips rewriting the file if the only changes would be `published_at` values (including nested keys), so git-backed `data/` does not pick up timestamp-only RSS churn.
 - **AI summary body:** `data/feeds/{feedId}/articles/{articleId}/summaries/{profileName}.md`
 - **AI summary metadata:** `data/feeds/{feedId}/articles/{articleId}/summaries/{profileName}.meta.json`
 - **Summary profiles:** `data/summary_profiles.json` — single JSON object keyed by profile name. Each value: `name`, `base_url`, `key`, `model`, `fields`, `prompt_template`.
