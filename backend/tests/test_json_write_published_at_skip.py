@@ -41,7 +41,8 @@ def test_writes_new_file_even_if_only_published_at_in_payload(tmp_path: Path) ->
         {"published_at": "2021-01-01T00:00:00+00:00"},
     )
     assert path.exists()
-    assert json.loads(path.read_text(encoding="utf-8"))["published_at"] == "2021-01-01T00:00:00+00:00"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    assert data["published_at"] == "2021-01-01T00:00:00+00:00"
 
 
 def test_no_skip_when_payload_has_no_published_at_key(tmp_path: Path) -> None:
