@@ -55,6 +55,22 @@ class ReadLaterService:
         items = self._load()
         return any(x["feed_id"] == feed_id and x["article_id"] == article_id for x in items)
 
+    def relocate_article_reference(
+        self, from_feed_id: str, article_id: str, to_feed_id: str
+    ) -> None:
+        """Update read-later entries when an article is moved between feeds (same article_id)."""
+        items = self._load()
+        changed = False
+        new_items: list[dict[str, Any]] = []
+        for x in items:
+            row = dict(x)
+            if row["feed_id"] == from_feed_id and row["article_id"] == article_id:
+                row["feed_id"] = to_feed_id
+                changed = True
+            new_items.append(row)
+        if changed:
+            self._save(new_items)
+
     def _load(self) -> list[dict[str, Any]]:
         if not self._path.exists():
             return []

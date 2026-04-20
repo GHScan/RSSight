@@ -27,6 +27,7 @@ vi.mock("../api/client", () => ({
     extractUrlMetadata: vi.fn(),
     createCustomArticle: vi.fn(),
     deleteArticle: vi.fn(),
+    moveArticle: vi.fn(),
     getSummary: vi.fn(),
     generateSummary: vi.fn(),
     createSummaryProfile: vi.fn(),
@@ -59,6 +60,8 @@ describe("Article list interaction (S010)", () => {
     vi.mocked(api.getArticles).mockReset();
     vi.mocked(api.getArticles).mockResolvedValue([...mockArticles]);
     vi.mocked(api.getReadLaterList).mockResolvedValue([]);
+    vi.mocked(api.moveArticle).mockReset();
+    vi.mocked(api.moveArticle).mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -932,6 +935,141 @@ describe("Article list interaction (S010)", () => {
         expect(alert.textContent).toMatch(/Network error|删除失败/);
       });
       expect(screen.getByText("To Remove")).toBeInTheDocument();
+    });
+  });
+
+  describe("S075: move article between favorites collections", () => {
+    it("hides move button when fewer than two virtual favorites exist", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "Solo",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getFeeds).mockImplementation((domain) => {
+        if (domain === "favorites") {
+          return Promise.resolve([{ id: "vf1", title: "Solo", url: null, feed_type: "virtual" }]);
+        }
+        return Promise.resolve([]);
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([
+        { id: "art1", title: "Only", link: "", published: "2025-03-01T12:00:00Z" },
+      ]);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("Only")).toBeInTheDocument();
+      });
+      expect(screen.queryByTestId("move-article-art1")).not.toBeInTheDocument();
+      expect(screen.getByTestId("delete-article-art1")).toBeInTheDocument();
+    });
+
+    it("shows move left of delete when at least two virtual favorites exist", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "First",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getFeeds).mockImplementation((domain) => {
+        if (domain === "favorites") {
+          return Promise.resolve([
+            { id: "vf1", title: "First", url: null, feed_type: "virtual" },
+            { id: "vf2", title: "Second", url: null, feed_type: "virtual" },
+          ]);
+        }
+        return Promise.resolve([]);
+      });
+      vi.mocked(api.getArticles).mockResolvedValue([
+        { id: "art1", title: "Movable", link: "", published: "2025-03-01T12:00:00Z" },
+      ]);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByTestId("move-article-art1")).toBeInTheDocument();
+      });
+      const row = screen.getByText("Movable").closest("li");
+      expect(row).toBeTruthy();
+      const buttons = within(row as HTMLElement).getAllByRole("button");
+      const labels = buttons.map((b) => b.getAttribute("aria-label"));
+      const moveIdx = labels.indexOf("移动");
+      const delIdx = labels.indexOf("删除");
+      expect(moveIdx).toBeGreaterThanOrEqual(0);
+      expect(delIdx).toBeGreaterThan(moveIdx);
+    });
+
+    it("move dialog: select target, confirm calls moveArticle and shows 已移动", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "vf1",
+        title: "First",
+        url: null,
+        feed_type: "virtual",
+      });
+      vi.mocked(api.getFeeds).mockImplementation((domain) => {
+        if (domain === "favorites") {
+          return Promise.resolve([
+            { id: "vf1", title: "First", url: null, feed_type: "virtual" },
+            { id: "vf2", title: "Second", url: null, feed_type: "virtual" },
+          ]);
+        }
+        return Promise.resolve([]);
+      });
+      vi.mocked(api.getArticles)
+        .mockResolvedValueOnce([
+          { id: "art1", title: "To Move", link: "", published: "2025-03-01T12:00:00Z" },
+        ])
+        .mockResolvedValueOnce([
+          { id: "art1", title: "To Move", link: "", published: "2025-03-01T12:00:00Z" },
+        ]);
+
+      render(
+        <MemoryRouter initialEntries={["/feeds/vf1/articles"]}>
+          <App />
+        </MemoryRouter>,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByText("To Move")).toBeInTheDocument();
+      });
+      await userEvent.click(screen.getByTestId("move-article-art1"));
+
+      const dialog = screen.getByRole("dialog", { name: /移动文章/i });
+      expect(dialog).toBeInTheDocument();
+      const select = within(dialog).getByRole("combobox", { name: /目标收藏夹/i });
+      await userEvent.selectOptions(select, "vf2");
+      await userEvent.click(within(dialog).getByRole("button", { name: "确定" }));
+
+      await waitFor(() => {
+        expect(api.moveArticle).toHaveBeenCalledWith("vf1", "art1", "vf2");
+      });
+      await waitFor(() => {
+        expect(screen.getByText("已移动")).toBeInTheDocument();
+      });
+    });
+
+    it("RSS article list has no move or delete controls", async () => {
+      vi.mocked(api.getFeed).mockResolvedValue({
+        id: "f1",
+        title: "RSS",
+        url: "https://example.com/feed.xml",
+        feed_type: "rss",
+      });
+      renderArticleList("f1");
+      await waitFor(() => {
+        expect(screen.getByText("Article First")).toBeInTheDocument();
+      });
+      expect(screen.queryByTestId("move-article-a1")).not.toBeInTheDocument();
+      expect(screen.queryByTestId("delete-article-a1")).not.toBeInTheDocument();
     });
   });
 

@@ -1259,3 +1259,163 @@ def test_delete_article_from_rss_feed_returns_400(tmp_path: Path, monkeypatch) -
     assert delete_r.status_code == 400
     body = delete_r.json()
     assert body.get("detail", {}).get("code") == "NOT_VIRTUAL_FEED"
+
+
+# --- S075: Move article between favorites (virtual) collections ---
+
+
+def test_move_article_between_virtual_feeds_returns_204_and_persists(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """
+    S075 happy path: POST move relocates article directory to target virtual feed;
+    source list empty, target list contains article.
+    """
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    r_a = client.post("/api/feeds/virtual", json={"name": "Collection A"})
+    r_b = client.post("/api/feeds/virtual", json={"name": "Collection B"})
+    assert r_a.status_code == 201 and r_b.status_code == 201
+    feed_a = r_a.json()["id"]
+    feed_b = r_b.json()["id"]
+
+    create_art = client.post(
+        f"/api/feeds/{feed_a}/articles",
+        json={
+            "title": "Movable",
+            "link": "",
+            "description": "Body",
+            "published_at": "2025-03-07T10:00:00Z",
+        },
+    )
+    assert create_art.status_code == 201
+    article_id = create_art.json()["id"]
+
+    move_r = client.post(
+        f"/api/feeds/{feed_a}/articles/{article_id}/move",
+        json={"target_feed_id": feed_b},
+    )
+    assert move_r.status_code == 204
+
+    list_a = client.get(f"/api/feeds/{feed_a}/articles")
+    list_b = client.get(f"/api/feeds/{feed_b}/articles")
+    assert list_a.status_code == 200 and list_b.status_code == 200
+    assert list_a.json() == []
+    assert len(list_b.json()) == 1
+    assert list_b.json()[0]["id"] == article_id
+
+    assert not (tmp_path / "feeds" / feed_a / "articles" / article_id).exists()
+    assert (tmp_path / "feeds" / feed_b / "articles" / article_id).is_dir()
+
+
+def test_move_article_target_already_has_same_article_id_returns_409(
+    tmp_path: Path, monkeypatch
+) -> None:
+    """
+    S075 boundary: target feed already has same article id -> move returns 409.
+    """
+    import shutil
+
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    r_a = client.post("/api/feeds/virtual", json={"name": "A"})
+    r_b = client.post("/api/feeds/virtual", json={"name": "B"})
+    feed_a = r_a.json()["id"]
+    feed_b = r_b.json()["id"]
+
+    create_art = client.post(
+        f"/api/feeds/{feed_a}/articles",
+        json={
+            "title": "Only in A",
+            "link": "",
+            "description": "D",
+            "published_at": "2025-03-07T10:00:00Z",
+        },
+    )
+    article_id = create_art.json()["id"]
+    src_dir = tmp_path / "feeds" / feed_a / "articles" / article_id
+    dup_dir = tmp_path / "feeds" / feed_b / "articles" / article_id
+    dup_dir.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(src_dir, dup_dir)
+
+    move_r = client.post(
+        f"/api/feeds/{feed_a}/articles/{article_id}/move",
+        json={"target_feed_id": feed_b},
+    )
+    assert move_r.status_code == 409
+    assert move_r.json()["detail"]["code"] == "ARTICLE_EXISTS_IN_TARGET"
+    assert (tmp_path / "feeds" / feed_a / "articles" / article_id).is_dir()
+
+
+def test_move_article_same_source_and_target_returns_400(tmp_path: Path, monkeypatch) -> None:
+    """S075: moving to the same collection is rejected."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    r_a = client.post("/api/feeds/virtual", json={"name": "Solo"})
+    feed_a = r_a.json()["id"]
+    create_art = client.post(
+        f"/api/feeds/{feed_a}/articles",
+        json={
+            "title": "X",
+            "link": "",
+            "description": "D",
+            "published_at": "2025-03-07T10:00:00Z",
+        },
+    )
+    article_id = create_art.json()["id"]
+
+    move_r = client.post(
+        f"/api/feeds/{feed_a}/articles/{article_id}/move",
+        json={"target_feed_id": feed_a},
+    )
+    assert move_r.status_code == 400
+    assert move_r.json()["detail"]["code"] == "SAME_SOURCE_AND_TARGET"
+
+
+def test_move_article_updates_read_later_feed_reference(tmp_path: Path, monkeypatch) -> None:
+    """S075 regression: read-later ref updated from source feed to target after move."""
+    from app import main as app_main
+
+    monkeypatch.setattr(app_main, "get_data_root", _override_data_root(tmp_path))
+    client = TestClient(app)
+
+    r_a = client.post("/api/feeds/virtual", json={"name": "A"})
+    r_b = client.post("/api/feeds/virtual", json={"name": "B"})
+    feed_a = r_a.json()["id"]
+    feed_b = r_b.json()["id"]
+
+    create_art = client.post(
+        f"/api/feeds/{feed_a}/articles",
+        json={
+            "title": "RL",
+            "link": "",
+            "description": "D",
+            "published_at": "2025-03-07T10:00:00Z",
+        },
+    )
+    article_id = create_art.json()["id"]
+
+    add_rl = client.post("/api/read-later", json={"feed_id": feed_a, "article_id": article_id})
+    assert add_rl.status_code == 204
+
+    move_r = client.post(
+        f"/api/feeds/{feed_a}/articles/{article_id}/move",
+        json={"target_feed_id": feed_b},
+    )
+    assert move_r.status_code == 204
+
+    list_rl = client.get("/api/read-later")
+    assert list_rl.status_code == 200
+    items = list_rl.json()
+    assert len(items) == 1
+    assert items[0]["feed_id"] == feed_b
+    assert items[0]["article_id"] == article_id

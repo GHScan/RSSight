@@ -84,6 +84,19 @@
         "Docs are consistent with implemented behavior and reviewed for accuracy."
       ],
       "passes": true
+    },
+    {
+      "id": "S075",
+      "priority": 40,
+      "title": "Move favorites article to another collection with full data",
+      "description": "Add move control on virtual feed article list (when multiple collections exist), modal to pick target, API to relocate article directory and read-later ref; conflict when target already has same article id.",
+      "acceptanceCriteria": [
+        "POST move API and persistence move entire article subtree between virtual feeds.",
+        "409 when target already contains the same article id; read-later references updated on success.",
+        "UI: move hidden if fewer than two favorites; RSS list has no move/delete.",
+        "Docs and tests updated; story marked passes."
+      ],
+      "passes": true
     }
   ]
 }

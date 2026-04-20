@@ -417,3 +417,57 @@ def test_delete_article_idempotent_when_already_gone(tmp_path: Path) -> None:
     art_svc.delete_article(feed.id, "nonexistent-id")  # does not raise
     listed = art_svc.list_articles_for_feed(feed.id)
     assert len(listed) == 0
+
+
+# --- S075: Move article between virtual feeds ---
+
+
+def test_move_article_relocates_directory_and_updates_feed_id_in_json(tmp_path: Path) -> None:
+    """S075 happy path: article dir moves; article.json feed_id matches destination."""
+    feed_svc = FeedService(tmp_path)
+    feed_a = feed_svc.create_virtual_feed("A")
+    feed_b = feed_svc.create_virtual_feed("B")
+    art_svc = ArticleService(tmp_path)
+    created = art_svc.create_custom_article(
+        feed_id=feed_a.id,
+        title="Move me",
+        link="",
+        description="D",
+        published_at=datetime(2026, 3, 7, 10, 0, 0, tzinfo=timezone.utc),
+    )
+    src = tmp_path / "feeds" / feed_a.id / "articles" / created.id
+    assert src.is_dir()
+    art_svc.move_article(feed_a.id, created.id, feed_b.id)
+    assert not src.exists()
+    dst_json = tmp_path / "feeds" / feed_b.id / "articles" / created.id / "article.json"
+    assert dst_json.exists()
+    raw = json.loads(dst_json.read_text(encoding="utf-8"))
+    assert raw["feed_id"] == feed_b.id
+    assert len(art_svc.list_articles_for_feed(feed_a.id)) == 0
+    assert len(art_svc.list_articles_for_feed(feed_b.id)) == 1
+
+
+def test_move_article_raises_when_target_has_same_article_id(tmp_path: Path) -> None:
+    """S075 boundary: ArticleMoveTargetConflictError when destination article id exists."""
+    import shutil
+
+    from app.services.articles import ArticleMoveTargetConflictError
+
+    feed_svc = FeedService(tmp_path)
+    feed_a = feed_svc.create_virtual_feed("A")
+    feed_b = feed_svc.create_virtual_feed("B")
+    art_svc = ArticleService(tmp_path)
+    created = art_svc.create_custom_article(
+        feed_id=feed_a.id,
+        title="One",
+        link="",
+        description="D",
+        published_at=datetime(2026, 3, 7, 10, 0, 0, tzinfo=timezone.utc),
+    )
+    src = tmp_path / "feeds" / feed_a.id / "articles" / created.id
+    dup = tmp_path / "feeds" / feed_b.id / "articles" / created.id
+    dup.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copytree(src, dup)
+    with pytest.raises(ArticleMoveTargetConflictError):
+        art_svc.move_article(feed_a.id, created.id, feed_b.id)
+    assert src.is_dir()

@@ -72,3 +72,18 @@ def test_contains_returns_true_when_in_list(tmp_path: Path) -> None:
     service.add(feed_id="f1", article_id="a1")
     assert service.contains(feed_id="f1", article_id="a1") is True
     assert service.contains(feed_id="f1", article_id="a2") is False
+
+
+def test_relocate_article_reference_updates_feed_id(tmp_path: Path) -> None:
+    """S075: after moving an article between feeds, read-later points at the new feed_id."""
+    service = ReadLaterService(tmp_path)
+    service.add(feed_id="src", article_id="art1")
+    service.add(feed_id="other", article_id="art2")
+    service.relocate_article_reference("src", "art1", "dst")
+
+    entries = service.list_entries()
+    assert len(entries) == 2
+    moved = next(e for e in entries if e.article_id == "art1")
+    assert moved.feed_id == "dst"
+    assert service.contains(feed_id="dst", article_id="art1") is True
+    assert service.contains(feed_id="src", article_id="art1") is False

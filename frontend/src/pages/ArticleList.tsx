@@ -37,6 +37,13 @@ export function ArticleList() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   /** S059: standardized delete confirmation dialog (article to delete or null). */
   const [confirmDeleteArticle, setConfirmDeleteArticle] = useState<{ id: string; title: string } | null>(null);
+  /** S075: virtual favorites list (for move target picker); only loaded on virtual feed pages. */
+  const [virtualFavoritesFeeds, setVirtualFavoritesFeeds] = useState<Feed[]>([]);
+  const [moveDialogArticle, setMoveDialogArticle] = useState<{ id: string; title: string } | null>(null);
+  const [moveTargetFeedId, setMoveTargetFeedId] = useState("");
+  const [moveError, setMoveError] = useState<string | null>(null);
+  const [moveSuccess, setMoveSuccess] = useState<string | null>(null);
+  const [movingId, setMovingId] = useState<string | null>(null);
 
   const loadFeed = useCallback(() => {
     if (!feedId) return;
@@ -80,6 +87,17 @@ export function ArticleList() {
   }, [loadFeed]);
 
   useEffect(() => {
+    if (feed?.feed_type !== "virtual" || !feedId) {
+      setVirtualFavoritesFeeds([]);
+      return;
+    }
+    api
+      .getFeeds("favorites")
+      .then(setVirtualFavoritesFeeds)
+      .catch(() => setVirtualFavoritesFeeds([]));
+  }, [feed?.feed_type, feedId]);
+
+  useEffect(() => {
     if (!createSuccess) return;
     const t = setTimeout(() => setCreateSuccess(null), 3000);
     return () => clearTimeout(t);
@@ -90,6 +108,19 @@ export function ArticleList() {
     const t = setTimeout(() => setDeleteSuccess(null), 3000);
     return () => clearTimeout(t);
   }, [deleteSuccess]);
+
+  useEffect(() => {
+    if (!moveSuccess) return;
+    const t = setTimeout(() => setMoveSuccess(null), 3000);
+    return () => clearTimeout(t);
+  }, [moveSuccess]);
+
+  const moveTargetOptions = useMemo(
+    () => virtualFavoritesFeeds.filter((f) => f.id !== feedId),
+    [virtualFavoritesFeeds, feedId],
+  );
+  const showMoveArticleButton =
+    feed?.feed_type === "virtual" && virtualFavoritesFeeds.length >= 2;
 
   const filteredArticles = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -115,6 +146,37 @@ export function ArticleList() {
       setDeletingId(null);
     }
   }, [feedId, confirmDeleteArticle, loadArticles]);
+
+  const openMoveDialog = useCallback(
+    (article: { id: string; title: string }) => {
+      setMoveError(null);
+      setMoveDialogArticle(article);
+      const first = moveTargetOptions[0]?.id ?? "";
+      setMoveTargetFeedId(first);
+    },
+    [moveTargetOptions],
+  );
+
+  const handleMoveArticleConfirm = useCallback(async () => {
+    if (!feedId || !moveDialogArticle || !moveTargetFeedId) return;
+    setMovingId(moveDialogArticle.id);
+    setMoveError(null);
+    try {
+      await api.moveArticle(feedId, moveDialogArticle.id, moveTargetFeedId);
+      setMoveDialogArticle(null);
+      setMoveSuccess("已移动");
+      loadArticles();
+      const refreshed = await api.getFeeds("favorites");
+      setVirtualFavoritesFeeds(refreshed);
+    } catch (err) {
+      const raw = err instanceof Error ? err.message : "";
+      const exists =
+        /ARTICLE_EXISTS_IN_TARGET|already exists in the target collection/i.test(raw);
+      setMoveError(exists ? "目标收藏夹中已存在该文章" : raw || "移动失败");
+    } finally {
+      setMovingId(null);
+    }
+  }, [feedId, moveDialogArticle, moveTargetFeedId, loadArticles]);
 
   const btnBase =
     "inline-flex items-center justify-center min-h-[44px] min-w-[120px] px-5 py-2.5 rounded-lg text-base font-medium focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2";
@@ -404,6 +466,11 @@ export function ArticleList() {
             {deleteSuccess}
           </p>
         )}
+        {moveSuccess && (
+          <p className="mb-4 px-4 py-2 rounded-lg bg-green-500/15 text-green-700 dark:text-green-400 border border-green-500/30" role="status">
+            {moveSuccess}
+          </p>
+        )}
         {deleteError && (
           <p className="mb-4 px-4 py-2 rounded-lg bg-destructive/15 text-destructive border border-destructive/30" role="alert">
             {deleteError}
@@ -460,20 +527,35 @@ export function ArticleList() {
                 {a.title_trans ?? a.title}
               </Link>
               {feed?.feed_type === "virtual" && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setConfirmDeleteArticle({ id: a.id, title: a.title_trans ?? a.title });
-                    setDeleteError(null);
-                  }}
-                  disabled={deletingId === a.id}
-                  aria-label="删除"
-                  title="删除"
-                  data-testid={`delete-article-${a.id}`}
-                  className="shrink-0 ml-auto text-lg leading-none p-1 rounded text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
-                >
-                  删除
-                </button>
+                <div className="shrink-0 ml-auto flex items-center gap-2">
+                  {showMoveArticleButton && (
+                    <button
+                      type="button"
+                      onClick={() => openMoveDialog({ id: a.id, title: a.title_trans ?? a.title })}
+                      disabled={movingId === a.id || deletingId === a.id}
+                      aria-label="移动"
+                      title="移动"
+                      data-testid={`move-article-${a.id}`}
+                      className="text-lg leading-none p-1 rounded text-foreground hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                    >
+                      移动
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConfirmDeleteArticle({ id: a.id, title: a.title_trans ?? a.title });
+                      setDeleteError(null);
+                    }}
+                    disabled={deletingId === a.id || movingId === a.id}
+                    aria-label="删除"
+                    title="删除"
+                    data-testid={`delete-article-${a.id}`}
+                    className="text-lg leading-none p-1 rounded text-destructive hover:bg-destructive/10 focus:outline-none focus:ring-2 focus:ring-ring disabled:opacity-50"
+                  >
+                    删除
+                  </button>
+                </div>
               )}
             </li>
           ))}
@@ -489,6 +571,55 @@ export function ArticleList() {
             <div className="flex gap-2">
               <button type="button" onClick={handleDeleteArticleConfirm} className={btnPrimary}>确认</button>
               <button type="button" onClick={() => setConfirmDeleteArticle(null)} className={btnSecondary}>取消</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {moveDialogArticle && (
+        <div role="dialog" aria-modal="true" aria-labelledby="move-article-title" className="fixed inset-0 flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-background border border-border rounded-lg p-6 max-w-md w-full shadow-lg">
+            <h2 id="move-article-title" className="text-lg font-medium text-foreground mb-2">移动文章</h2>
+            <p className="text-sm text-muted-foreground mb-4 break-words">{moveDialogArticle.title}</p>
+            <label htmlFor="move-article-target" className="block text-sm font-medium text-foreground mb-1">
+              目标收藏夹
+            </label>
+            <select
+              id="move-article-target"
+              value={moveTargetFeedId}
+              onChange={(e) => setMoveTargetFeedId(e.target.value)}
+              className="w-full mb-4 px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+            >
+              {moveTargetOptions.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.title}
+                </option>
+              ))}
+            </select>
+            {moveError && (
+              <p className="text-destructive text-sm mb-4" role="alert">
+                {moveError}
+              </p>
+            )}
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleMoveArticleConfirm}
+                disabled={!moveTargetFeedId || movingId === moveDialogArticle.id}
+                className={btnPrimary}
+              >
+                {movingId === moveDialogArticle.id ? "移动中…" : "确定"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setMoveDialogArticle(null);
+                  setMoveError(null);
+                }}
+                disabled={movingId === moveDialogArticle.id}
+                className={btnSecondary}
+              >
+                取消
+              </button>
             </div>
           </div>
         </div>

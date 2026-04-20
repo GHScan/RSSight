@@ -42,8 +42,9 @@ async function handleResponse<T>(res: Response): Promise<T> {
 }
 
 export const api = {
-  getFeeds(): Promise<Feed[]> {
-    return fetch(`${BASE}/feeds`).then(handleResponse<Feed[]>);
+  getFeeds(domain?: "rss" | "favorites"): Promise<Feed[]> {
+    const q = domain ? `?domain=${encodeURIComponent(domain)}` : "";
+    return fetch(`${BASE}/feeds${q}`).then(handleResponse<Feed[]>);
   },
   createFeed(body: { title: string; url: string }): Promise<Feed> {
     return fetch(`${BASE}/feeds`, {
@@ -113,6 +114,13 @@ export const api = {
   deleteArticle(feedId: string, articleId: string): Promise<void> {
     return fetch(`${BASE}/feeds/${feedId}/articles/${encodeURIComponent(articleId)}`, {
       method: "DELETE",
+    }).then(handleResponse<void>);
+  },
+  moveArticle(feedId: string, articleId: string, targetFeedId: string): Promise<void> {
+    return fetch(`${BASE}/feeds/${feedId}/articles/${encodeURIComponent(articleId)}/move`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ target_feed_id: targetFeedId }),
     }).then(handleResponse<void>);
   },
   getSummaryProfiles(): Promise<SummaryProfile[]> {

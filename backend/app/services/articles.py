@@ -28,6 +28,14 @@ class ArticleNotFoundError(Exception):
 
 
 @dataclass(frozen=True)
+class ArticleMoveTargetConflictError(Exception):
+    """Target favorites feed already contains an article directory with this id."""
+
+    feed_id: str
+    article_id: str
+
+
+@dataclass(frozen=True)
 class ParsedRssItem:
     title: str
     link: str
@@ -308,6 +316,37 @@ class ArticleService:
         if not article_dir.exists():
             return
         shutil.rmtree(article_dir)
+
+    def move_article(self, from_feed_id: str, article_id: str, to_feed_id: str) -> None:
+        """
+        Move an article directory (including summaries) from one virtual feed to another.
+
+        Raises ValueError if feeds are not virtual or source equals target.
+        Raises ArticleNotFoundError if the article is missing under the source feed.
+        Raises ArticleMoveTargetConflictError if the target already has this article id.
+        """
+        if from_feed_id == to_feed_id:
+            raise ValueError("Source and target feeds must differ")
+        src_feed = self._feed_service.get_feed(from_feed_id)
+        dst_feed = self._feed_service.get_feed(to_feed_id)
+        if src_feed.feed_type != "virtual" or dst_feed.feed_type != "virtual":
+            raise ValueError("Articles can only be moved between virtual (favorites) feeds")
+        src_dir = self._feeds_dir / from_feed_id / "articles" / article_id
+        if not src_dir.is_dir():
+            raise ArticleNotFoundError(from_feed_id, article_id)
+        dst_parent = self._feeds_dir / to_feed_id / "articles"
+        dst_dir = dst_parent / article_id
+        dst_parent.mkdir(parents=True, exist_ok=True)
+        if dst_dir.exists():
+            raise ArticleMoveTargetConflictError(to_feed_id, article_id)
+        shutil.move(str(src_dir), str(dst_dir))
+        article_json = dst_dir / "article.json"
+        raw = json.loads(article_json.read_text(encoding="utf-8"))
+        raw["feed_id"] = to_feed_id
+        article_json.write_text(
+            json.dumps(raw, indent=2, ensure_ascii=False),
+            encoding="utf-8",
+        )
 
     @staticmethod
     def _default_fetch_rss(url: str) -> str:

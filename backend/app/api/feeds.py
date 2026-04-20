@@ -11,13 +11,22 @@ from pydantic import BaseModel
 
 from app.models.articles import ArticleDetail, ArticleRead, CustomArticleCreate
 from app.models.feeds import FeedCreate, FeedRead, FeedUpdate, VirtualFeedCreate
-from app.services.articles import ArticleNotFoundError, ArticleService
+from app.services.articles import (
+    ArticleMoveTargetConflictError,
+    ArticleNotFoundError,
+    ArticleService,
+)
 from app.services.feeds import FeedNotFoundError, FeedService
+from app.services.read_later import ReadLaterService
 from app.services.url_autofill import fetch_and_parse_url
 
 
 class FavoriteUpdate(BaseModel):
     favorite: bool
+
+
+class ArticleMoveRequest(BaseModel):
+    target_feed_id: str
 
 
 class ExtractUrlRequest(BaseModel):
@@ -53,6 +62,13 @@ def get_article_service() -> ArticleService:
         data_root=app_main.get_data_root(),
         logger=logging.getLogger(__name__),
     )
+
+
+def get_read_later_service() -> ReadLaterService:
+    """Dependency for read-later storage (update refs when articles move between feeds)."""
+    from app import main as app_main
+
+    return ReadLaterService(app_main.get_data_root())
 
 
 FeedListDomain = Literal["rss", "favorites"]
@@ -409,6 +425,80 @@ def delete_article(
                 "details": {"feedId": feed_id},
             },
         ) from exc
+
+
+@router.post("/{feed_id}/articles/{article_id}/move", status_code=HTTPStatus.NO_CONTENT)
+def move_article_between_feeds(
+    feed_id: str,
+    article_id: str,
+    payload: ArticleMoveRequest,
+    feed_service: FeedService = Depends(get_feed_service),
+    article_service: ArticleService = Depends(get_article_service),
+    read_later_service: ReadLaterService = Depends(get_read_later_service),
+) -> None:
+    """Move a favorites article (full directory including summaries) to another virtual feed."""
+    try:
+        feed_service.get_feed(feed_id)
+    except FeedNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "FEED_NOT_FOUND",
+                "message": "Feed not found.",
+                "details": {"feedId": exc.feed_id},
+            },
+        ) from exc
+    try:
+        feed_service.get_feed(payload.target_feed_id)
+    except FeedNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "FEED_NOT_FOUND",
+                "message": "Feed not found.",
+                "details": {"feedId": exc.feed_id},
+            },
+        ) from exc
+    try:
+        article_service.move_article(feed_id, article_id, payload.target_feed_id)
+    except ValueError as exc:
+        msg = str(exc)
+        if "must differ" in msg:
+            raise HTTPException(
+                status_code=HTTPStatus.BAD_REQUEST,
+                detail={
+                    "code": "SAME_SOURCE_AND_TARGET",
+                    "message": msg,
+                    "details": {"feedId": feed_id, "targetFeedId": payload.target_feed_id},
+                },
+            ) from exc
+        raise HTTPException(
+            status_code=HTTPStatus.BAD_REQUEST,
+            detail={
+                "code": "NOT_VIRTUAL_FEED",
+                "message": msg,
+                "details": {"feedId": feed_id},
+            },
+        ) from exc
+    except ArticleNotFoundError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.NOT_FOUND,
+            detail={
+                "code": "ARTICLE_NOT_FOUND",
+                "message": "Article not found.",
+                "details": {"feedId": exc.feed_id, "articleId": exc.article_id},
+            },
+        ) from exc
+    except ArticleMoveTargetConflictError as exc:
+        raise HTTPException(
+            status_code=HTTPStatus.CONFLICT,
+            detail={
+                "code": "ARTICLE_EXISTS_IN_TARGET",
+                "message": "An article with this id already exists in the target collection.",
+                "details": {"feedId": exc.feed_id, "articleId": exc.article_id},
+            },
+        ) from exc
+    read_later_service.relocate_article_reference(feed_id, article_id, payload.target_feed_id)
 
 
 @router.get("/{feed_id}/articles/{article_id}", response_model=ArticleDetail)
