@@ -210,7 +210,10 @@ class SummaryProfileService:
     def _load_profiles(self) -> Dict[str, SummaryProfile]:
         if not self._profiles_index_path.exists():
             return {}
-        raw = json.loads(self._profiles_index_path.read_text(encoding="utf-8"))
+        text = self._profiles_index_path.read_text(encoding="utf-8").strip()
+        if not text:
+            return {}
+        raw = json.loads(text)
         return {name: SummaryProfile.model_validate(data) for name, data in raw.items()}
 
     def _save_profiles(self, profiles: Dict[str, SummaryProfile]) -> None:

@@ -195,3 +195,10 @@ def test_update_profile_ai_params_removes_summaries(tmp_path: Path) -> None:
     assert not (summaries_dir / "p.meta.json").exists()
     profile = profile_svc.get_profile("p")
     assert profile.prompt_template == "New: {{title}}"
+
+
+def test_empty_summary_profiles_json_lists_no_profiles(tmp_path: Path) -> None:
+    """Existing but empty index file must not crash JSON load (e.g. interrupted write)."""
+    (tmp_path / "summary_profiles.json").write_text("", encoding="utf-8")
+    profile_svc = SummaryProfileService(tmp_path)
+    assert profile_svc.list_profiles() == []
