@@ -13,6 +13,12 @@ cd "$ROOT"
 BACKEND_PORT="${1:-8173}"
 FRONTEND_PORT="${2:-5173}"
 
+if [ ! -f "$ROOT/frontend/node_modules/@vitejs/plugin-react/package.json" ]; then
+    echo "[ERROR] Frontend dependencies are missing or incomplete."
+    echo "[ERROR] Please run ./scripts/setup.sh first, then run ./scripts/start.sh."
+    exit 1
+fi
+
 echo "Starting RSSight backend and frontend (bound to all interfaces, LAN accessible)..."
 echo "Backend:  http://0.0.0.0:$BACKEND_PORT  (e.g. http://YOUR_IP:$BACKEND_PORT)"
 echo "Frontend: http://0.0.0.0:$FRONTEND_PORT (e.g. http://YOUR_IP:$FRONTEND_PORT)"

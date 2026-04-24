@@ -1,7 +1,7 @@
 @echo off
 setlocal
 rem One-click start of backend + frontend. Run from anywhere; script resolves repo root from its own path.
-rem Usage: start.cmd [backend_port] [frontend_port]   (defaults: 8000 5173)
+rem Usage: start.cmd [backend_port] [frontend_port]   (defaults: 8173 5173)
 
 set "ROOT=%~dp0.."
 cd /d "%ROOT%"
@@ -14,6 +14,12 @@ set "BACKEND_PORT=%~1"
 if "%BACKEND_PORT%"=="" set "BACKEND_PORT=8173"
 set "FRONTEND_PORT=%~2"
 if "%FRONTEND_PORT%"=="" set "FRONTEND_PORT=5173"
+
+if not exist "%ROOT%\frontend\node_modules\@vitejs\plugin-react\package.json" (
+  echo [ERROR] Frontend dependencies are missing or incomplete.
+  echo [ERROR] Please run scripts\setup.cmd first, then run scripts\start.cmd.
+  exit /b 1
+)
 
 echo Starting RSSight backend and frontend (bound to all interfaces, LAN accessible)...
 echo Backend:  http://0.0.0.0:%BACKEND_PORT%  (e.g. http://YOUR_IP:%BACKEND_PORT%)

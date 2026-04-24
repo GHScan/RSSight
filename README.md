@@ -20,62 +20,44 @@
 - Python 3.12+
 - Node.js 20+
 
-## Installation
-
-**Windows (cmd):**
-
-```bat
-cd backend
-python -m venv .venv
-.venv\Scripts\activate.bat
-pip install -e .[dev]
-cd ..\frontend
-npm install
-```
-
-**macOS / Linux (bash):**
-
-```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -e .[dev]
-cd ../frontend
-npm install
-```
-
 ## Quick start
+
+Install dependencies, then start services:
 
 **Windows** — From the repository root:
 
 ```bat
-scripts\start.cmd
+.\scripts\setup.cmd
+.\scripts\start.cmd
 ```
 
 **macOS / Linux** — From the repository root:
 
 ```bash
+./scripts/setup.sh
 ./scripts/start.sh
 ```
 
-Optional ports: `scripts\start.cmd [backend_port] [frontend_port]` (Windows) or `./scripts/start.sh [backend_port] [frontend_port]` (Unix). Defaults: backend `8173`, frontend `5173`.
+`setup` is required for first-time setup, and when dependencies change (for example, after deleting `node_modules`).
+
+Optional ports: `.\scripts\start.cmd [backend_port] [frontend_port]` (Windows) or `./scripts/start.sh [backend_port] [frontend_port]` (Unix). Defaults: backend `8173`, frontend `5173`.
 
 Then open the frontend in your browser (default port 5173; use `http://127.0.0.1:5173` if needed).
 
-### Manual start
+### Debug start (manual)
 
 If you prefer to start services manually (e.g., for debugging):
 
 **Windows (cmd) — two terminals:**
 
 ```bat
-:: Terminal 1 (backend)
+rem Terminal 1 (backend)
 cd backend
 .venv\Scripts\activate.bat
 set WEBRSS_DEBUG=1
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8173
 
-:: Terminal 2 (frontend)
+rem Terminal 2 (frontend)
 cd frontend
 npm run dev -- --port 5173 --host
 ```
@@ -94,6 +76,8 @@ npm run dev -- --port 5173 --host
 ```
 
 ## Usage
+
+The frontend UI labels are in Simplified Chinese.
 
 1. Open the app and go to **RSS 订阅** (Feed management). Add one or more RSS feed URLs, or click **文章收藏** to create a virtual feed (article favorites collection).
 2. Open a feed and browse its articles.
